@@ -1,19 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
-
-export default async function Home() {
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getSession();
-
+export default function Home() {
   return (
-    <main className="p-8 font-mono">
-      <h1 className="text-2xl font-bold mb-4">Supabase connection test</h1>
-      {error ? (
-        <p className="text-red-600">Error: {error.message}</p>
-      ) : (
-        <p className="text-green-600">
-          Connected. Session: {data.session ? "active" : "none (expected)"}
-        </p>
-      )}
+    <main className="flex min-h-screen items-center justify-center p-8">
+      <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+        CRM 4 Construction - Coming Soon
+      </h1>
     </main>
   );
 }
