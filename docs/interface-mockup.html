@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Artisan Project Hub — Interface Mockup</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --surface:#ffffff; --line:#e4e7ec; --line-2:#eef0f3;
+    --text:#1b2430; --muted:#667085; --faint:#98a2b3;
+    --accent:#2f6f5e; --accent-soft:#e7f1ee;
+    --portal:#2563a8; --portal-soft:#e6eef7;
+    --proposal:#475467; --signed:#4f46e5; --progress:#b54708; --completed:#157347;
+    --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+    --shadow-lg:0 8px 24px rgba(16,24,40,.12);
+    --r:14px; --r-sm:9px;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:var(--sans);background:#e9ebee;color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.45}
+
+  /* ---- preview chrome (not part of the app) ---- */
+  .toolbar{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:14px;align-items:center;
+    padding:12px 18px;background:#101828;color:#fff}
+  .toolbar h1{font-size:14px;margin:0;font-weight:600;letter-spacing:.2px;margin-right:auto}
+  .toolbar .group{display:flex;background:#1d2939;border-radius:10px;padding:3px}
+  .toolbar button{border:0;background:transparent;color:#cdd5df;font-family:inherit;font-size:12.5px;
+    font-weight:600;padding:7px 13px;border-radius:8px;cursor:pointer}
+  .toolbar button.on{background:#fff;color:#101828}
+  .toolbar .hint{font-size:11.5px;color:#98a2b3;width:100%;margin-top:-2px}
+
+  .stage{display:flex;justify-content:center;padding:26px 14px 60px}
+
+  /* ---- device frames ---- */
+  .device{background:var(--bg);overflow:hidden;position:relative}
+  .device.desktop{width:100%;max-width:1180px;height:760px;border-radius:16px;box-shadow:var(--shadow-lg);display:flex}
+  .device.phone{width:390px;height:780px;border-radius:38px;box-shadow:var(--shadow-lg);
+    border:11px solid #101828;display:flex;flex-direction:column}
+  .device.phone::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);
+    width:150px;height:26px;background:#101828;border-radius:0 0 16px 16px;z-index:30}
+
+  /* ===================== DESKTOP LAYOUT ===================== */
+  .sidebar{width:236px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--line);
+    display:flex;flex-direction:column;padding:18px 14px}
+  .brand{display:flex;align-items:center;gap:10px;padding:6px 8px 16px}
+  .brand .logo{width:30px;height:30px;border-radius:8px;background:var(--accent);color:#fff;
+    display:grid;place-items:center;font-weight:700;font-size:14px}
+  .brand.portal .logo{background:var(--portal)}
+  .brand b{font-size:14.5px}
+  .brand span{display:block;font-size:11px;color:var(--muted);font-weight:500}
+  .nav{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+  .nav a{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:9px;color:var(--muted);
+    text-decoration:none;font-size:13.5px;font-weight:550;cursor:pointer}
+  .nav a .ico{width:18px;text-align:center;font-size:15px;opacity:.9}
+  .nav a:hover{background:var(--line-2);color:var(--text)}
+  .nav a.active{background:var(--accent-soft);color:var(--accent);font-weight:650}
+  .portal .nav a.active{background:var(--portal-soft);color:var(--portal)}
+  .nav .sep{height:1px;background:var(--line);margin:10px 6px}
+  .sidebar .foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 8px;border-top:1px solid var(--line)}
+  .avatar{width:30px;height:30px;border-radius:50%;background:#d4dae3;display:grid;place-items:center;font-size:12px;font-weight:700;color:#475467}
+
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .topbar{height:60px;flex-shrink:0;display:flex;align-items:center;gap:12px;padding:0 24px;
+    border-bottom:1px solid var(--line);background:var(--surface)}
+  .topbar .back{display:none}
+  .topbar h2{font-size:17px;margin:0;font-weight:650}
+  .topbar .sub{font-size:12.5px;color:var(--muted);font-weight:500}
+  .topbar .spacer{margin-left:auto}
+  .content{flex:1;overflow-y:auto;padding:22px 24px 40px}
+  .content .col{max-width:1000px;margin:0 auto}
+
+  /* ===================== PHONE LAYOUT ===================== */
+  .phone .sidebar{display:none}
+  .phone .main{width:100%}
+  .phone .topbar{height:54px;padding:0 14px;padding-top:14px}
+  .phone .topbar h2{font-size:16px}
+  .phone .topbar .back{display:grid;place-items:center;width:32px;height:32px;margin-left:-6px;
+    border-radius:8px;cursor:pointer;color:var(--text);font-size:20px}
+  .phone .content{padding:16px 14px 86px}
+  .phone .content .col{max-width:100%}
+  .tabbar{display:none}
+  .phone .tabbar{display:flex;position:absolute;bottom:0;left:0;right:0;height:64px;background:var(--surface);
+    border-top:1px solid var(--line);padding:6px 6px 10px;z-index:20}
+  .tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    color:var(--faint);text-decoration:none;font-size:10.5px;font-weight:600;cursor:pointer;border-radius:10px}
+  .tabbar a .ico{font-size:19px}
+  .tabbar a.active{color:var(--accent)}
+  .portal .tabbar a.active{color:var(--portal)}
+  .fab{display:none}
+  .phone .fab{display:grid;place-items:center;position:absolute;right:16px;bottom:80px;z-index:25;
+    width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;font-size:24px;
+    box-shadow:0 6px 16px rgba(47,111,94,.45);cursor:pointer;border:0}
+
+  /* ===================== COMPONENTS ===================== */
+  .page-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:18px}
+  .page-head .spacer{margin-left:auto}
+  .btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--accent);background:var(--accent);
+    color:#fff;font-family:inherit;font-size:13px;font-weight:600;padding:9px 15px;border-radius:9px;cursor:pointer;white-space:nowrap}
+  .btn.ghost{background:#fff;color:var(--text);border-color:var(--line)}
+  .btn.sm{padding:6px 11px;font-size:12px}
+  .portal .btn{background:var(--portal);border-color:var(--portal)}
+
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}
+  .phone .stat-row{grid-template-columns:repeat(3,1fr)}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px 16px;cursor:pointer;box-shadow:var(--shadow)}
+  .stat:hover{border-color:#cfd4dc}
+  .stat .n{font-size:26px;font-weight:700;line-height:1}
+  .stat .l{font-size:12px;color:var(--muted);margin-top:7px;font-weight:550;display:flex;align-items:center;gap:6px}
+
+  .section{margin-bottom:26px}
+  .section > h3{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:0 0 11px;font-weight:700}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+  .list-row{display:flex;align-items:center;gap:13px;padding:13px 16px;border-bottom:1px solid var(--line-2);cursor:pointer;text-decoration:none;color:inherit}
+  .list-row:last-child{border-bottom:0}
+  .list-row:hover{background:var(--line-2)}
+  .list-row .grow{min-width:0;flex:1}
+  .list-row .t{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .list-row .s{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .list-row .meta{font-size:11.5px;color:var(--faint);text-align:right;white-space:nowrap}
+  .thumb{width:38px;height:38px;border-radius:9px;flex-shrink:0;display:grid;place-items:center;font-size:16px;background:var(--line-2);color:var(--muted)}
+
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:650;padding:3px 9px;border-radius:99px;white-space:nowrap}
+  .chip.proposal{background:#eef1f4;color:var(--proposal)} .chip.signed{background:#eceafe;color:var(--signed)}
+  .chip.progress{background:#fdf0e6;color:var(--progress)} .chip.completed{background:#e6f4ec;color:var(--completed)}
+  .chip.type{background:#eef1f4;color:#475467} .chip.login-no{background:#f2f4f7;color:#98a2b3}
+  .chip.login-inv{background:#fdf0e6;color:var(--progress)} .chip.login-act{background:#e6f4ec;color:var(--completed)}
+
+  .share{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:650;padding:4px 10px;border-radius:99px;cursor:pointer;border:1px solid transparent}
+  .share.on{background:var(--accent);color:#fff}
+  .share.off{background:#fff;color:var(--muted);border-color:var(--line)}
+
+  .seg{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+  .seg button{border:0;background:transparent;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--muted);padding:6px 12px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .seg button.on{background:var(--accent-soft);color:var(--accent)}
+
+  .chiprow{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px}
+  .chiprow button{flex-shrink:0;border:1px solid var(--line);background:#fff;font-family:inherit;font-size:12px;font-weight:600;color:var(--muted);padding:6px 13px;border-radius:99px;cursor:pointer}
+  .chiprow button.on{background:var(--text);color:#fff;border-color:var(--text)}
+
+  .search{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 13px;color:var(--faint);font-size:13px;margin-bottom:14px}
+
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px;overflow-x:auto}
+  .tabs button{border:0;background:transparent;font-family:inherit;font-size:13.5px;font-weight:600;color:var(--muted);padding:11px 13px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+  .tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+  .portal .tabs button.on{color:var(--portal);border-bottom-color:var(--portal)}
+
+  .update{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px 16px;margin-bottom:12px;box-shadow:var(--shadow)}
+  .update .uh{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .update .uh .when{font-size:11.5px;color:var(--faint);margin-left:auto}
+  .update p{margin:0;font-size:13.5px;color:#344054}
+  .update .slot{margin-top:11px;padding-top:10px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--faint)}
+
+  .composer{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:18px;box-shadow:var(--shadow)}
+  .composer .ph{font-size:13px;color:var(--faint);padding:9px 0}
+  .composer .cf{display:flex;align-items:center;gap:10px;margin-top:10px;border-top:1px solid var(--line-2);padding-top:11px}
+
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .phone .grid{grid-template-columns:1fr 1fr}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;box-shadow:var(--shadow);cursor:pointer}
+  .tile .pic{height:84px;display:grid;place-items:center;font-size:26px;color:#fff}
+  .tile .cap{padding:8px 9px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .tile .cap .nm{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .todo{display:flex;align-items:center;gap:12px;padding:12px 15px;border-bottom:1px solid var(--line-2)}
+  .todo:last-child{border-bottom:0}
+  .todo .box{width:20px;height:20px;border-radius:6px;border:2px solid #cfd4dc;flex-shrink:0}
+  .todo .box.done{background:var(--accent);border-color:var(--accent);display:grid;place-items:center;color:#fff;font-size:12px}
+  .todo.done .tt{color:var(--faint);text-decoration:line-through}
+  .todo .tt{font-size:13.5px;flex:1}
+  .todo .due{font-size:11.5px;color:var(--faint)}
+  .todo .proj{font-size:11px;color:var(--accent);font-weight:600}
+
+  .banner{display:flex;gap:10px;align-items:flex-start;background:var(--accent-soft);border:1px solid #cfe2da;
+    color:#235f4f;border-radius:var(--r-sm);padding:11px 13px;font-size:12.5px;margin-bottom:16px}
+  .portal .banner{background:var(--portal-soft);border-color:#c8dbf0;color:#1c4f86}
+  .empty{text-align:center;padding:46px 20px;color:var(--muted)}
+  .empty .big{font-size:34px;margin-bottom:10px}
+  .kv{display:flex;gap:8px;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line-2)}
+  .kv b{color:var(--muted);font-weight:600;width:108px;flex-shrink:0}
+  .note{font-size:12px;color:var(--muted);background:#fafbfc;border:1px dashed var(--line);border-radius:9px;padding:10px 12px;margin-top:8px}
+  .stack-h{display:flex;align-items:center;gap:10px}
+  .mb12{margin-bottom:12px}
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <h1>Artisan Project Hub — interface mockup</h1>
+    <div class="group" id="appSwitch">
+      <button data-app="artisan" class="on">Artisan app</button>
+      <button data-app="portal">Customer portal</button>
+    </div>
+    <div class="group" id="frameSwitch">
+      <button data-frame="desktop" class="on">🖥 Desktop</button>
+      <button data-frame="phone">📱 Phone</button>
+    </div>
+    <div class="hint">Click around — nav, project tabs, list rows, and share toggles all work. Switch Desktop/Phone to see the responsive layout.</div>
+  </div>
+
+  <div class="stage">
+    <div class="device desktop" id="device"></div>
+  </div>
+
+<script>
+/* ---------------- sample data ---------------- */
+const STAGES={proposal:["Proposal","proposal"],signed:["Signed","signed"],in_progress:["In progress","progress"],completed:["Completed","completed"]};
+const projects=[
+  {id:"p1",name:"14 Brenton Rd",cust:"Marsh Residence",stage:"in_progress",dates:"May 2 – Jun 20",contacts:2},
+  {id:"p2",name:"88 Ocean Ave — rear deck",cust:"Calloway Property",stage:"signed",dates:"Jun 10 – Jul 30",contacts:1},
+  {id:"p3",name:"5 Spring St kitchen",cust:"Marsh Residence",stage:"proposal",dates:"—",contacts:1},
+  {id:"p4",name:"212 Thames St storefront",cust:"Harborline LLC",stage:"in_progress",dates:"Apr 14 – Jun 30",contacts:3},
+  {id:"p5",name:"7 Cliff Walk roof",cust:"Calloway Property",stage:"completed",dates:"Mar 1 – Apr 9",contacts:2},
+];
+const customers=[
+  {id:"c1",name:"Marsh Residence",addr:"14 Brenton Rd, Newport RI",projects:2},
+  {id:"c2",name:"Calloway Property",addr:"88 Ocean Ave, Newport RI",projects:2},
+  {id:"c3",name:"Harborline LLC",addr:"212 Thames St, Newport RI",projects:1},
+];
+const contacts=[
+  {id:"k1",name:"Diane Marsh",type:"customer",email:"diane@marsh.com",phone:"(401) 555-0142",login:"act"},
+  {id:"k2",name:"Rob Calloway",type:"customer",email:"rob@calloway.net",phone:"(401) 555-0188",login:"inv"},
+  {id:"k3",name:"Tate Mason — architect",type:"partner",email:"tate@masondesign.com",phone:"(401) 555-0110",login:"no"},
+  {id:"k4",name:"Priya Shah",type:"prospect",email:"priya.shah@gmail.com",phone:"(401) 555-0173",login:"no"},
+];
+const shareState={}; // toggles
+function loginChip(l){return l==="act"?'<span class="chip login-act">● Active</span>':l==="inv"?'<span class="chip login-inv">● Invited</span>':'<span class="chip login-no">○ No login</span>';}
+function stageChip(s){const[n,c]=STAGES[s];return `<span class="chip ${c}">${n}</span>`;}
+const picColors=["#7a9e93","#9e8a7a","#7a8a9e","#9e7a8a","#88997a","#7a7a9e"];
+
+/* ---------------- state ---------------- */
+let S={app:"artisan",frame:"desktop",screen:"dashboard",param:null,ptab:"updates"};
+
+/* ---------------- nav configs ---------------- */
+const artisanNav=[["dashboard","▦","Dashboard"],["projects","▤","Projects"],["customers","◳","Customers"],["contacts","◑","Contacts"],["SEP"],["settings","⚙","Settings"]];
+const artisanTabs=[["dashboard","▦","Dash"],["projects","▤","Projects"],["contacts","◑","Contacts"],["settings","⋯","More"]];
+const portalNav=[["myprojects","▤","My Projects"],["account","◯","Account"]];
+const portalTabs=[["myprojects","▤","Projects"],["account","◯","Account"]];
+
+/* ---------------- render ---------------- */
+function go(screen,param){S.screen=screen;S.param=param||null;if(screen==="project"||screen==="pproject")S.ptab=S.app==="portal"?"updates":"updates";render();}
+function render(){
+  const d=document.getElementById("device");
+  d.className="device "+S.frame+(S.app==="portal"?" portal":"");
+  const isP=S.app==="portal";
+  const nav=isP?portalNav:artisanNav, tabs=isP?portalTabs:artisanTabs;
+  const orgName=isP?"Diane Marsh":"J Huber Restorations";
+  const orgSub=isP?"Customer portal":"Workspace";
+  const logoTxt=isP?"DM":"JH";
+
+  // sidebar
+  let side=`<div class="sidebar"><div class="brand ${isP?'portal':''}"><div class="logo">${logoTxt}</div><div><b>${orgName}</b><span>${orgSub}</span></div></div><div class="nav">`;
+  nav.forEach(n=>{ if(n[0]==="SEP"){side+='<div class="sep"></div>';return;}
+    const act=isActive(n[0])?"active":"";
+    side+=`<a class="${act}" onclick="go('${n[0]}')"><span class="ico">${n[1]}</span>${n[2]}</a>`;});
+  side+=`</div><div class="foot"><div class="avatar">${logoTxt}</div><div style="font-size:12px"><div style="font-weight:600">${isP?'Diane Marsh':'John Huber'}</div><div style="color:var(--muted);font-size:11px">${isP?'diane@marsh.com':'Owner'}</div></div></div></div>`;
+
+  // body
+  const {title,sub,action,html,back}=screenContent();
+  let top=`<div class="topbar">`;
+  if(back) top+=`<div class="back" onclick="go('${back}')">‹</div>`;
+  top+=`<div><h2>${title}</h2>${sub?`<div class="sub">${sub}</div>`:''}</div><div class="spacer"></div>`;
+  if(action&&S.frame==="desktop") top+=action;
+  top+=`</div>`;
+
+  let tabbar=`<div class="tabbar">`;
+  tabs.forEach(t=>{let on=isActive(t[0]);
+    if(t[0]==="settings"&&["customers","customer"].includes(S.screen))on=true; // Customers lives under More on mobile
+    tabbar+=`<a class="${on?'active':''}" onclick="go('${t[0]}')"><span class="ico">${t[1]}</span>${t[2]}</a>`;});
+  tabbar+=`</div>`;
+
+  const fab=screenFab();
+  d.innerHTML=side+`<div class="main">${top}<div class="content"><div class="col">${html}</div></div></div>`+tabbar+fab;
+}
+function isActive(id){
+  const map={projects:["projects","project"],customers:["customers","customer"],contacts:["contacts","contact"],
+    dashboard:["dashboard"],settings:["settings"],myprojects:["myprojects","pproject"],account:["account"]};
+  return (map[id]||[id]).includes(S.screen);
+}
+
+/* ---------------- screens ---------------- */
+function screenContent(){
+  if(S.app==="portal") return portalScreen();
+  switch(S.screen){
+    case "dashboard": return dashboard();
+    case "projects": return projectsList();
+    case "project": return projectDetail();
+    case "customers": return customersList();
+    case "customer": return customerDetail();
+    case "contacts": return contactsList();
+    case "contact": return contactDetail();
+    case "settings": return settings();
+    default: return dashboard();
+  }
+}
+function screenFab(){
+  if(S.frame!=="phone")return"";
+  if(S.app==="portal")return"";
+  if(S.screen==="project"&&S.ptab==="photos")return `<button class="fab" title="Capture photo">📷</button>`;
+  if(["projects","customers","contacts","dashboard"].includes(S.screen))return `<button class="fab" title="New">＋</button>`;
+  return"";
+}
+
+function dashboard(){
+  const cards=[["Projects",projects.length,"projects","▤"],["Customers",customers.length,"customers","◳"],["Contacts",contacts.length,"contacts","◑"]];
+  let stats=`<div class="stat-row">`;
+  cards.forEach(([label,n,target,ic])=>{stats+=`<div class="stat" onclick="go('${target}')"><div class="n">${n}</div><div class="l"><span class="ico">${ic}</span> ${label}</div></div>`;});
+  stats+=`</div>`;
+  const todos=`<div class="section"><h3>To-dos across all projects</h3><div class="card">
+    ${todoRow("Order cedar decking",false,"88 Ocean Ave","Due Jun 6")}
+    ${todoRow("Confirm dumpster drop-off",false,"212 Thames St","Due Jun 7")}
+    ${todoRow("Send revised proposal",false,"5 Spring St","Due Jun 9")}
+    ${todoRow("Final walkthrough photos",true,"7 Cliff Walk","Done")}
+  </div></div>`;
+  const act=`<div class="section"><h3>Recent activity</h3><div class="card">
+    ${actRow("📸","3 after-photos added","14 Brenton Rd · 2h ago")}
+    ${actRow("📝","Status update shared with customer","212 Thames St · 5h ago")}
+    ${actRow("📄","Invoice uploaded (private)","7 Cliff Walk · yesterday")}
+  </div></div>`;
+  return{title:"Dashboard",sub:"Wednesday, June 3",action:`<button class="btn" onclick="go('projects')">＋ New project</button>`,
+    html:stats+todos+act};
+}
+function todoRow(t,done,proj,due){return `<div class="todo ${done?'done':''}" onclick="this.classList.toggle('done');this.querySelector('.box').classList.toggle('done')"><div class="box ${done?'done':''}">${done?'✓':''}</div><div class="tt">${t}</div><div style="text-align:right"><div class="proj">${proj}</div><div class="due">${due}</div></div></div>`;}
+function actRow(ic,t,s){return `<a class="list-row" onclick="go('project','p1')"><div class="thumb">${ic}</div><div class="grow"><div class="t">${t}</div><div class="s">${s}</div></div><div class="meta">›</div></a>`;}
+
+function projectsList(){
+  const groups={in_progress:[],signed:[],proposal:[],completed:[]};
+  projects.forEach(p=>groups[p.stage].push(p));
+  let body=`<div class="search">🔍 Search projects…</div><div class="chiprow"><button class="on">All stages</button><button>Proposal</button><button>Signed</button><button>In progress</button><button>Completed</button></div>`;
+  Object.entries(groups).forEach(([k,arr])=>{ if(!arr.length)return;
+    body+=`<div class="section"><h3>${STAGES[k][0]} · ${arr.length}</h3><div class="card">`;
+    arr.forEach(p=>{body+=`<a class="list-row" onclick="go('project','${p.id}')"><div class="thumb">🏠</div><div class="grow"><div class="t">${p.name}</div><div class="s">${p.cust} · ${p.contacts} contact${p.contacts>1?'s':''}</div></div><div class="meta">${stageChip(p.stage)}<div style="margin-top:5px">${p.dates}</div></div></a>`;});
+    body+=`</div></div>`;});
+  return{title:"Projects",action:`<button class="btn" onclick="go('project','p1')">＋ New project</button>`,html:body};
+}
+
+function projectDetail(){
+  const p=projects.find(x=>x.id===(S.param||"p1"))||projects[0];
+  const tabs=[["updates","Updates"],["photos","Photos & Files"],["todos","To-dos"],["contacts","Contacts"]];
+  let tb=`<div class="tabs">`;tabs.forEach(t=>tb+=`<button class="${S.ptab===t[0]?'on':''}" onclick="S.ptab='${t[0]}';render()">${t[1]}</button>`);tb+=`</div>`;
+  const head=`<div class="page-head"><div><div class="stack-h mb12">${stageChip(p.stage)}<span style="font-size:12px;color:var(--muted)">${p.dates}</span></div>
+    <div style="font-size:12.5px;color:var(--muted)">Customer · <a style="color:var(--accent);font-weight:600;cursor:pointer" onclick="go('customer','c1')">${p.cust}</a></div></div>
+    <div class="spacer"></div><div class="seg"><button class="on">Stage</button><button>⋯</button></div></div>`;
+  let pane="";
+  if(S.ptab==="updates") pane=updatesPane();
+  else if(S.ptab==="photos") pane=photosPane();
+  else if(S.ptab==="todos") pane=todosPane();
+  else pane=contactsPane();
+  return{title:p.name,sub:p.cust,back:"projects",html:head+tb+pane};
+}
+function updatesPane(){
+  return `<div class="composer"><div class="ph">Post an update…</div><div class="cf">${shareToggle("c1",false)}<div class="spacer" style="margin-left:auto"></div><button class="btn sm">Post</button></div></div>
+    ${updateCard("Framing complete on the rear deck. Starting decking boards tomorrow once the cedar arrives.","Jun 2 · 4:10pm",true)}
+    ${updateCard("Footings poured and inspected — passed. Photos attached.","May 28 · 9:02am",true)}
+    ${updateCard("Internal note: customer asked about upgrading railing to cable. Pricing TBD.","May 24 · 1:30pm",false)}`;
+}
+function updateCard(body,when,shared){const id="u"+when.length;return `<div class="update"><div class="uh">${shareToggle(id,shared)}<span class="when">${when}</span></div><p>${body}</p></div>`;}
+function shareToggle(id,def){const on=(id in shareState)?shareState[id]:def;return `<span class="share ${on?'on':'off'}" onclick="shareState['${id}']=${!on};render()">${on?'◉ Shared':'○ Private'}</span>`;}
+function photosPane(){
+  const items=[["📷","before · DSC01.jpg","before"],["📷","before · DSC02.jpg","before"],["🖼","after · deck1.jpg","after"],["🖼","after · deck2.jpg","after"],["📐","site-plan.pdf","plans"],["📋","building-permit.pdf","permits"],["📄","contract.pdf","contract"],["📄","invoice-04.pdf","invoice"]];
+  let g=`<div class="chiprow"><button class="on">All</button><button>Before</button><button>After</button><button>Plans</button><button>Permits</button><button>Proposal</button><button>Contract</button><button>Invoice</button></div><div class="grid">`;
+  items.forEach((it,i)=>{const shared=i<4;g+=`<div class="tile"><div class="pic" style="background:${picColors[i%picColors.length]}">${it[0]}</div><div class="cap"><span class="nm">${it[1]}</span>${shareToggle('ph'+i,shared)}</div></div>`;});
+  g+=`</div><div class="note">📷 On a phone the green camera button (bottom-right) opens the camera directly — shoot, pick a category, set shared/private, save. New files default to <b>private</b>.</div>`;
+  return g;
+}
+function todosPane(){
+  return `<div class="banner">🔒 To-dos are <b>internal</b> — never shown in the customer portal.</div>
+  <div class="composer"><div class="cf" style="border:0;padding:0;margin:0">＋ <span style="color:var(--faint);font-size:13px">Add a to-do…</span></div></div>
+  <div class="card">${todoRow("Order cedar decking",false,"due Jun 6","")}${todoRow("Schedule railing inspection",false,"due Jun 12","")}${todoRow("Pour footings",true,"done","")}</div>`;
+}
+function contactsPane(){
+  return `<div class="page-head"><h3 style="margin:0">Attached contacts</h3><div class="spacer"></div><button class="btn sm">＋ Attach contact</button></div>
+  <div class="card">
+    ${attachRow("Diane Marsh","customer","act")}
+    ${attachRow("Tate Mason — architect","partner","no")}
+  </div>
+  <div class="note">Attaching a contact is what <b>grants portal access</b> to this project. Detaching removes it. Use <b>Invite</b> to give an attached contact a login.</div>`;
+}
+function attachRow(name,type,login){const inv=login==="no"?'<button class="btn sm ghost">Invite</button>':'';
+  return `<div class="list-row" style="cursor:default"><div class="avatar">${name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div><div class="grow"><div class="t">${name}</div><div class="s"><span class="chip type">${type}</span> ${loginChip(login)}</div></div><div class="stack-h">${inv}<span style="color:var(--faint);font-size:12px;cursor:pointer">Detach</span></div></div>`;}
+
+function customersList(){
+  let body=`<div class="search">🔍 Search customers…</div><div class="card">`;
+  customers.forEach(c=>{body+=`<a class="list-row" onclick="go('customer','${c.id}')"><div class="thumb">◳</div><div class="grow"><div class="t">${c.name}</div><div class="s">${c.addr}</div></div><div class="meta">${c.projects} project${c.projects>1?'s':''} ›</div></a>`;});
+  body+=`</div>`;
+  return{title:"Customers",action:`<button class="btn">＋ New customer</button>`,html:body};
+}
+function customerDetail(){
+  const c=customers.find(x=>x.id===(S.param||"c1"))||customers[0];
+  const theirs=projects.filter(p=>p.cust===c.name);
+  let body=`<div class="page-head"><div><div style="font-size:13px;color:var(--muted)">${c.addr}</div></div><div class="spacer"></div><button class="btn sm ghost">Edit</button></div>
+    <div class="section"><h3>Projects · ${theirs.length}</h3><div class="card">`;
+  theirs.forEach(p=>{body+=`<a class="list-row" onclick="go('project','${p.id}')"><div class="thumb">🏠</div><div class="grow"><div class="t">${p.name}</div><div class="s">${p.dates}</div></div><div class="meta">${stageChip(p.stage)}</div></a>`;});
+  body+=`</div></div><div class="section"><h3>Notes</h3><div class="card"><div style="padding:14px 16px;font-size:13px;color:#475467">Repeat customer. Prefers email over phone. Gate code 4417.</div></div></div>`;
+  return{title:c.name,sub:c.addr,back:"customers",action:`<button class="btn sm">＋ New project</button>`,html:body};
+}
+
+function contactsList(){
+  let body=`<div class="search">🔍 Search contacts…</div><div class="chiprow"><button class="on">All types</button><button>Partner</button><button>Prospect</button><button>Customer</button></div><div class="card">`;
+  contacts.forEach(k=>{body+=`<a class="list-row" onclick="go('contact','${k.id}')"><div class="avatar">${k.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div><div class="grow"><div class="t">${k.name}</div><div class="s">${k.email}</div></div><div class="meta"><span class="chip type">${k.type}</span><div style="margin-top:5px">${loginChip(k.login)}</div></div></a>`;});
+  body+=`</div>`;
+  return{title:"Contacts",action:`<button class="btn">＋ New contact</button>`,html:body};
+}
+function contactDetail(){
+  const k=contacts.find(x=>x.id===(S.param||"k1"))||contacts[0];
+  const canInvite=k.login==="no";
+  let body=`<div class="page-head"><div class="stack-h"><span class="chip type">${k.type}</span>${loginChip(k.login)}</div><div class="spacer"></div><button class="btn sm ghost">Edit</button></div>
+    <div class="card" style="padding:6px 16px;margin-bottom:18px">
+      <div class="kv"><b>Email</b>${k.email}</div><div class="kv"><b>Phone</b>${k.phone}</div><div class="kv" style="border:0"><b>Customer</b>${k.type==='customer'?'Marsh Residence':'—'}</div></div>
+    <div class="section"><h3>Attached projects</h3><div class="card">
+      <a class="list-row" onclick="go('project','p1')"><div class="thumb">🏠</div><div class="grow"><div class="t">14 Brenton Rd</div><div class="s">Can view shared updates &amp; files</div></div><div class="meta">${stageChip('in_progress')}</div></a></div></div>
+    <div class="section"><h3>Portal login</h3><div class="card"><div style="padding:14px 16px;display:flex;align-items:center;gap:12px">${loginChip(k.login)}<div style="font-size:12.5px;color:var(--muted);flex:1">${k.login==='act'?'Has an active portal login.':k.login==='inv'?'Invitation sent — awaiting acceptance.':'No login yet.'}</div>${canInvite?'<button class="btn sm">Invite to portal</button>':''}</div></div></div>`;
+  return{title:k.name,sub:k.email,back:"contacts",html:body};
+}
+function settings(){
+  return{title:"More",html:`<div class="section"><h3>Browse</h3><div class="card">
+      <div class="list-row" onclick="go('customers')"><div class="thumb">◳</div><div class="grow"><div class="t">Customers</div><div class="s">Browse customer accounts &amp; their projects</div></div><div class="meta">›</div></div>
+    </div></div>
+    <div class="section"><h3>Organization</h3><div class="card" style="padding:6px 16px"><div class="kv"><b>Org name</b>J Huber Restorations</div><div class="kv"><b>Signed in</b>John Huber (Owner)</div><div class="kv" style="border:0"><b>Account</b>john@jhuber.com</div></div></div>
+    <div class="section"><h3>Other</h3><div class="card">
+      <div class="list-row"><div class="thumb">🗄</div><div class="grow"><div class="t">Archived items</div><div class="s">Recover archived customers, contacts &amp; projects</div></div><div class="meta">›</div></div>
+      <div class="list-row"><div class="thumb">↪</div><div class="grow"><div class="t">Sign out</div></div></div>
+    </div></div>`};
+}
+
+/* ---------------- portal ---------------- */
+function portalScreen(){
+  if(S.screen==="account") return{title:"Account",html:`<div class="card" style="padding:6px 16px"><div class="kv"><b>Name</b>Diane Marsh</div><div class="kv"><b>Email</b>diane@marsh.com</div><div class="kv" style="border:0"><b>Password</b>••••••••</div></div><div style="margin-top:16px"><button class="btn ghost sm">Change password</button> <button class="btn ghost sm">Sign out</button></div>`};
+  if(S.screen==="pproject") return portalProject();
+  return portalMyProjects();
+}
+function portalMyProjects(){
+  const body=`<div class="banner">👋 This is your view into the projects that have been shared with you.</div>
+  <div class="section"><h3>Current</h3><div class="card">
+    <a class="list-row" onclick="go('pproject','p1')"><div class="thumb">🏠</div><div class="grow"><div class="t">14 Brenton Rd</div><div class="s">J Huber Restorations · updated 2h ago</div></div><div class="meta">${stageChip('in_progress')}</div></a></div></div>
+  <div class="section"><h3>Proposal</h3><div class="card">
+    <a class="list-row" onclick="go('pproject','p3')"><div class="thumb">🏠</div><div class="grow"><div class="t">5 Spring St kitchen</div><div class="s">J Huber Restorations</div></div><div class="meta">${stageChip('proposal')}</div></a></div></div>
+  <div class="section"><h3>Past</h3><div class="card">
+    <a class="list-row" onclick="go('pproject','p5')"><div class="thumb">🏠</div><div class="grow"><div class="t">7 Cliff Walk roof</div><div class="s">J Huber Restorations</div></div><div class="meta">${stageChip('completed')}</div></a></div></div>`;
+  return{title:"My Projects",html:body};
+}
+function portalProject(){
+  const tabs=[["updates","Updates"],["photos","Photos & Files"]];
+  let tb=`<div class="tabs">`;tabs.forEach(t=>tb+=`<button class="${S.ptab===t[0]?'on':''}" onclick="S.ptab='${t[0]}';render()">${t[1]}</button>`);tb+=`</div>`;
+  let pane;
+  if(S.ptab==="photos"){
+    const items=[["📷","before · DSC01.jpg"],["📷","before · DSC02.jpg"],["🖼","after · deck1.jpg"],["🖼","after · deck2.jpg"]];
+    pane=`<div class="grid">`+items.map((it,i)=>`<div class="tile"><div class="pic" style="background:${picColors[i%picColors.length]}">${it[0]}</div><div class="cap"><span class="nm">${it[1]}</span><span style="font-size:14px">⬇</span></div></div>`).join('')+`</div>`;
+  } else {
+    pane=`${pUpdate("Framing complete on the rear deck. Starting decking boards tomorrow once the cedar arrives.","Jun 2 · 4:10pm")}${pUpdate("Footings poured and inspected — passed. Photos attached.","May 28 · 9:02am")}`;
+  }
+  const head=`<div class="page-head"><div class="stack-h">${stageChip('in_progress')}<span style="font-size:12px;color:var(--muted)">J Huber Restorations</span></div></div>`;
+  return{title:"14 Brenton Rd",sub:"Shared with you",back:"myprojects",html:head+tb+pane};
+}
+function pUpdate(body,when){return `<div class="update"><div class="uh"><span style="font-size:11.5px;color:var(--faint)">${when}</span></div><p>${body}</p><div class="slot">↪ Acknowledge / comment — planned fast-follow (read-only today)</div></div>`;}
+
+/* ---------------- wire up ---------------- */
+document.getElementById("appSwitch").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  document.querySelectorAll("#appSwitch button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
+  S.app=b.dataset.app;S.screen=S.app==="portal"?"myprojects":"dashboard";S.param=null;render();});
+document.getElementById("frameSwitch").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  document.querySelectorAll("#frameSwitch button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
+  S.frame=b.dataset.frame;render();});
+render();
+</script>
+</body>
+</html>

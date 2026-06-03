@@ -1,26 +1,41 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ---- Design tokens — mirror of docs/design-tokens.css ---- */
+:root{
+  --bg:#f4f5f7; --surface:#ffffff; --line:#e4e7ec; --line-2:#eef0f3;
+  --text:#1b2430; --muted:#667085; --faint:#98a2b3;
+  --accent:#2f6f5e; --accent-soft:#e7f1ee;
+  --portal:#2563a8; --portal-soft:#e6eef7;
+  --proposal:#475467; --proposal-soft:#eef1f4;
+  --signed:#4f46e5; --signed-soft:#eceafe;
+  --progress:#b54708; --progress-soft:#fdf0e6;
+  --completed:#157347; --completed-soft:#e6f4ec;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+  --shadow-lg:0 8px 24px rgba(16,24,40,.12);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+/* The two worlds differ ONLY by accent. */
+[data-world="portal"]{ --accent:var(--portal); --accent-soft:var(--portal-soft); }
+
+/* ---- Map tokens → Tailwind theme (NON-inline so the accent stays overridable) ---- */
+@theme{
+  --color-bg:var(--bg); --color-surface:var(--surface);
+  --color-line:var(--line); --color-line-2:var(--line-2);
+  --color-text:var(--text); --color-muted:var(--muted); --color-faint:var(--faint);
+  --color-accent:var(--accent); --color-accent-soft:var(--accent-soft);
+  --color-proposal:var(--proposal); --color-proposal-soft:var(--proposal-soft);
+  --color-signed:var(--signed); --color-signed-soft:var(--signed-soft);
+  --color-progress:var(--progress); --color-progress-soft:var(--progress-soft);
+  --color-completed:var(--completed); --color-completed-soft:var(--completed-soft);
+
+  --radius-card:14px; --radius-control:9px;
+  --shadow-card:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+  --shadow-float:0 8px 24px rgba(16,24,40,.12);
+
+  --font-sans:var(--sans);
+
+  --text-title:17px; --text-section:13px; --text-body:13.5px;
+  --text-sub:12.5px; --text-meta:11.5px; --text-chip:11px; --text-stat:26px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+body{ background:var(--bg); color:var(--text); font-family:var(--sans); }

@@ -45,7 +45,8 @@ Invitation                     (email, token, status)       ── grants a Cont
 - **StatusUpdate:** body, posted_at, **is_shared**.
 - **Todo:** text, due_date, done. *Internal — never shown in portal.*
 - **Attachment:** Storage ref,
-  `category ∈ {before_photo, after_photo, proposal, contract, invoice, other}`, filename,
+  `category ∈ {before_photo, after_photo, plans, permits, proposal, contract, invoice, other}`,
+  filename,
   size, mime, uploaded_by, uploaded_at, **is_shared**.
 - **Invitation:** email, contact_id, token, `status ∈ {pending, accepted, expired}`.
 

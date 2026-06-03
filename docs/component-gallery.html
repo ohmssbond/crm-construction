@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Artisan Project Hub — Component Gallery</title>
+<!-- The gallery renders from the REAL token source of truth. -->
+<link rel="stylesheet" href="design-tokens.css" />
+<style>
+  /* ---- gallery-only chrome ---- */
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--sans);background:#e9ebee;color:var(--text);line-height:1.45}
+  .bar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;padding:13px 22px;background:#101828;color:#fff}
+  .bar h1{font-size:14px;margin:0;font-weight:600;margin-right:auto}
+  .bar .group{display:flex;background:#1d2939;border-radius:10px;padding:3px}
+  .bar button{border:0;background:transparent;color:#cdd5df;font-family:inherit;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:8px;cursor:pointer}
+  .bar button.on{background:#fff;color:#101828}
+  .wrap{max-width:1080px;margin:0 auto;padding:26px 22px 80px}
+  .lead{font-size:13px;color:var(--muted);margin:4px 0 24px;max-width:70ch}
+  section{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px 22px;margin-bottom:18px}
+  section > h2{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:0 0 4px;font-weight:700}
+  section > .desc{font-size:12.5px;color:var(--faint);margin:0 0 16px}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .stackv{display:flex;flex-direction:column;gap:10px}
+  .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .sw{border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:#fff}
+  .sw .chip{height:54px}
+  .sw .lab{padding:8px 10px;font-size:11.5px}
+  .sw .lab b{display:block;font-size:12px}
+  .sw .lab code{color:var(--muted);font-size:11px}
+
+  /* ===== the components, themed from tokens only ===== */
+  .btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-family:inherit;font-size:13px;font-weight:600;padding:9px 15px;border-radius:var(--r-sm);cursor:pointer}
+  .btn.ghost{background:#fff;color:var(--text);border-color:var(--line)}
+  .btn.sm{padding:6px 11px;font-size:12px}
+
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-chip);font-weight:650;padding:3px 9px;border-radius:var(--r-pill);white-space:nowrap}
+  .chip.proposal{background:var(--proposal-soft);color:var(--proposal)}
+  .chip.signed{background:var(--signed-soft);color:var(--signed)}
+  .chip.progress{background:var(--progress-soft);color:var(--progress)}
+  .chip.completed{background:var(--completed-soft);color:var(--completed)}
+  .chip.type{background:var(--proposal-soft);color:var(--proposal)}
+  .chip.login-no{background:var(--line-2);color:var(--faint)}
+  .chip.login-inv{background:var(--progress-soft);color:var(--progress)}
+  .chip.login-act{background:var(--completed-soft);color:var(--completed)}
+
+  .share{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-chip);font-weight:650;padding:4px 10px;border-radius:var(--r-pill);cursor:pointer;border:1px solid transparent}
+  .share.on{background:var(--accent);color:#fff}
+  .share.off{background:#fff;color:var(--muted);border-color:var(--line)}
+
+  .seg{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+  .seg button{border:0;background:transparent;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--muted);padding:6px 12px;border-radius:7px;cursor:pointer}
+  .seg button.on{background:var(--accent-soft);color:var(--accent)}
+
+  .chiprow{display:flex;gap:8px;flex-wrap:wrap}
+  .chiprow button{border:1px solid var(--line);background:#fff;font-family:inherit;font-size:12px;font-weight:600;color:var(--muted);padding:6px 13px;border-radius:var(--r-pill);cursor:pointer}
+  .chiprow button.on{background:var(--text);color:#fff;border-color:var(--text)}
+
+  .search{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 13px;color:var(--faint);font-size:13px;max-width:360px}
+
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+  .tabs button{border:0;background:transparent;font-family:inherit;font-size:13.5px;font-weight:600;color:var(--muted);padding:11px 13px;cursor:pointer;border-bottom:2px solid transparent}
+  .tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;max-width:460px}
+  .list-row{display:flex;align-items:center;gap:13px;padding:13px 16px;border-bottom:1px solid var(--line-2)}
+  .list-row:last-child{border-bottom:0}
+  .list-row .grow{min-width:0;flex:1}
+  .list-row .t{font-size:var(--fs-body);font-weight:600}
+  .list-row .s{font-size:12px;color:var(--muted);margin-top:2px}
+  .list-row .meta{font-size:var(--fs-meta);color:var(--faint);text-align:right}
+  .thumb{width:38px;height:38px;border-radius:var(--r-sm);flex-shrink:0;display:grid;place-items:center;font-size:16px;background:var(--line-2);color:var(--muted)}
+  .avatar{width:38px;height:38px;border-radius:50%;background:#d4dae3;display:grid;place-items:center;font-size:13px;font-weight:700;color:#475467;flex-shrink:0}
+
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px 16px;box-shadow:var(--shadow);min-width:150px;cursor:pointer}
+  .stat .n{font-size:var(--fs-stat);font-weight:700;line-height:1}
+  .stat .l{font-size:12px;color:var(--muted);margin-top:7px;font-weight:550}
+
+  .update{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px 16px;box-shadow:var(--shadow);max-width:460px}
+  .update .uh{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .update .uh .when{font-size:var(--fs-meta);color:var(--faint);margin-left:auto}
+  .update p{margin:0;font-size:var(--fs-body);color:#344054}
+  .update .slot{margin-top:11px;padding-top:10px;border-top:1px dashed var(--line);font-size:var(--fs-meta);color:var(--faint)}
+
+  .composer{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow);max-width:460px}
+  .composer .ph{font-size:13px;color:var(--faint);padding:9px 0}
+  .composer .cf{display:flex;align-items:center;gap:10px;margin-top:10px;border-top:1px solid var(--line-2);padding-top:11px}
+
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:560px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;box-shadow:var(--shadow)}
+  .tile .pic{height:70px;display:grid;place-items:center;font-size:24px;color:#fff}
+  .tile .cap{padding:8px 9px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .tile .cap .nm{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .todo{display:flex;align-items:center;gap:12px;padding:12px 15px;border-bottom:1px solid var(--line-2)}
+  .todo:last-child{border-bottom:0}
+  .todo .box{width:20px;height:20px;border-radius:6px;border:2px solid #cfd4dc;flex-shrink:0}
+  .todo .box.done{background:var(--accent);border-color:var(--accent);display:grid;place-items:center;color:#fff;font-size:12px}
+  .todo.done .tt{color:var(--faint);text-decoration:line-through}
+  .todo .tt{font-size:var(--fs-body);flex:1}
+  .todo .due{font-size:var(--fs-meta);color:var(--faint)}
+
+  .banner{display:flex;gap:10px;align-items:flex-start;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 22%,#fff);color:var(--accent);border-radius:var(--r-sm);padding:11px 13px;font-size:12.5px;max-width:520px}
+  .empty{text-align:center;padding:40px 20px;color:var(--muted);border:1px dashed var(--line);border-radius:var(--r);max-width:460px}
+  .empty .big{font-size:32px;margin-bottom:10px}
+  .kv{display:flex;gap:8px;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line-2);max-width:420px}
+  .kv:last-child{border-bottom:0}
+  .kv b{color:var(--muted);font-weight:600;width:108px;flex-shrink:0}
+  .note{font-size:12px;color:var(--muted);background:#fafbfc;border:1px dashed var(--line);border-radius:var(--r-sm);padding:10px 12px;max-width:520px}
+
+  .type-spec{display:flex;align-items:baseline;gap:14px;padding:6px 0;border-bottom:1px solid var(--line-2)}
+  .type-spec:last-child{border:0}
+  .type-spec .meta{font-size:11.5px;color:var(--faint);font-family:ui-monospace,monospace;width:170px;flex-shrink:0}
+  .t-title{font-size:var(--fs-title);font-weight:650}
+  .t-section{font-size:var(--fs-section);font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  .t-body{font-size:var(--fs-body)}
+  .t-sub{font-size:var(--fs-sub);color:var(--muted)}
+  .t-meta{font-size:var(--fs-meta);color:var(--faint)}
+  .t-stat{font-size:var(--fs-stat);font-weight:700}
+
+  .radii{display:flex;gap:16px;flex-wrap:wrap}
+  .radii .b{width:90px;height:64px;background:var(--accent-soft);border:1px solid var(--accent);display:grid;place-items:end center;padding-bottom:6px;font-size:11px;color:var(--accent)}
+  .elev{display:flex;gap:20px;flex-wrap:wrap}
+  .elev .e{width:150px;height:74px;background:#fff;border-radius:var(--r);display:grid;place-items:center;font-size:11.5px;color:var(--muted)}
+</style>
+</head>
+<body data-world="artisan">
+  <div class="bar">
+    <h1>Artisan Project Hub — component gallery</h1>
+    <span style="font-size:11.5px;color:#98a2b3">rendered from design-tokens.css</span>
+    <div class="group" id="world">
+      <button data-w="artisan" class="on">Artisan (green)</button>
+      <button data-w="portal">Portal (blue)</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <p class="lead">Every component below pulls its colors, radii, shadows, and type sizes from
+      <code>design-tokens.css</code> — the same file the app imports. Flip the world toggle to confirm a single
+      accent swap re-themes the entire library with no other change. This page is the visual reference Claude Code
+      builds the real components against.</p>
+
+    <!-- COLOR -->
+    <section>
+      <h2>Color — neutrals & text</h2>
+      <div class="swatches">
+        <div class="sw"><div class="chip" style="background:var(--bg)"></div><div class="lab"><b>Canvas</b><code>--bg</code></div></div>
+        <div class="sw"><div class="chip" style="background:var(--surface);border-bottom:1px solid var(--line)"></div><div class="lab"><b>Surface</b><code>--surface</code></div></div>
+        <div class="sw"><div class="chip" style="background:var(--line)"></div><div class="lab"><b>Line</b><code>--line</code></div></div>
+        <div class="sw"><div class="chip" style="background:var(--line-2)"></div><div class="lab"><b>Line 2</b><code>--line-2</code></div></div>
+        <div class="sw"><div class="chip" style="background:var(--text)"></div><div class="lab"><b>Text</b><code>--text</code></div></div>
+        <div class="sw"><div class="chip" style="background:var(--muted)"></div><div class="lab"><b>Muted</b><code>--muted</code></div></div>
+        <div class="sw"><div class="chip" style="background:var(--faint)"></div><div class="lab"><b>Faint</b><code>--faint</code></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Color — accent & stages</h2>
+      <p class="desc">Accent swaps per world; stage colors are fixed pairings (solid text on a soft bg).</p>
+      <div class="swatches">
+        <div class="sw"><div class="chip" style="background:var(--accent)"></div><div class="lab"><b>Accent</b><code>--accent</code></div></div>
+        <div class="sw"><div class="chip" style="background:var(--accent-soft)"></div><div class="lab"><b>Accent soft</b><code>--accent-soft</code></div></div>
+        <div class="sw"><div class="chip" style="background:var(--proposal)"></div><div class="lab"><b>Proposal</b><code>--proposal</code></div></div>
+        <div class="sw"><div class="chip" style="background:var(--signed)"></div><div class="lab"><b>Signed</b><code>--signed</code></div></div>
+        <div class="sw"><div class="chip" style="background:var(--progress)"></div><div class="lab"><b>In progress</b><code>--progress</code></div></div>
+        <div class="sw"><div class="chip" style="background:var(--completed)"></div><div class="lab"><b>Completed</b><code>--completed</code></div></div>
+      </div>
+    </section>
+
+    <!-- TYPE -->
+    <section>
+      <h2>Typography scale</h2>
+      <div class="type-spec"><span class="meta">17 / 650 · --fs-title</span><span class="t-title">Page title</span></div>
+      <div class="type-spec"><span class="meta">13 / 700 · --fs-section</span><span class="t-section">Section label</span></div>
+      <div class="type-spec"><span class="meta">13.5 / 600 · --fs-body</span><span class="t-body">Body & row title</span></div>
+      <div class="type-spec"><span class="meta">12.5 / 500 · --fs-sub</span><span class="t-sub">Secondary line</span></div>
+      <div class="type-spec"><span class="meta">11.5 / 500 · --fs-meta</span><span class="t-meta">Meta / timestamp</span></div>
+      <div class="type-spec"><span class="meta">26 / 700 · --fs-stat</span><span class="t-stat">128</span></div>
+    </section>
+
+    <!-- RADIUS & ELEVATION -->
+    <section>
+      <h2>Radius & elevation</h2>
+      <div class="radii" style="margin-bottom:18px">
+        <div class="b" style="border-radius:var(--r)">--r 14</div>
+        <div class="b" style="border-radius:var(--r-sm)">--r-sm 9</div>
+        <div class="b" style="border-radius:var(--r-pill);width:120px">--r-pill 99</div>
+      </div>
+      <div class="elev">
+        <div class="e" style="box-shadow:var(--shadow)">--shadow (resting)</div>
+        <div class="e" style="box-shadow:var(--shadow-lg)">--shadow-lg (floating)</div>
+      </div>
+    </section>
+
+    <!-- BUTTONS -->
+    <section>
+      <h2>Buttons</h2>
+      <div class="row">
+        <button class="btn">Primary</button>
+        <button class="btn ghost">Ghost</button>
+        <button class="btn sm">Small</button>
+        <button class="btn sm ghost">Small ghost</button>
+        <button class="btn">＋ New project</button>
+      </div>
+    </section>
+
+    <!-- CHIPS -->
+    <section>
+      <h2>Stage, type & login chips</h2>
+      <p class="desc">The only way to show a stage or status — never color or text alone.</p>
+      <div class="row" style="margin-bottom:14px">
+        <span class="chip proposal">Proposal</span>
+        <span class="chip signed">Signed</span>
+        <span class="chip progress">In progress</span>
+        <span class="chip completed">Completed</span>
+      </div>
+      <div class="row">
+        <span class="chip type">partner</span>
+        <span class="chip type">prospect</span>
+        <span class="chip type">customer</span>
+        <span class="chip login-no">○ No login</span>
+        <span class="chip login-inv">● Invited</span>
+        <span class="chip login-act">● Active</span>
+      </div>
+    </section>
+
+    <!-- SHARE TOGGLE -->
+    <section>
+      <h2>Share toggle</h2>
+      <p class="desc">One control for <code>is_shared</code>. Click to flip — new content defaults to Private.</p>
+      <div class="row">
+        <span class="share on" onclick="this.outerHTML='<span class=\'share off\' onclick=\'flip(this)\'>○ Private</span>'">◉ Shared</span>
+        <span class="share off" onclick="flip(this)">○ Private</span>
+      </div>
+    </section>
+
+    <!-- CONTROLS -->
+    <section>
+      <h2>Segmented control · filter chips · search · tabs</h2>
+      <div class="stackv" style="gap:16px">
+        <div class="seg"><button class="on">Stage</button><button>⋯</button></div>
+        <div class="chiprow"><button class="on">All</button><button>Before</button><button>After</button><button>Plans</button><button>Permits</button><button>Proposal</button><button>Contract</button><button>Invoice</button></div>
+        <div class="search">🔍 Search projects…</div>
+        <div class="tabs"><button class="on">Updates</button><button>Photos &amp; Files</button><button>To-dos</button><button>Contacts</button></div>
+      </div>
+    </section>
+
+    <!-- LIST / CARD -->
+    <section>
+      <h2>Card & list rows</h2>
+      <div class="card">
+        <div class="list-row"><div class="thumb">🏠</div><div class="grow"><div class="t">14 Brenton Rd</div><div class="s">Marsh Residence · 2 contacts</div></div><div class="meta"><span class="chip progress">In progress</span><div style="margin-top:5px">May 2 – Jun 20</div></div></div>
+        <div class="list-row"><div class="avatar">DM</div><div class="grow"><div class="t">Diane Marsh</div><div class="s">diane@marsh.com</div></div><div class="meta"><span class="chip type">customer</span></div></div>
+        <div class="list-row"><div class="thumb">📐</div><div class="grow"><div class="t">site-plan.pdf</div><div class="s">plans</div></div><div class="meta"><span class="share off">○ Private</span></div></div>
+      </div>
+    </section>
+
+    <!-- STAT CARDS -->
+    <section>
+      <h2>Stat cards (dashboard)</h2>
+      <div class="row">
+        <div class="stat"><div class="n">5</div><div class="l">▤ Projects</div></div>
+        <div class="stat"><div class="n">3</div><div class="l">◳ Customers</div></div>
+        <div class="stat"><div class="n">4</div><div class="l">◑ Contacts</div></div>
+      </div>
+    </section>
+
+    <!-- UPDATE + COMPOSER -->
+    <section>
+      <h2>Status update & composer</h2>
+      <div class="row" style="align-items:flex-start">
+        <div class="composer"><div class="ph">Post an update…</div><div class="cf"><span class="share off">○ Private</span><span style="margin-left:auto"></span><button class="btn sm">Post</button></div></div>
+        <div class="update"><div class="uh"><span class="share on">◉ Shared</span><span class="when">Jun 2 · 4:10pm</span></div><p>Framing complete on the rear deck. Starting decking boards tomorrow.</p></div>
+      </div>
+      <p class="desc" style="margin:14px 0 8px">Portal variant — read-only, with the planned acknowledge/comment slot:</p>
+      <div class="update" data-world="portal"><div class="uh"><span class="when">Jun 2 · 4:10pm</span></div><p>Framing complete on the rear deck. Starting decking boards tomorrow.</p><div class="slot">↪ Acknowledge / comment — planned fast-follow (read-only today)</div></div>
+    </section>
+
+    <!-- FILES -->
+    <section>
+      <h2>File tile grid</h2>
+      <div class="grid">
+        <div class="tile"><div class="pic" style="background:#7a9e93">📷</div><div class="cap"><span class="nm">before.jpg</span><span class="share on">◉</span></div></div>
+        <div class="tile"><div class="pic" style="background:#9e8a7a">🖼</div><div class="cap"><span class="nm">after.jpg</span><span class="share on">◉</span></div></div>
+        <div class="tile"><div class="pic" style="background:#7a8a9e">📐</div><div class="cap"><span class="nm">plans.pdf</span><span class="share off">○</span></div></div>
+        <div class="tile"><div class="pic" style="background:#9e7a8a">📋</div><div class="cap"><span class="nm">permit.pdf</span><span class="share off">○</span></div></div>
+      </div>
+    </section>
+
+    <!-- TODO -->
+    <section>
+      <h2>To-do rows (internal)</h2>
+      <div class="card">
+        <div class="todo"><div class="box"></div><div class="tt">Order cedar decking</div><div class="due">due Jun 6</div></div>
+        <div class="todo done"><div class="box done">✓</div><div class="tt">Pour footings</div><div class="due">done</div></div>
+      </div>
+    </section>
+
+    <!-- BANNER / EMPTY / KV / NOTE -->
+    <section>
+      <h2>Banner · empty state · key–value · note</h2>
+      <div class="stackv" style="gap:16px">
+        <div class="banner">🔒 To-dos are <b>internal</b> — never shown in the customer portal.</div>
+        <div class="empty"><div class="big">📋</div>No projects yet<div style="margin-top:10px"><button class="btn sm">Create your first project</button></div></div>
+        <div class="card" style="padding:6px 16px"><div class="kv"><b>Email</b>diane@marsh.com</div><div class="kv"><b>Phone</b>(401) 555-0142</div><div class="kv"><b>Customer</b>Marsh Residence</div></div>
+        <div class="note">Attaching a contact is what <b>grants portal access</b> to this project. Detaching removes it.</div>
+      </div>
+    </section>
+  </div>
+
+<script>
+  document.getElementById("world").addEventListener("click",e=>{
+    const b=e.target.closest("button"); if(!b) return;
+    document.querySelectorAll("#world button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+    document.body.setAttribute("data-world", b.dataset.w);
+  });
+  function flip(el){ el.className="share on"; el.textContent="◉ Shared"; el.onclick=()=>{el.className="share off";el.textContent="○ Private";el.onclick=()=>flip(el);}; }
+</script>
+</body>
+</html>

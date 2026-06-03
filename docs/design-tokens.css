@@ -1,0 +1,67 @@
+/* ============================================================
+   Artisan Project Hub — Design Tokens (single source of truth)
+   ------------------------------------------------------------
+   Canonical values for the whole app. Every page must theme from
+   these variables — never hard-code a hex, radius, or shadow.
+   Documented in docs/design-system.md. Keep the two in sync.
+   ============================================================ */
+
+:root{
+  /* ---- Neutrals / surfaces ---- */
+  --bg:#f4f5f7;          /* app canvas behind cards */
+  --surface:#ffffff;     /* cards, bars, sheets */
+  --line:#e4e7ec;        /* default borders, dividers */
+  --line-2:#eef0f3;      /* subtle row dividers, hover fills */
+
+  /* ---- Text ---- */
+  --text:#1b2430;        /* primary text */
+  --muted:#667085;       /* secondary text, labels */
+  --faint:#98a2b3;       /* timestamps, captions, placeholders */
+
+  /* ---- Brand: artisan world (green) ---- */
+  --accent:#2f6f5e;
+  --accent-soft:#e7f1ee; /* active nav fill, "Shared" soft bg */
+
+  /* ---- Brand: customer portal world (blue) ---- */
+  --portal:#2563a8;
+  --portal-soft:#e6eef7;
+
+  /* ---- Stage colors (text on *-soft backgrounds) ---- */
+  --proposal:#475467;    --proposal-soft:#eef1f4;
+  --signed:#4f46e5;      --signed-soft:#eceafe;
+  --progress:#b54708;    --progress-soft:#fdf0e6;   /* in_progress */
+  --completed:#157347;   --completed-soft:#e6f4ec;
+
+  /* ---- Elevation ---- */
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+  --shadow-lg:0 8px 24px rgba(16,24,40,.12);
+
+  /* ---- Radius ---- */
+  --r:14px;              /* cards, large containers */
+  --r-sm:9px;            /* tiles, buttons, inputs, nav items */
+  --r-pill:99px;         /* chips, pills, toggles */
+
+  /* ---- Type ---- */
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --fs-title:17px;       /* page title */
+  --fs-section:13px;     /* UPPERCASE section label */
+  --fs-body:13.5px;      /* default body / row title */
+  --fs-sub:12.5px;       /* secondary line */
+  --fs-meta:11.5px;      /* timestamps / meta */
+  --fs-chip:11px;        /* chips & pills */
+  --fs-stat:26px;        /* big counts */
+
+  /* ---- Layout ---- */
+  --sidebar-w:236px;
+  --content-max:1000px;
+  --topbar-h:60px;       /* 54px on phone */
+  --tabbar-h:64px;       /* mobile bottom nav */
+  --tap-min:44px;        /* minimum interactive target */
+}
+
+/* Portal scoping: set data-world="portal" on <body> (or a wrapper)
+   to swap the accent to the blue customer-portal brand. */
+[data-world="portal"]{
+  --accent:var(--portal);
+  --accent-soft:var(--portal-soft);
+}
