@@ -17,6 +17,10 @@ _Last updated: 2026-06-03._
   - All UI primitives from design-system §7, matched to `component-gallery.html`.
   - Placeholder screens for every route (artisan + portal, both breakpoints).
   - `npm run build` passes; all 14 routes serve 200; full IA is clickable.
+- ✅ **Tenant white-label config (MVP)** — applied to remote (migration `20260603000002`):
+  per-tenant `primary_color` / `member_noun` / `client_noun`; per-tenant `file_categories`
+  (seeded for both verticals); `attachments.kind` + `url` for external doc links. Accent now
+  themes from `AppShell`'s `accent` prop (auto-derives `--accent-soft`).
 
 ## Next steps (resume here)
 
@@ -27,6 +31,10 @@ _Last updated: 2026-06-03._
 3. **Replace placeholder content with real Supabase reads** — artisan screens first
    (dashboard, projects, project detail, customers, contacts), then the read-only portal
    (only `is_shared` rows). The components and routes already exist; swap the sample data.
+   **Wire tenant config here too:** the `(artisan)`/`(portal)` layouts read the signed-in
+   org's `primary_color` + nouns and pass `accent` to `AppShell`; the Photos & Files screen
+   reads `file_categories` instead of hardcoded chips; add the "add doc link" (`kind=link`)
+   path alongside upload.
 4. **Enable auth gating.** Stamp `app_metadata.role` (+ `organization_id`) at sign-in via a
    Supabase Auth hook / DB trigger, fill in `getSessionRole` usage, then flip
    `ENFORCE_AUTH` on in `src/proxy.ts` (artisan → `/dashboard`, contact → `/my-projects`).

@@ -18,23 +18,32 @@ them.
   **shared** content of **projects they're attached to**.
 - ~~Admin~~ — deferred; two tenants seeded manually.
 
+**Terminology & brand are tenant-configured (white-label).** Each Organization sets its
+own `member_noun` (*Contractor* for J Huber, *Consultant* for Gargoyle), `client_noun`, and
+brand `primary_color`; the UI reads these so each vertical feels native. Two verticals
+onboard at launch (construction + software consultancy), so this is MVP, not later.
+
 ## Entity Model
 
 ```
-Organization (tenant)         → Gargoyle Systems, J Huber Restorations
+Organization (tenant)         → primary_color, member_noun, client_noun (white-label)
+   ├─ FileCategory             (per-tenant attachment categories; plans/permits vs PRD/arch)
    ├─ Customer                 (account; a Project lives under exactly 1)
    ├─ Contact                  (person; type: partner|prospect|customer; optional login)
    └─ Project                  (name = site address; stage; dates; → 1 Customer)
         ├─ ProjectContact      (M:N: which contacts are attached → drives access)
         ├─ StatusUpdate        (body, posted_at, is_shared)
         ├─ Todo                (text, due, done)            ── internal only
-        └─ Attachment          (file, category, is_shared)  ── photos + any document
+        └─ Attachment          (kind: file|link; category → FileCategory; is_shared)
 User ↔ Contact | Organization  (auth identity + role)
 Invitation                     (email, token, status)       ── grants a Contact a login
 ```
 
 ### Key fields
 
+- **Organization (tenant):** name, `primary_color`, `member_noun`, `client_noun`.
+- **FileCategory:** per-Organization `key`, `label`, `sort`. Seeded per vertical
+  (construction: plans/permits/…; software: PRD/tech-architecture/…), editable later.
 - **Customer:** name, address, notes, archived_at.
 - **Contact:** first/last name, email, phone, `type ∈ {partner, prospect, customer}`,
   optional Customer link, archived_at.
@@ -44,10 +53,9 @@ Invitation                     (email, token, status)       ── grants a Cont
 - **ProjectContact:** project_id, contact_id. *(This row is the access grant.)*
 - **StatusUpdate:** body, posted_at, **is_shared**.
 - **Todo:** text, due_date, done. *Internal — never shown in portal.*
-- **Attachment:** Storage ref,
-  `category ∈ {before_photo, after_photo, plans, permits, proposal, contract, invoice, other}`,
-  filename,
-  size, mime, uploaded_by, uploaded_at, **is_shared**.
+- **Attachment:** `kind ∈ {file, link}` — an uploaded file *or* an external link (Google
+  Docs/Sheets/Drive). Storage ref *or* `url`, `category` → one of the tenant's
+  **FileCategory** rows, filename, size, mime, uploaded_by, uploaded_at, **is_shared**.
 - **Invitation:** email, contact_id, token, `status ∈ {pending, accepted, expired}`.
 
 ### Two rules that carry the whole design
@@ -115,6 +123,8 @@ Invitation                     (email, token, status)       ── grants a Cont
 | Status updates, to-dos, unified attachments    | Two-way comments, customer write actions                |
 | Shared/private toggle; mobile photo capture    | Online payments, scheduling/calendar                    |
 | Email on invite                                | Native app, offline                                     |
+| Per-tenant brand color + nouns; per-tenant file categories | Self-serve color picker / category-management UI |
+| Attachments as upload **or** external doc link | Link preview/thumbnail, OAuth for private linked docs   |
 
 ## Conscious cut
 

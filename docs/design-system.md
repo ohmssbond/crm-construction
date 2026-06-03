@@ -20,8 +20,10 @@ This document is the source of truth. When you design or build a new page:
 3. **If the system lacks something, extend the system first, then use it.** Add the token or
    component here (and to `design-tokens.css`), then build with it — see §11 Governance. This
    is how we keep twenty screens looking like one app.
-4. **Honor the two worlds.** The artisan app is green; the customer portal is blue. The only
-   difference is the accent — set `data-world="portal"` and everything else stays identical.
+4. **Honor the two worlds.** Both worlds use the **tenant's brand accent**
+   (`organizations.primary_color`); the portal is distinguished by its read-only chrome and
+   labels, not its hue. Set `data-world` as a structural hook; never re-introduce a
+   per-world color.
 
 A page is "on-system" when every color is a token, every interactive target meets the touch
 minimum, every status/stage uses the standard chip, and nothing introduces a new pattern
@@ -64,18 +66,22 @@ decorative.
 | `--muted` | `#667085` | Secondary text, labels, section headers |
 | `--faint` | `#98a2b3` | Timestamps, captions, placeholders |
 
-### Brand accent (two worlds)
+### Brand accent (tenant-defined)
 
-| Token | Hex | Use |
+The accent is the **tenant's brand color** (`organizations.primary_color`), set as
+`--accent` on the shell root by `AppShell`; `--accent-soft` derives from it via `color-mix`.
+Each tenant themes the whole app — J Huber green (`#2f6f5e`), Gargoyle indigo (`#5a4fcf`),
+the next tenant whatever they choose.
+
+| Token | Source | Use |
 | --- | --- | --- |
-| `--accent` | `#2f6f5e` (green) | **Artisan** primary actions, active nav, "Shared" state, focus |
-| `--accent-soft` | `#e7f1ee` | Active-nav fill, soft accent backgrounds |
-| `--portal` | `#2563a8` (blue) | **Customer portal** accent (swaps in via `data-world="portal"`) |
-| `--portal-soft` | `#e6eef7` | Portal soft backgrounds |
+| `--accent` | tenant `primary_color` (fallback `#2f6f5e`) | Primary actions, active nav, "Shared" state, focus |
+| `--accent-soft` | `color-mix(in srgb, --accent 14%, #fff)` | Active-nav fill, soft accent backgrounds |
 
-The portal is intentionally a different accent so a customer always knows they're in *their*
-view, not the artisan's tool. Switching worlds changes **only** the accent — never the
-layout, components, or neutrals.
+**Two worlds, no hue swap.** The artisan tool and the customer portal both render in the
+tenant's accent, so a tenant's brand reaches their customers. The portal is distinguished by
+its **read-only chrome, simpler nav, and labels** (e.g. "<client_noun> portal") — never a
+different color. `data-world="portal"` remains a structural hook only.
 
 ### Stage & status colors
 

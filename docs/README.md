@@ -17,6 +17,7 @@ reverse.**
 | [`shell-build-spec.md`](shell-build-spec.md) | Step-by-step instructions to scaffold the runnable app shell in `src/`. | **You're starting the build.** Start here. |
 | [`setup.md`](setup.md) | Supabase CLI, migrations, tenant IDs, and why RLS returns nothing until a user is authorized. | You're touching the database or auth. |
 | [`next-steps.md`](next-steps.md) | Current status and the ordered backlog of remaining build work. | You want to know what to do next. |
+| [`post-mvp-backlog.md`](post-mvp-backlog.md) | Feature enhancements to pursue *after* the MVP loop ships, by theme + priority. | You're planning beyond MVP. |
 
 ## Source-of-truth hierarchy (resolve conflicts top-down)
 

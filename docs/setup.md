@@ -36,7 +36,15 @@ Current state (already applied to remote):
 | --- | --- |
 | `20260602000001_init.sql` | 10 tables + indexes |
 | `20260602000002_rls.sql` | helper functions, RLS policies, `project-files` storage bucket |
-| `supabase/seed.sql` | tenants: Gargoyle Systems, J Huber Restorations |
+| `20260603000001_add_attachment_categories.sql` | (superseded by config below) |
+| `20260603000002_tenant_config_and_files.sql` | org white-label cols, `file_categories`, attachment `kind`/`url` |
+| `20260603000003_seed_tenants.sql` | tenant baseline: orgs + config + categories (idempotent) |
+
+> **Why the tenant baseline is a migration, not `seed.sql`:** on a linked remote the CLI runs
+> `seed.sql` only **once**, silently skipping later changes. Reference data that must stay in
+> sync (the two tenants, their config, their categories) therefore lives in
+> `20260603000003_seed_tenants.sql` with idempotent `on conflict` upserts. `seed.sql` is now
+> empty except for the artisan-member-link note.
 
 ## Tenants
 
@@ -44,6 +52,15 @@ Current state (already applied to remote):
 | --- | --- |
 | Gargoyle Systems | `11111111-1111-1111-1111-111111111111` |
 | J Huber Restorations | `22222222-2222-2222-2222-222222222222` |
+
+### Per-tenant config (white-label)
+
+Each org carries `primary_color`, `member_noun`, `client_noun`, and its own `file_categories`
+(seeded per vertical — construction vs software). `attachments` can be an upload
+(`kind='file'`, `storage_path`) or an external link (`kind='link'`, `url`), and
+`attachments.category` is a composite FK into `file_categories(organization_id, key)` — so a
+category must exist for the org before a file can use it. To retune a tenant, `update
+organizations …` and edit its `file_categories` rows.
 
 ## RLS: why your queries return nothing
 

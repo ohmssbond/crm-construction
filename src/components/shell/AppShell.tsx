@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { World } from "./nav";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
@@ -6,18 +6,23 @@ import { BottomTabBar } from "./BottomTabBar";
 import { Fab } from "./Fab";
 
 /**
- * The one shell for both worlds. `world` sets `data-world` (the accent swap)
- * and the nav set — nothing else branches per world.
+ * The one shell for both worlds. `world` sets `data-world` and the nav set;
+ * `accent` is the tenant's brand color (org.primary_color), applied as the
+ * `--accent` CSS variable on the root so the whole tree themes from it.
  */
 export default function AppShell({
   world,
+  accent,
   children,
 }: {
   world: World;
+  accent?: string;
   children: ReactNode;
 }) {
+  // Cast: CSS custom properties aren't in the CSSProperties type.
+  const style = accent ? ({ "--accent": accent } as CSSProperties) : undefined;
   return (
-    <div data-world={world} className="min-h-dvh flex bg-bg">
+    <div data-world={world} style={style} className="min-h-dvh flex bg-bg">
       <Sidebar world={world} />
       <div className="flex-1 flex flex-col min-w-0">
         <TopBar world={world} />
