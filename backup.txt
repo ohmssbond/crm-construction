@@ -1,0 +1,5 @@
+# Rotated credentials — save to your password manager, then DELETE this file.
+# email	new_password
+doug+sarahmarsh@myotherbrain.com	WLDk1K5VClExZcwr
+doug+gargoyle@myotherbrain.com	0CqfU8D7An8xIqYj
+doug+jhuber@myotherbrain.com	Kb87zHHGpmBT9vSc

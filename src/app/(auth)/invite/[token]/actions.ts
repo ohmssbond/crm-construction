@@ -6,16 +6,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export type AcceptState = { error: string | null };
 
-async function findUserId(admin: ReturnType<typeof createAdminClient>, email: string) {
-  const { data } = await admin.auth.admin.listUsers({ perPage: 200 });
-  return data?.users.find((u) => u.email?.toLowerCase() === email.toLowerCase())?.id;
-}
-
 /**
- * Accept an invitation: provision the contact's auth login (or set its password
- * if it already exists), stamp the portal branding into app_metadata, link
- * contacts.user_id, mark the invite accepted, then sign the new user in and send
- * them to the portal. Runs with the service role (the invitee is unauthenticated).
+ * Accept an invitation: provision a NEW auth login for the contact, stamp portal
+ * branding into app_metadata, link contacts.user_id, mark the invite accepted,
+ * then sign the new user in and send them to the portal. Runs with the service
+ * role (the invitee is unauthenticated).
+ *
+ * Security: if the email already has an account we REFUSE — we must never reset
+ * an existing account's password from a public, token-only endpoint (that would
+ * be an account takeover: invite a contact with a victim's email, then claim it).
  */
 export async function acceptInvite(
   token: string,
@@ -53,21 +52,23 @@ export async function acceptInvite(
     client_noun: org?.client_noun,
   };
 
-  // Create the auth user, or set the password if the email already exists.
-  let uid: string | undefined;
-  const { data: created } = await admin.auth.admin.createUser({
+  // Provision a NEW login only. If createUser fails because the email already
+  // has an account, refuse — we never reset an existing user's password here.
+  const { data: created, error: createErr } = await admin.auth.admin.createUser({
     email: invite.email,
     password,
     email_confirm: true,
     app_metadata,
   });
-  if (created?.user?.id) {
-    uid = created.user.id;
-  } else {
-    uid = await findUserId(admin, invite.email);
-    if (!uid) return { error: "Could not create your login. Try again." };
-    await admin.auth.admin.updateUserById(uid, { password, email_confirm: true, app_metadata });
+  if (createErr || !created?.user?.id) {
+    const exists = /exist|registered|already/i.test(createErr?.message ?? "");
+    return {
+      error: exists
+        ? "An account already exists for this email — please sign in instead."
+        : "Could not create your login. Please try again or contact your contractor.",
+    };
   }
+  const uid = created.user.id;
 
   await admin.from("contacts").update({ user_id: uid }).eq("id", invite.contact_id);
   await admin
