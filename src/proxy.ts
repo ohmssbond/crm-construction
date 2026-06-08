@@ -1,15 +1,23 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getSessionRole } from "@/lib/auth";
 
 // Next.js 16 renamed the `middleware` convention to `proxy`. Same job:
 // run before routes render. Here it refreshes the Supabase session and
-// (once enabled) gates the two worlds.
+// gates the two worlds by role.
 
 const PUBLIC = ["/login", "/invite"];
 
-// Auth gating is staged off until roles are stamped into app_metadata at
-// sign-in (see docs/next-steps.md). Flip on to enforce login + world split.
-const ENFORCE_AUTH = false;
+// Roles are stamped into app_metadata at provisioning (scripts/stamp-roles.mjs,
+// scripts/seed-contact-login.mjs), so gating is enforced.
+const ENFORCE_AUTH = true;
+
+// Route ownership per world — used for the artisan↔contact separation.
+const PORTAL_PREFIXES = ["/my-projects", "/account"];
+const ARTISAN_PREFIXES = ["/dashboard", "/projects", "/customers", "/contacts", "/settings"];
+
+const matches = (pathname: string, prefixes: string[]) =>
+  prefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -40,22 +48,31 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isPublic = PUBLIC.some(
-    (p) => pathname === p || pathname.startsWith(p + "/")
-  );
+  const isPublic = matches(pathname, PUBLIC);
 
-  // Send the root to the artisan home for now.
-  if (pathname === "/") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  const go = (to: string) => NextResponse.redirect(new URL(to, request.url));
+
+  if (!ENFORCE_AUTH) {
+    if (pathname === "/") return go("/dashboard");
+    return response;
   }
 
-  if (ENFORCE_AUTH) {
-    if (!user && !isPublic) {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-    // TODO: role-based world separation via getSessionRole(user)
-    // (artisan → /dashboard, contact → /my-projects) once metadata is stamped.
+  // The contact portal home; everyone else (artisan, or unstamped) lands on the
+  // artisan dashboard.
+  const role = getSessionRole(user);
+  const home = role === "contact" ? "/my-projects" : "/dashboard";
+
+  // Unauthenticated → only public routes; everything else bounces to login.
+  if (!user) {
+    return isPublic ? response : go("/login");
   }
+
+  // Authenticated users have no business on the login screen or bare root.
+  if (pathname === "/" || pathname === "/login") return go(home);
+
+  // World separation: keep each role inside its own surface.
+  if (role === "contact" && matches(pathname, ARTISAN_PREFIXES)) return go("/my-projects");
+  if (role === "artisan" && matches(pathname, PORTAL_PREFIXES)) return go("/dashboard");
 
   return response;
 }

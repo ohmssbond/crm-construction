@@ -1,0 +1,119 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getOrgContext } from "@/lib/data/org";
+
+export type FormState = { error: string | null };
+
+const str = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
+const orNull = (s: string) => (s ? s : null);
+
+/** Create a customer, then open its detail page. */
+export async function createCustomer(
+  _prev: FormState,
+  fd: FormData
+): Promise<FormState> {
+  const name = str(fd, "name");
+  if (!name) return { error: "Name is required." };
+
+  const ctx = await getOrgContext();
+  if (!ctx) return { error: "Not signed in." };
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("customers")
+    .insert({
+      organization_id: ctx.org.id,
+      name,
+      address: orNull(str(fd, "address")),
+      notes: orNull(str(fd, "notes")),
+    })
+    .select("id")
+    .single();
+  if (error || !data) return { error: error?.message ?? "Could not create." };
+  redirect(`/customers/${data.id}`);
+}
+
+/** Update a customer's basics, then return to its detail page. */
+export async function updateCustomer(
+  id: string,
+  _prev: FormState,
+  fd: FormData
+): Promise<FormState> {
+  const name = str(fd, "name");
+  if (!name) return { error: "Name is required." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("customers")
+    .update({
+      name,
+      address: orNull(str(fd, "address")),
+      notes: orNull(str(fd, "notes")),
+    })
+    .eq("id", id);
+  if (error) return { error: error.message };
+  redirect(`/customers/${id}`);
+}
+
+/** Create a contact (optionally tied to a customer), then open its detail. */
+export async function createContact(
+  _prev: FormState,
+  fd: FormData
+): Promise<FormState> {
+  const first = str(fd, "first_name");
+  const last = str(fd, "last_name");
+  const type = str(fd, "type");
+  if (!first && !last) return { error: "Enter a first or last name." };
+  if (!["partner", "prospect", "customer"].includes(type)) {
+    return { error: "Pick a contact type." };
+  }
+
+  const ctx = await getOrgContext();
+  if (!ctx) return { error: "Not signed in." };
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("contacts")
+    .insert({
+      organization_id: ctx.org.id,
+      first_name: orNull(first),
+      last_name: orNull(last),
+      email: orNull(str(fd, "email")),
+      phone: orNull(str(fd, "phone")),
+      type,
+      customer_id: orNull(str(fd, "customer_id")),
+    })
+    .select("id")
+    .single();
+  if (error || !data) return { error: error?.message ?? "Could not create." };
+  redirect(`/contacts/${data.id}`);
+}
+
+/** Create a project for a customer, then open its detail. */
+export async function createProject(
+  _prev: FormState,
+  fd: FormData
+): Promise<FormState> {
+  const name = str(fd, "name");
+  const customerId = str(fd, "customer_id");
+  if (!name) return { error: "Project name is required." };
+  if (!customerId) return { error: "Choose a customer." };
+
+  const ctx = await getOrgContext();
+  if (!ctx) return { error: "Not signed in." };
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("projects")
+    .insert({
+      organization_id: ctx.org.id,
+      customer_id: customerId,
+      name,
+      stage: str(fd, "stage") || "proposal",
+      start_date: orNull(str(fd, "start_date")),
+      end_date: orNull(str(fd, "end_date")),
+    })
+    .select("id")
+    .single();
+  if (error || !data) return { error: error?.message ?? "Could not create." };
+  redirect(`/projects/${data.id}`);
+}

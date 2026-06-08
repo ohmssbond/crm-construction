@@ -1,50 +1,63 @@
-import { StageChip } from "@/components/ui/Chip";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { FolderKanban } from "lucide-react";
+import { StageChip, type Stage } from "@/components/ui/Chip";
 import { Card } from "@/components/ui/Card";
 import { KeyValue } from "@/components/ui/KeyValue";
 import { ListRow } from "@/components/ui/ListRow";
 import { Thumb } from "@/components/ui/Thumb";
 import { SectionLabel } from "@/components/ui/SectionLabel";
-import { Button } from "@/components/ui/Button";
+import { buttonClasses } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { getCustomerDetail } from "@/lib/data/customers";
 
 export default async function CustomerDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await params;
+  const { id } = await params;
+  const detail = await getCustomerDetail(id);
+  if (!detail) notFound();
+
+  const { customer, projects } = detail;
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-title font-semibold">Marsh Residence</h2>
-        <Button variant="ghost" className="hidden lg:inline-flex">
+        <h2 className="text-title font-semibold">{customer.name}</h2>
+        <Link href={`/customers/${customer.id}/edit`} className={`${buttonClasses("ghost")} hidden lg:inline-flex`}>
           Edit
-        </Button>
+        </Link>
       </div>
 
       <Card className="px-4 py-1">
-        <KeyValue label="Address" value="14 Brenton Rd, Providence RI" />
-        <KeyValue label="Notes" value="Repeat customer — referred by Donnelly." />
+        <KeyValue label="Address" value={customer.address ?? "—"} />
+        <KeyValue label="Notes" value={customer.notes ?? "—"} />
       </Card>
 
       <section className="flex flex-col gap-2">
         <SectionLabel>Projects</SectionLabel>
-        <Card>
-          <ListRow
-            href="/projects/1"
-            leading={<Thumb>🏠</Thumb>}
-            title="14 Brenton Rd"
-            sub="2 contacts"
-            meta={<StageChip stage="in_progress" />}
-          />
-          <ListRow
-            href="/projects/3"
-            leading={<Thumb>🏗️</Thumb>}
-            title="Rear deck rebuild"
-            sub="2 contacts"
-            meta={<StageChip stage="proposal" />}
-          />
-        </Card>
+        {projects.length === 0 ? (
+          <EmptyState glyph="📂" title="No projects for this customer." />
+        ) : (
+          <Card>
+            {projects.map((p) => (
+              <ListRow
+                key={p.id}
+                href={`/projects/${p.id}`}
+                leading={
+                  <Thumb>
+                    <FolderKanban size={18} />
+                  </Thumb>
+                }
+                title={p.name}
+                sub={`${p.contactCount} contact${p.contactCount === 1 ? "" : "s"}`}
+                meta={<StageChip stage={p.stage as Stage} />}
+              />
+            ))}
+          </Card>
+        )}
       </section>
     </div>
   );

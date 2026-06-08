@@ -1,22 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
 export function TodoRow({
   text,
   due,
   done: doneDefault = false,
+  action,
 }: {
   text: string;
   due?: string;
   done?: boolean;
+  action?: (done: boolean) => void | Promise<void>;
 }) {
   const [done, setDone] = useState(doneDefault);
+  const [pending, start] = useTransition();
+  const toggle = () => {
+    const next = !done;
+    setDone(next);
+    if (action) start(() => void action(next));
+  };
   return (
     <button
       type="button"
-      onClick={() => setDone((v) => !v)}
-      className="w-full flex items-center gap-[12px] px-[15px] py-[12px] border-b border-line-2 last:border-b-0 text-left"
+      disabled={pending}
+      onClick={toggle}
+      className="w-full flex items-center gap-[12px] px-[15px] py-[12px] border-b border-line-2 last:border-b-0 text-left disabled:opacity-70"
     >
       <span
         className={`size-5 rounded-[6px] grid place-items-center shrink-0 text-white text-[12px] ${

@@ -1,31 +1,51 @@
-import { FilterChips } from "@/components/ui/FilterChips";
+import { FolderKanban } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { ListRow } from "@/components/ui/ListRow";
 import { Thumb } from "@/components/ui/Thumb";
-import { StageChip } from "@/components/ui/Chip";
+import { StageChip, type Stage } from "@/components/ui/Chip";
 import { Banner } from "@/components/ui/Banner";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { getPortalContext, listPortalProjects } from "@/lib/data/portal";
+import { projectMeta } from "@/lib/data/format";
 
-export default function MyProjectsPage() {
+export default async function MyProjectsPage() {
+  const [ctx, projects] = await Promise.all([
+    getPortalContext(),
+    listPortalProjects(),
+  ]);
+  const orgName = ctx?.orgName ?? "your contractor";
+
   return (
     <div className="flex flex-col gap-4">
-      <Banner>Welcome — here are the projects shared with you by J Huber Restorations.</Banner>
-      <FilterChips options={["Current", "Past", "Proposed"]} />
-      <Card>
-        <ListRow
-          href="/my-projects/1"
-          leading={<Thumb>🏠</Thumb>}
-          title="14 Brenton Rd"
-          sub="Updated Jun 2"
-          meta={<StageChip stage="in_progress" />}
-        />
-        <ListRow
-          href="/my-projects/3"
-          leading={<Thumb>🏗️</Thumb>}
-          title="Rear deck rebuild"
-          sub="Proposal sent May 28"
-          meta={<StageChip stage="proposal" />}
-        />
-      </Card>
+      <Banner>Welcome — here are the projects shared with you by {orgName}.</Banner>
+      {projects.length === 0 ? (
+        <EmptyState glyph="📂" title="No projects shared with you yet." />
+      ) : (
+        <Card>
+          {projects.map((p) => {
+            const meta = projectMeta(p);
+            return (
+              <ListRow
+                key={p.id}
+                href={`/my-projects/${p.id}`}
+                leading={
+                  <Thumb>
+                    <FolderKanban size={18} />
+                  </Thumb>
+                }
+                title={p.name}
+                sub={p.customerName}
+                meta={
+                  <>
+                    <StageChip stage={p.stage as Stage} />
+                    {meta && <div className="mt-[5px]">{meta}</div>}
+                  </>
+                }
+              />
+            );
+          })}
+        </Card>
+      )}
     </div>
   );
 }

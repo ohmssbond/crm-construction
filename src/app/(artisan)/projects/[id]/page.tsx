@@ -1,41 +1,69 @@
+import { notFound } from "next/navigation";
 import { Lock } from "lucide-react";
-import { StageChip, TypeChip, LoginChip } from "@/components/ui/Chip";
-import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { StageChip, type Stage } from "@/components/ui/Chip";
 import { Tabs } from "@/components/ui/Tabs";
 import { Card } from "@/components/ui/Card";
 import { Composer } from "@/components/ui/Composer";
 import { UpdateCard } from "@/components/ui/UpdateCard";
-import { FilterChips } from "@/components/ui/FilterChips";
 import { FileTile } from "@/components/ui/FileTile";
 import { TodoRow } from "@/components/ui/TodoRow";
 import { Banner } from "@/components/ui/Banner";
-import { ListRow } from "@/components/ui/ListRow";
-import { Avatar } from "@/components/ui/Avatar";
-import { Button } from "@/components/ui/Button";
-import { Note } from "@/components/ui/Note";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { getProjectDetail } from "@/lib/data/projects";
+import { getOrgContext } from "@/lib/data/org";
+import { fmtDate, fmtDateTime } from "@/lib/data/format";
+import { UploadForm } from "./UploadForm";
+import { LinkForm } from "./LinkForm";
+import { StageControl } from "./StageControl";
+import { ContactManager } from "./ContactManager";
+import { TodoComposer } from "./TodoComposer";
+import {
+  postUpdate,
+  setUpdateShared,
+  setProjectStage,
+  setAttachmentShared,
+  toggleTodo,
+  addTodo,
+  addLink,
+  attachContact,
+  detachContact,
+} from "./actions";
+
+// Glyph + tile color per file category, with a sensible fallback.
+const FILE_STYLE: Record<string, { glyph: string; bg: string }> = {
+  before_photo: { glyph: "📷", bg: "#7a9e93" },
+  after_photo: { glyph: "🖼", bg: "#9e8a7a" },
+  plans: { glyph: "📐", bg: "#7a8a9e" },
+  permits: { glyph: "📋", bg: "#9e7a8a" },
+  proposal: { glyph: "📝", bg: "#8a7a9e" },
+  contract: { glyph: "✍️", bg: "#7a9e8a" },
+  invoice: { glyph: "🧾", bg: "#9e9a7a" },
+};
+const FILE_FALLBACK = { glyph: "📄", bg: "#8a93a0" };
 
 export default async function ProjectDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await params; // id wires to a Supabase read later
+  const { id } = await params;
+  const [detail, ctx] = await Promise.all([getProjectDetail(id), getOrgContext()]);
+  if (!detail) notFound();
+
+  const { project, updates, todos, contacts, availableContacts, attachments, fileCategories } =
+    detail;
+  const clientNoun = ctx?.org.client_noun ?? "Customer";
 
   return (
     <div className="flex flex-col gap-5">
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-title font-semibold">14 Brenton Rd</h2>
-        <StageChip stage="in_progress" />
+        <h2 className="text-title font-semibold">{project.name}</h2>
+        <StageChip stage={project.stage as Stage} />
         <div className="lg:ml-auto">
-          <SegmentedControl
-            options={[
-              { value: "proposal", label: "Proposal" },
-              { value: "signed", label: "Signed" },
-              { value: "in_progress", label: "In progress" },
-              { value: "completed", label: "Completed" },
-            ]}
-            defaultValue="in_progress"
+          <StageControl
+            current={project.stage}
+            action={setProjectStage.bind(null, project.id)}
           />
         </div>
       </div>
@@ -46,16 +74,20 @@ export default async function ProjectDetailPage({
             label: "Updates",
             content: (
               <div className="flex flex-col gap-3">
-                <Composer />
-                <UpdateCard
-                  when="Jun 2 · 4:10pm"
-                  body="Framing complete on the rear deck. Starting decking boards tomorrow."
-                  shared
-                />
-                <UpdateCard
-                  when="May 30 · 9:02am"
-                  body="Materials delivered. Waiting on the inspector before footings."
-                />
+                <Composer action={postUpdate.bind(null, project.id)} />
+                {updates.length === 0 ? (
+                  <EmptyState glyph="📣" title="No updates yet." />
+                ) : (
+                  updates.map((u) => (
+                    <UpdateCard
+                      key={u.id}
+                      when={fmtDateTime(u.created_at)}
+                      body={u.body}
+                      shared={u.is_shared}
+                      shareAction={setUpdateShared.bind(null, project.id, u.id)}
+                    />
+                  ))
+                )}
               </div>
             ),
           },
@@ -63,15 +95,35 @@ export default async function ProjectDetailPage({
             label: "Photos & Files",
             content: (
               <div className="flex flex-col gap-3">
-                <FilterChips
-                  options={["All", "Before", "After", "Plans", "Permits", "Proposal", "Contract", "Invoice"]}
+                <UploadForm
+                  projectId={project.id}
+                  categories={fileCategories}
+                  shareLabel={`Share with ${clientNoun.toLowerCase()}`}
                 />
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                  <FileTile name="before.jpg" glyph="📷" bg="#7a9e93" shared />
-                  <FileTile name="after.jpg" glyph="🖼" bg="#9e8a7a" shared />
-                  <FileTile name="site-plan.pdf" glyph="📐" bg="#7a8a9e" />
-                  <FileTile name="permit.pdf" glyph="📋" bg="#9e7a8a" />
-                </div>
+                <LinkForm action={addLink.bind(null, project.id)} categories={fileCategories} />
+                {attachments.length === 0 ? (
+                  <EmptyState glyph="🗂" title="No files yet." />
+                ) : (
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    {attachments.map((a) => {
+                      const style =
+                        a.kind === "link"
+                          ? { glyph: "🔗", bg: "#6a7c8a" }
+                          : FILE_STYLE[a.category] ?? FILE_FALLBACK;
+                      return (
+                        <FileTile
+                          key={a.id}
+                          name={a.filename ?? a.url ?? "Link"}
+                          glyph={style.glyph}
+                          bg={style.bg}
+                          shared={a.is_shared}
+                          href={a.href}
+                          shareAction={setAttachmentShared.bind(null, project.id, a.id)}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             ),
           },
@@ -80,52 +132,36 @@ export default async function ProjectDetailPage({
             content: (
               <div className="flex flex-col gap-3">
                 <Banner icon={<Lock size={15} />}>
-                  To-dos are <strong>internal</strong> — never shown in the customer portal.
+                  To-dos are <strong>internal</strong> — never shown in the {clientNoun.toLowerCase()} portal.
                 </Banner>
-                <Card>
-                  <TodoRow text="Order cedar decking" due="Jun 6" />
-                  <TodoRow text="Schedule railing install" due="Jun 12" />
-                  <TodoRow text="Pour footings" done />
-                </Card>
+                <TodoComposer action={addTodo.bind(null, project.id)} />
+                {todos.length === 0 ? (
+                  <EmptyState glyph="✅" title="Nothing on the list." />
+                ) : (
+                  <Card>
+                    {todos.map((t) => (
+                      <TodoRow
+                        key={t.id}
+                        text={t.body}
+                        due={fmtDate(t.due_date) ?? undefined}
+                        done={t.done}
+                        action={toggleTodo.bind(null, project.id, t.id)}
+                      />
+                    ))}
+                  </Card>
+                )}
               </div>
             ),
           },
           {
             label: "Contacts",
             content: (
-              <div className="flex flex-col gap-3">
-                <Note>
-                  Attaching a contact is what <strong>grants portal access</strong> to this
-                  project. Detaching removes it.
-                </Note>
-                <Card>
-                  <ListRow
-                    leading={<Avatar initials="DM" />}
-                    title="Diane Marsh"
-                    sub="diane@marsh.com"
-                    meta={
-                      <div className="flex items-center gap-2">
-                        <TypeChip type="customer" />
-                        <LoginChip status="active" />
-                      </div>
-                    }
-                  />
-                  <ListRow
-                    leading={<Avatar initials="RM" />}
-                    title="Rob Marsh"
-                    sub="rob@marsh.com"
-                    meta={
-                      <div className="flex items-center gap-2">
-                        <TypeChip type="customer" />
-                        <LoginChip status="invited" />
-                      </div>
-                    }
-                  />
-                </Card>
-                <div>
-                  <Button variant="ghost">＋ Attach contact</Button>
-                </div>
-              </div>
+              <ContactManager
+                attached={contacts}
+                available={availableContacts}
+                attachAction={attachContact.bind(null, project.id)}
+                detachAction={detachContact.bind(null, project.id)}
+              />
             ),
           },
         ]}

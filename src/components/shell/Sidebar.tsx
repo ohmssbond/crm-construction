@@ -2,17 +2,38 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { navFor, type World } from "./nav";
+import { navFor, navLabel, type World } from "./nav";
 
-const BRAND: Record<World, { tile: string; name: string; label: string }> = {
+export type Brand = { tile: string; name: string; label: string };
+export type ShellUser = { tile: string; name: string; email: string };
+
+// Fallback for worlds whose layout hasn't been wired to real org data yet
+// (currently the portal). Once wired, the layout passes `brand`/`user` in.
+const FALLBACK_BRAND: Record<World, Brand> = {
   artisan: { tile: "JH", name: "J Huber Restorations", label: "Artisan workspace" },
   portal: { tile: "JH", name: "J Huber Restorations", label: "Customer portal" },
 };
+const FALLBACK_USER: ShellUser = {
+  tile: "JH",
+  name: "Jordan Huber",
+  email: "jordan@jhuber.co",
+};
 
-export function Sidebar({ world }: { world: World }) {
+export function Sidebar({
+  world,
+  brand: brandProp,
+  user: userProp,
+  clientNoun,
+}: {
+  world: World;
+  brand?: Brand;
+  user?: ShellUser;
+  clientNoun?: string;
+}) {
   const pathname = usePathname() ?? "/";
   const nav = navFor(world);
-  const brand = BRAND[world];
+  const brand = brandProp ?? FALLBACK_BRAND[world];
+  const user = userProp ?? FALLBACK_USER;
 
   return (
     <aside className="hidden lg:flex w-[236px] shrink-0 flex-col bg-surface border-r border-line">
@@ -29,7 +50,8 @@ export function Sidebar({ world }: { world: World }) {
 
       {/* Nav */}
       <nav className="flex-1 p-3 flex flex-col gap-1">
-        {nav.map(({ href, label, icon: Icon }) => {
+        {nav.map((item) => {
+          const { href, icon: Icon } = item;
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
             <Link
@@ -42,7 +64,7 @@ export function Sidebar({ world }: { world: World }) {
               }`}
             >
               <Icon size={18} />
-              {label}
+              {navLabel(item, clientNoun)}
             </Link>
           );
         })}
@@ -55,11 +77,11 @@ export function Sidebar({ world }: { world: World }) {
           className="flex items-center gap-3 px-2 py-2 rounded-control hover:bg-line-2"
         >
           <div className="size-8 rounded-full bg-[#d4dae3] text-[#475467] grid place-items-center text-meta font-bold">
-            JH
+            {user.tile}
           </div>
           <div className="min-w-0">
-            <div className="text-sub font-semibold truncate">Jordan Huber</div>
-            <div className="text-meta text-faint truncate">jordan@jhuber.co</div>
+            <div className="text-sub font-semibold truncate">{user.name}</div>
+            <div className="text-meta text-faint truncate">{user.email}</div>
           </div>
         </Link>
       </div>

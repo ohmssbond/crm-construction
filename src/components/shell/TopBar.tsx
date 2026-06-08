@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
-import { navFor, type World } from "./nav";
+import { navFor, navLabel, type World } from "./nav";
 
 const SINGULAR: Record<string, string> = {
   projects: "Project",
@@ -11,15 +11,18 @@ const SINGULAR: Record<string, string> = {
   "my-projects": "Project",
 };
 
-function titleFor(world: World, pathname: string): string {
+function titleFor(world: World, pathname: string, clientNoun?: string): string {
   const seg = pathname.split("/").filter(Boolean);
   if (seg.length === 0) return navFor(world)[0]?.label ?? "";
-  if (seg.length >= 2) return SINGULAR[seg[0]] ?? "Detail";
+  if (seg.length >= 2) {
+    if (seg[0] === "customers" && clientNoun) return clientNoun;
+    return SINGULAR[seg[0]] ?? "Detail";
+  }
   const item = navFor(world).find((n) => n.href === "/" + seg[0]);
-  return item?.label ?? "";
+  return item ? navLabel(item, clientNoun) : "";
 }
 
-export function TopBar({ world }: { world: World }) {
+export function TopBar({ world, clientNoun }: { world: World; clientNoun?: string }) {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
   const isDetail = pathname.split("/").filter(Boolean).length >= 2;
@@ -35,7 +38,7 @@ export function TopBar({ world }: { world: World }) {
           <ChevronLeft size={20} />
         </button>
       )}
-      <h1 className="text-title font-semibold">{titleFor(world, pathname)}</h1>
+      <h1 className="text-title font-semibold">{titleFor(world, pathname, clientNoun)}</h1>
     </header>
   );
 }
