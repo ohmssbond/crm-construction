@@ -13,6 +13,9 @@ import { Note } from "@/components/ui/Note";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getContactDetail, contactName, contactInitials } from "@/lib/data/contacts";
 import { getOrgContext } from "@/lib/data/org";
+import { getPendingInvitation } from "@/lib/data/invitations";
+import { inviteContact, revokeInvitation } from "../../actions";
+import { InvitePanel } from "./InvitePanel";
 
 export default async function ContactDetailPage({
   params,
@@ -20,7 +23,11 @@ export default async function ContactDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [detail, ctx] = await Promise.all([getContactDetail(id), getOrgContext()]);
+  const [detail, ctx, pendingInvite] = await Promise.all([
+    getContactDetail(id),
+    getOrgContext(),
+    getPendingInvitation(id),
+  ]);
   if (!detail) notFound();
 
   const { contact, projects } = detail;
@@ -48,6 +55,20 @@ export default async function ContactDetailPage({
         <KeyValue label="Phone" value={contact.phone ?? "—"} />
         <KeyValue label={clientNoun} value={contact.customer?.name ?? "—"} />
       </Card>
+
+      <section className="flex flex-col gap-2">
+        <SectionLabel>Portal access</SectionLabel>
+        {contact.user_id ? (
+          <Note>This contact has an active portal login.</Note>
+        ) : (
+          <InvitePanel
+            token={pendingInvite?.token ?? null}
+            hasEmail={Boolean(contact.email)}
+            inviteAction={inviteContact.bind(null, contact.id)}
+            revokeAction={revokeInvitation.bind(null, contact.id)}
+          />
+        )}
+      </section>
 
       <Note>
         This contact has portal access to every project they are attached to.

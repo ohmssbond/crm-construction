@@ -121,10 +121,20 @@ _Last updated: 2026-06-08._
    signed URL (storage contact-read policy).
    - ⏳ **Follow-ups:** "add doc link" (`kind:'link'`) create UI (links only display today);
      per-tile share-toggle persistence; image thumbnails (tiles show a category glyph for now).
-6. **Invite flow.** Inserting `invitations` + creating a portal auth user needs elevated
-   privileges → add a **service-role key** (server-side only). Then build invitation
-   acceptance (set password → link `contacts.user_id`) behind `/invite/[token]`.
-7. **Email notifications** on invite (and optionally when a status update is shared).
+6. ✅ **Invite flow (give a contact a login) — built & verified.** No migration needed (the
+   `invitations` table already has `contact_id`/`email`/`token`/`status`).
+   - Artisan: contact detail → **Portal access** section. `inviteContact` (`(artisan)/actions.ts`)
+     creates a pending `invitations` row with a random token; `InvitePanel` surfaces the
+     `/invite/<token>` link to copy (email delivery = step 7) + a Revoke action.
+   - Invitee: `(auth)/invite/[token]` looks up the token via the **service-role admin client**
+     (`src/lib/supabase/admin.ts`, keyed by non-public `SUPABASE_SERVICE_ROLE_KEY`) since they're
+     unauthenticated; `acceptInvite` creates the auth user (or sets password if it exists), stamps
+     `app_metadata` branding, links `contacts.user_id`, marks the invite accepted, **auto-signs them
+     in**, and redirects to `/my-projects`.
+   - Verified live end-to-end (Gargoyle): invite → link → accept/set-password → portal renders with
+     correct tenant branding + identity. Contact detail shows "active portal login" once linked.
+7. **Email notifications** on invite (and optionally when a status update is shared) — the only
+   piece left to make invites self-serve (today the artisan copies the link manually).
 
 ## Loose ends / decisions
 

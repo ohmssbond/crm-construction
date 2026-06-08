@@ -1,6 +1,8 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/data/org";
 
@@ -117,6 +119,57 @@ export async function createContact(
     .single();
   if (error || !data) return { error: error?.message ?? "Could not create." };
   redirect(`/contacts/${data.id}`);
+}
+
+/**
+ * Invite a contact to the portal: creates a pending `invitations` row with a
+ * random token. The accept link (/invite/<token>) is surfaced in the UI for the
+ * artisan to share (email delivery is a later step). One pending invite per
+ * contact — any existing pending one is replaced.
+ */
+export async function inviteContact(contactId: string): Promise<FormState> {
+  const ctx = await getOrgContext();
+  if (!ctx) return { error: "Not signed in." };
+  const supabase = await createClient();
+
+  const { data: contact } = await supabase
+    .from("contacts")
+    .select("id, email, user_id")
+    .eq("id", contactId)
+    .maybeSingle();
+  if (!contact) return { error: "Contact not found." };
+  if (contact.user_id) return { error: "This contact already has a login." };
+  if (!contact.email) return { error: "Add an email to this contact first." };
+
+  await supabase
+    .from("invitations")
+    .delete()
+    .eq("contact_id", contactId)
+    .eq("status", "pending");
+
+  const token = randomBytes(24).toString("base64url");
+  const { error } = await supabase.from("invitations").insert({
+    organization_id: ctx.org.id,
+    contact_id: contactId,
+    email: contact.email,
+    token,
+    status: "pending",
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/contacts/${contactId}`);
+  return { error: null };
+}
+
+/** Cancel a pending invitation. */
+export async function revokeInvitation(contactId: string): Promise<void> {
+  const supabase = await createClient();
+  await supabase
+    .from("invitations")
+    .delete()
+    .eq("contact_id", contactId)
+    .eq("status", "pending");
+  revalidatePath(`/contacts/${contactId}`);
 }
 
 /** Create a project for a customer, then open its detail. */
