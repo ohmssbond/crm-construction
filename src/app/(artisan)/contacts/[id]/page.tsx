@@ -63,7 +63,7 @@ export default async function ContactDetailPage({
         ) : (
           <InvitePanel
             token={pendingInvite?.token ?? null}
-            hasEmail={Boolean(contact.email)}
+            contactEmail={contact.email}
             inviteAction={inviteContact.bind(null, contact.id)}
             revokeAction={revokeInvitation.bind(null, contact.id)}
           />

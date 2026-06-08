@@ -4,21 +4,22 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { fieldInput, FormError } from "@/components/ui/Field";
-import type { FormState } from "../../actions";
+import type { InviteResult } from "../../actions";
 
 export function InvitePanel({
   token,
-  hasEmail,
+  contactEmail,
   inviteAction,
   revokeAction,
 }: {
   token: string | null;
-  hasEmail: boolean;
-  inviteAction: () => Promise<FormState>;
+  contactEmail: string | null;
+  inviteAction: () => Promise<InviteResult>;
   revokeAction: () => Promise<void>;
 }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [justEmailed, setJustEmailed] = useState<boolean | null>(null);
   const [copied, setCopied] = useState(false);
   // Read the browser origin once on mount (empty during SSR — the input below
   // carries suppressHydrationWarning to absorb that one-render difference).
@@ -30,9 +31,15 @@ export function InvitePanel({
   if (token) {
     return (
       <Card className="p-4 flex flex-col gap-3">
-        <div className="text-sub text-muted">
-          Invitation pending — share this link so they can set a password:
-        </div>
+        {justEmailed === true ? (
+          <div className="text-sub text-accent font-semibold">
+            ✓ Invite emailed to {contactEmail}. You can also copy the link:
+          </div>
+        ) : (
+          <div className="text-sub text-muted">
+            Invitation pending — share this link so they can set a password:
+          </div>
+        )}
         <div className="flex gap-2">
           <input
             readOnly
@@ -66,6 +73,7 @@ export function InvitePanel({
     );
   }
 
+  const hasEmail = Boolean(contactEmail);
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-3">
@@ -77,6 +85,7 @@ export function InvitePanel({
               setError(null);
               const res = await inviteAction();
               if (res?.error) setError(res.error);
+              else setJustEmailed(res.emailed);
             })
           }
         >

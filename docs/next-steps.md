@@ -133,8 +133,18 @@ _Last updated: 2026-06-08._
      in**, and redirects to `/my-projects`.
    - Verified live end-to-end (Gargoyle): invite → link → accept/set-password → portal renders with
      correct tenant branding + identity. Contact detail shows "active portal login" once linked.
-7. **Email notifications** on invite (and optionally when a status update is shared) — the only
-   piece left to make invites self-serve (today the artisan copies the link manually).
+7. ✅ **Email (invite) wired via Resend, behind an env flag.** `src/lib/email.ts` — `sendEmail`
+   calls Resend's REST API (no SDK dep) **only when `RESEND_API_KEY` is set**; otherwise a no-op
+   ({sent:false}), so the app runs fully without email and the invite UI just shows the copy-link.
+   `inviteContact` emails the `/invite/<token>` link best-effort and returns `{emailed}`; the
+   InvitePanel shows a "✓ emailed to …" confirmation only when it actually sent. Env vars
+   (`.env.example`): `RESEND_API_KEY`, `EMAIL_FROM` (verified sender), `APP_URL` (for absolute
+   links). Verified live in the no-key state (link shown, no false "emailed" claim; Revoke works).
+   - **To turn on:** add `RESEND_API_KEY` + verify a sending domain in Resend, set `EMAIL_FROM`
+     and `APP_URL`, restart dev. Optional future: notify a contact when a status update is shared.
+
+**✅ STEPS 1–7 COMPLETE — full MVP. An artisan can run the entire lifecycle from the UI;
+contacts can be invited (link today, auto-email once a Resend key is added).**
 
 ## Loose ends / decisions
 

@@ -5,8 +5,10 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/data/org";
+import { sendEmail, appUrl, inviteEmailHtml } from "@/lib/email";
 
 export type FormState = { error: string | null };
+export type InviteResult = { error: string | null; emailed: boolean };
 
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const orNull = (s: string) => (s ? s : null);
@@ -127,9 +129,9 @@ export async function createContact(
  * artisan to share (email delivery is a later step). One pending invite per
  * contact — any existing pending one is replaced.
  */
-export async function inviteContact(contactId: string): Promise<FormState> {
+export async function inviteContact(contactId: string): Promise<InviteResult> {
   const ctx = await getOrgContext();
-  if (!ctx) return { error: "Not signed in." };
+  if (!ctx) return { error: "Not signed in.", emailed: false };
   const supabase = await createClient();
 
   const { data: contact } = await supabase
@@ -137,9 +139,9 @@ export async function inviteContact(contactId: string): Promise<FormState> {
     .select("id, email, user_id")
     .eq("id", contactId)
     .maybeSingle();
-  if (!contact) return { error: "Contact not found." };
-  if (contact.user_id) return { error: "This contact already has a login." };
-  if (!contact.email) return { error: "Add an email to this contact first." };
+  if (!contact) return { error: "Contact not found.", emailed: false };
+  if (contact.user_id) return { error: "This contact already has a login.", emailed: false };
+  if (!contact.email) return { error: "Add an email to this contact first.", emailed: false };
 
   await supabase
     .from("invitations")
@@ -155,10 +157,19 @@ export async function inviteContact(contactId: string): Promise<FormState> {
     token,
     status: "pending",
   });
-  if (error) return { error: error.message };
+  if (error) return { error: error.message, emailed: false };
+
+  // Best-effort: emails the link if RESEND_API_KEY is set, else no-op (the UI
+  // still shows the copyable link).
+  const link = `${appUrl()}/invite/${token}`;
+  const sent = await sendEmail({
+    to: contact.email,
+    subject: `${ctx.org.name} invited you to their project portal`,
+    html: inviteEmailHtml({ link, orgName: ctx.org.name }),
+  });
 
   revalidatePath(`/contacts/${contactId}`);
-  return { error: null };
+  return { error: null, emailed: sent.sent };
 }
 
 /** Cancel a pending invitation. */
