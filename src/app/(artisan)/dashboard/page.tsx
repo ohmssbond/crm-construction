@@ -6,7 +6,6 @@ import { Thumb } from "@/components/ui/Thumb";
 import { StageChip, type Stage } from "@/components/ui/Chip";
 import { Banner } from "@/components/ui/Banner";
 import { SectionLabel } from "@/components/ui/SectionLabel";
-import { TodoRow } from "@/components/ui/TodoRow";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { createClient } from "@/lib/supabase/server";
 import { one } from "@/lib/data/rel";
@@ -99,14 +98,38 @@ export default async function DashboardPage() {
           <EmptyState glyph="✅" title="Nothing on the list." />
         ) : (
           <Card>
-            {todoList.map((t) => (
-              <TodoRow
-                key={t.id}
-                text={`${t.body}${one(t.project)?.name ? ` — ${one(t.project)!.name}` : ""}`}
-                due={fmtDate(t.due_date) ?? undefined}
-                done={t.done}
-              />
-            ))}
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="text-meta text-muted uppercase tracking-[0.4px] border-b border-line-2">
+                  <th className="font-semibold w-9 px-4 py-[10px]"></th>
+                  <th className="font-semibold px-2 py-[10px]">Task</th>
+                  <th className="font-semibold px-2 py-[10px]">Project</th>
+                  <th className="font-semibold px-4 py-[10px] text-right">Due</th>
+                </tr>
+              </thead>
+              <tbody>
+                {todoList.map((t) => (
+                  <tr key={t.id} className="border-b border-line-2 last:border-b-0">
+                    <td className="px-4 py-[11px]">
+                      <span
+                        className={`size-[18px] inline-grid place-items-center rounded-[5px] text-white text-[11px] ${
+                          t.done ? "bg-accent" : "border-2 border-[#cfd4dc]"
+                        }`}
+                      >
+                        {t.done ? "✓" : ""}
+                      </span>
+                    </td>
+                    <td className={`px-2 py-[11px] text-body ${t.done ? "text-faint line-through" : ""}`}>
+                      {t.body}
+                    </td>
+                    <td className="px-2 py-[11px] text-sub text-muted">{one(t.project)?.name ?? "—"}</td>
+                    <td className="px-4 py-[11px] text-right text-meta text-faint whitespace-nowrap">
+                      {t.done ? "done" : (fmtDate(t.due_date) ?? "—")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </Card>
         )}
       </section>

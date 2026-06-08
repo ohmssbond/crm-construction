@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { FolderKanban } from "lucide-react";
 import { StageChip, TypeChip, LoginChip, type Stage, type ContactType } from "@/components/ui/Chip";
+import { buttonClasses } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { KeyValue } from "@/components/ui/KeyValue";
 import { ListRow } from "@/components/ui/ListRow";
@@ -36,6 +38,9 @@ export default async function ContactDetailPage({
             <LoginChip status={contact.user_id ? "active" : "none"} />
           </div>
         </div>
+        <Link href={`/contacts/${contact.id}/edit`} className={`${buttonClasses("ghost")} hidden lg:inline-flex`}>
+          Edit
+        </Link>
       </div>
 
       <Card className="px-4 py-1">

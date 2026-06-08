@@ -5,15 +5,23 @@ export const fieldInput =
 
 export function Field({
   label,
+  required = false,
+  hint,
   children,
 }: {
   label: string;
+  required?: boolean;
+  hint?: string;
   children: ReactNode;
 }) {
   return (
     <label className="flex flex-col gap-1 text-meta text-muted font-semibold">
-      {label}
+      <span>
+        {label}
+        {required && <span className="text-[#b42318]"> *</span>}
+      </span>
       {children}
+      {hint && <span className="text-faint font-normal">{hint}</span>}
     </label>
   );
 }

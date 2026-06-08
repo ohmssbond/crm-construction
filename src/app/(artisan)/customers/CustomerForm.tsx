@@ -24,7 +24,7 @@ export function CustomerForm({
   return (
     <form action={formAction} className="flex flex-col gap-4 max-w-[560px]">
       <Card className="p-4 flex flex-col gap-3">
-        <Field label={`${nounLabel} name`}>
+        <Field label={`${nounLabel} name`} required>
           <input name="name" required defaultValue={defaults?.name ?? ""} className={fieldInput} />
         </Field>
         <Field label="Address">

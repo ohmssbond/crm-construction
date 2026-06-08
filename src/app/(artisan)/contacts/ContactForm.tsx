@@ -4,45 +4,58 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Field, fieldInput, FormError } from "@/components/ui/Field";
-import { createContact, type FormState } from "../actions";
+import type { FormState } from "../actions";
 
 const initial: FormState = { error: null };
 
+type Defaults = {
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  type?: string;
+  customer_id?: string | null;
+};
+
 export function ContactForm({
+  action,
   customers,
   clientNoun,
+  defaults,
+  submitLabel,
 }: {
+  action: (prev: FormState, fd: FormData) => Promise<FormState>;
   customers: { id: string; name: string }[];
   clientNoun: string;
+  defaults?: Defaults;
+  submitLabel: string;
 }) {
-  const [state, formAction, pending] = useActionState(createContact, initial);
+  const [state, formAction, pending] = useActionState(action, initial);
 
   return (
     <form action={formAction} className="flex flex-col gap-4 max-w-[560px]">
       <Card className="p-4 flex flex-col gap-3">
-        <div className="flex gap-3">
-          <Field label="First name">
-            <input name="first_name" className={fieldInput} />
-          </Field>
-          <Field label="Last name">
-            <input name="last_name" className={fieldInput} />
-          </Field>
-        </div>
+        <Field label="Name" required hint="Enter at least a first or last name.">
+          <div className="flex gap-3">
+            <input name="first_name" placeholder="First" defaultValue={defaults?.first_name ?? ""} className={fieldInput} />
+            <input name="last_name" placeholder="Last" defaultValue={defaults?.last_name ?? ""} className={fieldInput} />
+          </div>
+        </Field>
         <Field label="Email">
-          <input name="email" type="email" className={fieldInput} />
+          <input name="email" type="email" defaultValue={defaults?.email ?? ""} className={fieldInput} />
         </Field>
         <Field label="Phone">
-          <input name="phone" className={fieldInput} />
+          <input name="phone" defaultValue={defaults?.phone ?? ""} className={fieldInput} />
         </Field>
-        <Field label="Type">
-          <select name="type" defaultValue="customer" className={fieldInput}>
+        <Field label="Type" required>
+          <select name="type" defaultValue={defaults?.type ?? "customer"} className={fieldInput}>
             <option value="customer">Customer</option>
             <option value="partner">Partner</option>
             <option value="prospect">Prospect</option>
           </select>
         </Field>
         <Field label={clientNoun}>
-          <select name="customer_id" defaultValue="" className={fieldInput}>
+          <select name="customer_id" defaultValue={defaults?.customer_id ?? ""} className={fieldInput}>
             <option value="">— none —</option>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>
@@ -55,7 +68,7 @@ export function ContactForm({
       <FormError message={state.error} />
       <div>
         <Button type="submit" disabled={pending} className="disabled:opacity-60">
-          {pending ? "Saving…" : "Create contact"}
+          {pending ? "Saving…" : submitLabel}
         </Button>
       </div>
     </form>

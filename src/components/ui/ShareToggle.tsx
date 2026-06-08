@@ -24,7 +24,9 @@ export function ShareToggle({
   const [internal, setInternal] = useState(defaultShared);
   const [pending, start] = useTransition();
   const on = controlled ?? internal;
-  const text = compact ? (on ? "◉" : "○") : on ? "◉ Shared" : "○ Private";
+  // Always spell out the state — a bare symbol read as ambiguous on file tiles.
+  const text = on ? "◉ Shared" : "○ Private";
+  const sizing = compact ? "text-[10px] px-[7px] py-[2px]" : "text-chip px-[10px] py-[4px]";
 
   const flip = () => {
     const next = !on;
@@ -38,7 +40,7 @@ export function ShareToggle({
       aria-pressed={on}
       disabled={pending}
       onClick={flip}
-      className={`inline-flex items-center gap-[6px] rounded-full text-chip font-semibold px-[10px] py-[4px] border disabled:opacity-60 ${
+      className={`inline-flex items-center gap-[6px] rounded-full font-semibold border disabled:opacity-60 ${sizing} ${
         on ? "bg-accent text-white border-transparent" : "bg-surface text-muted border-line"
       }`}
     >

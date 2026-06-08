@@ -20,10 +20,10 @@ export function ProjectForm({
   return (
     <form action={formAction} className="flex flex-col gap-4 max-w-[560px]">
       <Card className="p-4 flex flex-col gap-3">
-        <Field label="Project name">
+        <Field label="Project name" required>
           <input name="name" required className={fieldInput} />
         </Field>
-        <Field label={clientNoun}>
+        <Field label={clientNoun} required>
           <select name="customer_id" required defaultValue="" className={fieldInput}>
             <option value="" disabled>
               Choose a {clientNoun.toLowerCase()}…

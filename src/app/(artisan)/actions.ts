@@ -56,6 +56,36 @@ export async function updateCustomer(
   redirect(`/customers/${id}`);
 }
 
+/** Update a contact, then return to its detail page. */
+export async function updateContact(
+  id: string,
+  _prev: FormState,
+  fd: FormData
+): Promise<FormState> {
+  const first = str(fd, "first_name");
+  const last = str(fd, "last_name");
+  const type = str(fd, "type");
+  if (!first && !last) return { error: "Enter a first or last name." };
+  if (!["partner", "prospect", "customer"].includes(type)) {
+    return { error: "Pick a contact type." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("contacts")
+    .update({
+      first_name: orNull(first),
+      last_name: orNull(last),
+      email: orNull(str(fd, "email")),
+      phone: orNull(str(fd, "phone")),
+      type,
+      customer_id: orNull(str(fd, "customer_id")),
+    })
+    .eq("id", id);
+  if (error) return { error: error.message };
+  redirect(`/contacts/${id}`);
+}
+
 /** Create a contact (optionally tied to a customer), then open its detail. */
 export async function createContact(
   _prev: FormState,
