@@ -1,16 +1,15 @@
--- Tenant baseline as reference data in a migration (idempotent), so it ALWAYS applies on
--- the remote. seed.sql is unreliable here: the CLI runs it only once per linked project,
--- so later config/category changes via seed.sql silently don't execute.
-
--- Orgs + white-label config. `do update` so config lands even when the org already exists.
+-- Tenant baseline as reference data in a migration. Seeds the two starter orgs on a
+-- FRESH environment only. Already applied to the live project (where these now exist:
+-- Gargoyle Systems is a real tenant; the 2222… org was renamed to "Test Tenant").
+--
+-- `on conflict do nothing` (NOT `do update`): once an org exists, this must NEVER
+-- overwrite its name/color/nouns — those belong to the tenant. Editing this file does
+-- not re-run on the live project (the migration is already applied); it only governs
+-- new/reset environments.
 insert into organizations (id, name, primary_color, member_noun, client_noun) values
-  ('11111111-1111-1111-1111-111111111111', 'Gargoyle Systems',     '#5a4fcf', 'Consultant', 'Client'),
-  ('22222222-2222-2222-2222-222222222222', 'J Huber Restorations', '#2f6f5e', 'Contractor', 'Customer')
-on conflict (id) do update set
-  name          = excluded.name,
-  primary_color = excluded.primary_color,
-  member_noun   = excluded.member_noun,
-  client_noun   = excluded.client_noun;
+  ('11111111-1111-1111-1111-111111111111', 'Gargoyle Systems', '#5a4fcf', 'Consultant', 'Client'),
+  ('22222222-2222-2222-2222-222222222222', 'Test Tenant',      '#2f6f5e', 'Contractor', 'Customer')
+on conflict (id) do nothing;
 
 -- Default file categories per vertical. `do nothing` to preserve any tenant edits.
 insert into file_categories (organization_id, key, label, sort) values
