@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isInviteExpired } from "@/lib/data/invitations";
 
 export type AcceptState = { error: string | null };
 
@@ -31,12 +32,12 @@ export async function acceptInvite(
   const { data: invite } = await admin
     .from("invitations")
     .select(
-      "id, email, status, contact_id, organization_id, organizations(name, primary_color, member_noun, client_noun), contact:contacts(first_name, last_name)"
+      "id, email, status, created_at, contact_id, organization_id, organizations(name, primary_color, member_noun, client_noun), contact:contacts(first_name, last_name)"
     )
     .eq("token", token)
     .maybeSingle();
-  if (!invite || invite.status !== "pending") {
-    return { error: "This invite is no longer valid." };
+  if (!invite || invite.status !== "pending" || isInviteExpired(invite.created_at)) {
+    return { error: "This invite is no longer valid. Ask your contractor to resend it." };
   }
 
   const org = Array.isArray(invite.organizations) ? invite.organizations[0] : invite.organizations;

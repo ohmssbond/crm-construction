@@ -41,13 +41,26 @@ export async function sendEmail({ to, subject, html }: SendArgs): Promise<{ sent
   }
 }
 
+/** Escape user-controlled text before interpolating into email HTML. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 /** Simple HTML for the portal invite email. */
 export function inviteEmailHtml({ link, orgName }: { link: string; orgName: string }): string {
+  // orgName is tenant-controlled → escape it. `link` is system-generated
+  // (APP_URL + a base64url token), so it's safe in the href/text as-is.
+  const org = escapeHtml(orgName);
   return `
   <div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;color:#1d2939">
-    <h2 style="font-size:18px">You're invited to ${orgName}'s project portal</h2>
+    <h2 style="font-size:18px">You're invited to ${org}'s project portal</h2>
     <p style="color:#475467;font-size:14px;line-height:1.5">
-      ${orgName} uses Artisan Project Hub to share project updates and files with you.
+      ${org} uses Artisan Project Hub to share project updates and files with you.
       Set a password to access your projects.
     </p>
     <p style="margin:24px 0">
