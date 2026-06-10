@@ -1,11 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    // Photos/PDFs flow through the upload Server Action (FormData); raise the
-    // default 1MB request-body cap to accommodate them.
-    serverActions: { bodySizeLimit: "10mb" },
-  },
+  // Uploads go browser→Supabase Storage directly (see UploadForm), so no large
+  // payloads pass through Server Actions — the default body-size limit is fine.
 };
 
 export default nextConfig;

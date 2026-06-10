@@ -4,66 +4,51 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/data/org";
 
-const BUCKET = "project-files";
-
-export type UploadState = { error: string | null; ok: boolean };
+export type RecordResult = { error: string | null };
 
 /**
- * Uploads a file to the private `project-files` bucket and records an
- * `attachments` row. Path convention `{org}/{project}/{ts-filename}` is what the
- * storage RLS policies key on. `projectId` is bound by the caller; RLS enforces
- * that the signed-in artisan owns both the org folder and the project.
+ * Records an `attachments` row for a file the browser uploaded DIRECTLY to
+ * Storage (see UploadForm). The file never passes through this Server Action —
+ * only metadata does — so there is no serverless request-body limit on uploads.
+ * RLS confines the insert to the signed-in org; we additionally verify the
+ * storage path sits inside this org/project so a client can't register a row
+ * pointing at another tenant's object.
  */
-export async function uploadAttachment(
+export async function recordAttachment(
   projectId: string,
-  _prev: UploadState,
-  formData: FormData
-): Promise<UploadState> {
-  const file = formData.get("file");
-  const category = String(formData.get("category") ?? "");
-  const isShared = formData.get("is_shared") === "on";
-
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: "Choose a file to upload.", ok: false };
+  meta: {
+    path: string;
+    filename: string;
+    mime: string | null;
+    size: number;
+    category: string;
+    isShared: boolean;
   }
-  if (!category) {
-    return { error: "Pick a category.", ok: false };
-  }
-
+): Promise<RecordResult> {
+  if (!meta.category) return { error: "Pick a category." };
   const ctx = await getOrgContext();
-  if (!ctx) return { error: "Not signed in.", ok: false };
-  const orgId = ctx.org.id;
+  if (!ctx) return { error: "Not signed in." };
 
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const path = `${orgId}/${projectId}/${Date.now()}-${safeName}`;
+  if (!meta.path.startsWith(`${ctx.org.id}/${projectId}/`)) {
+    return { error: "Invalid upload path." };
+  }
 
   const supabase = await createClient();
-  const { error: upErr } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, file, { contentType: file.type || undefined, upsert: false });
-  if (upErr) {
-    return { error: `Upload failed: ${upErr.message}`, ok: false };
-  }
-
-  const { error: insErr } = await supabase.from("attachments").insert({
-    organization_id: orgId,
+  const { error } = await supabase.from("attachments").insert({
+    organization_id: ctx.org.id,
     project_id: projectId,
     kind: "file",
-    storage_path: path,
-    category,
-    filename: file.name,
-    mime_type: file.type || null,
-    size_bytes: file.size,
-    is_shared: isShared,
+    storage_path: meta.path,
+    category: meta.category,
+    filename: meta.filename,
+    mime_type: meta.mime,
+    size_bytes: meta.size,
+    is_shared: meta.isShared,
   });
-  if (insErr) {
-    // Don't leave an orphaned object if the row insert is rejected.
-    await supabase.storage.from(BUCKET).remove([path]);
-    return { error: `Could not save attachment: ${insErr.message}`, ok: false };
-  }
+  if (error) return { error: error.message };
 
   revalidatePath(`/projects/${projectId}`);
-  return { error: null, ok: true };
+  return { error: null };
 }
 
 // ── Live-edit writes ────────────────────────────────────────────────────────

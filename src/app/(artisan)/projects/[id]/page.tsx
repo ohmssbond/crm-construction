@@ -105,6 +105,7 @@ export default async function ProjectDetailPage({
               <div className="flex flex-col gap-3">
                 <UploadForm
                   projectId={project.id}
+                  orgId={ctx?.org.id ?? ""}
                   categories={fileCategories}
                   shareLabel={`Share with ${clientNoun.toLowerCase()}`}
                 />

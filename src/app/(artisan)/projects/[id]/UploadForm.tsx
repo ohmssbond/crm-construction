@@ -1,46 +1,97 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useRef, useState, useTransition, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
-import { uploadAttachment, type UploadState } from "./actions";
+import { createClient } from "@/lib/supabase/client";
+import { recordAttachment } from "./actions";
 
-const initial: UploadState = { error: null, ok: false };
-
+const BUCKET = "project-files";
 const controlCls =
   "rounded-control border border-line bg-surface px-3 py-[7px] text-sub outline-none focus:border-accent";
 
+/**
+ * Uploads the file DIRECTLY from the browser to Supabase Storage (RLS lets an
+ * artisan write their own org folder), then records the attachment row via a
+ * Server Action that takes only metadata. The file never passes through a
+ * serverless function, so there's no request-body size limit on uploads.
+ */
 export function UploadForm({
   projectId,
+  orgId,
   categories,
   shareLabel,
 }: {
   projectId: string;
+  orgId: string;
   categories: { key: string; label: string }[];
   shareLabel: string;
 }) {
-  const action = uploadAttachment.bind(null, projectId);
-  const [state, formAction, pending] = useActionState(action, initial);
-  const formRef = useRef<HTMLFormElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [category, setCategory] = useState("");
+  const [shared, setShared] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
 
-  // Clear the file input after a successful upload (the grid revalidates server-side).
-  useEffect(() => {
-    if (state.ok) formRef.current?.reset();
-  }, [state]);
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    const file = fileRef.current?.files?.[0];
+    if (!file) return setError("Choose a file to upload.");
+    if (!category) return setError("Pick a category.");
+    setError(null);
+
+    start(async () => {
+      const supabase = createClient();
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${orgId}/${projectId}/${Date.now()}-${safeName}`;
+
+      const { error: upErr } = await supabase.storage
+        .from(BUCKET)
+        .upload(path, file, { contentType: file.type || undefined, upsert: false });
+      if (upErr) {
+        setError(`Upload failed: ${upErr.message}`);
+        return;
+      }
+
+      const res = await recordAttachment(projectId, {
+        path,
+        filename: file.name,
+        mime: file.type || null,
+        size: file.size,
+        category,
+        isShared: shared,
+      });
+      if (res.error) {
+        // Don't leave an orphaned object if the row insert is rejected.
+        await supabase.storage.from(BUCKET).remove([path]);
+        setError(res.error);
+        return;
+      }
+
+      // Reset for the next upload (the grid revalidates server-side).
+      if (fileRef.current) fileRef.current.value = "";
+      setCategory("");
+      setShared(false);
+    });
+  };
 
   return (
     <form
-      ref={formRef}
-      action={formAction}
+      onSubmit={submit}
       className="bg-surface border border-line rounded-card p-[14px] shadow-card flex flex-col gap-3"
     >
       <div className="flex flex-wrap items-center gap-3">
         <input
+          ref={fileRef}
           type="file"
-          name="file"
           required
           className="text-sub max-w-[230px] file:mr-3 file:rounded-control file:border-0 file:bg-accent-soft file:text-accent file:px-3 file:py-[6px] file:text-sub file:font-semibold"
         />
-        <select name="category" required defaultValue="" className={controlCls}>
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          required
+          className={controlCls}
+        >
           <option value="" disabled>
             Category…
           </option>
@@ -51,7 +102,12 @@ export function UploadForm({
           ))}
         </select>
         <label className="flex items-center gap-2 text-sub text-muted">
-          <input type="checkbox" name="is_shared" className="accent-[var(--accent)]" />
+          <input
+            type="checkbox"
+            checked={shared}
+            onChange={(e) => setShared(e.target.checked)}
+            className="accent-[var(--accent)]"
+          />
           {shareLabel}
         </label>
         <Button
@@ -63,9 +119,9 @@ export function UploadForm({
           {pending ? "Uploading…" : "Upload"}
         </Button>
       </div>
-      {state.error && (
+      {error && (
         <p role="alert" className="text-meta text-[#b42318]">
-          {state.error}
+          {error}
         </p>
       )}
     </form>
