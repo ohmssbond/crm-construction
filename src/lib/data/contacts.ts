@@ -16,6 +16,17 @@ export async function listContacts() {
   return data ?? [];
 }
 
+/** Archived contacts for the restore view, newest-archived first. */
+export async function listArchivedContacts() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("contacts")
+    .select("id, first_name, last_name, email")
+    .not("archived_at", "is", null)
+    .order("archived_at", { ascending: false });
+  return data ?? [];
+}
+
 /** A contact plus its customer and the (non-archived) projects it's attached to. */
 export async function getContactDetail(id: string) {
   const supabase = await createClient();
@@ -26,6 +37,7 @@ export async function getContactDetail(id: string) {
       "id, first_name, last_name, email, phone, type, user_id, customer:customers(id, name)"
     )
     .eq("id", id)
+    .is("archived_at", null)
     .maybeSingle();
   if (!contact) return null;
 

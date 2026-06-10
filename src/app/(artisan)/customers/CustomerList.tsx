@@ -9,15 +9,20 @@ import { Card } from "@/components/ui/Card";
 import { ListRow } from "@/components/ui/ListRow";
 import { Thumb } from "@/components/ui/Thumb";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ArchivedSection } from "../ArchivedSection";
 
 type Customer = { id: string; name: string; address: string | null; projectCount: number };
 
 export function CustomerList({
   customers,
+  archived,
+  restoreAction,
   noun,
   nounPlural,
 }: {
   customers: Customer[];
+  archived: { id: string; name: string }[];
+  restoreAction: (id: string) => Promise<void>;
   noun: string;
   nounPlural: string;
 }) {
@@ -58,6 +63,11 @@ export function CustomerList({
           ))}
         </Card>
       )}
+
+      <ArchivedSection
+        items={archived.map((a) => ({ id: a.id, label: a.name }))}
+        restoreAction={restoreAction}
+      />
     </div>
   );
 }

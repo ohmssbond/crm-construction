@@ -17,6 +17,17 @@ export async function listCustomers() {
   }));
 }
 
+/** Archived customers for the restore view, newest-archived first. */
+export async function listArchivedCustomers() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("customers")
+    .select("id, name")
+    .not("archived_at", "is", null)
+    .order("archived_at", { ascending: false });
+  return data ?? [];
+}
+
 /** A customer plus its (non-archived) projects, each with a contact count. */
 export async function getCustomerDetail(id: string) {
   const supabase = await createClient();
@@ -25,6 +36,7 @@ export async function getCustomerDetail(id: string) {
     .from("customers")
     .select("id, name, address, notes")
     .eq("id", id)
+    .is("archived_at", null)
     .maybeSingle();
   if (!customer) return null;
 

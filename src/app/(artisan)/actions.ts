@@ -211,3 +211,74 @@ export async function createProject(
   if (error || !data) return { error: error?.message ?? "Could not create." };
   redirect(`/projects/${data.id}`);
 }
+
+/** Update a project's basics, then return to its detail page. */
+export async function updateProject(
+  id: string,
+  _prev: FormState,
+  fd: FormData
+): Promise<FormState> {
+  const name = str(fd, "name");
+  const customerId = str(fd, "customer_id");
+  if (!name) return { error: "Project name is required." };
+  if (!customerId) return { error: "Choose a customer." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("projects")
+    .update({
+      name,
+      customer_id: customerId,
+      stage: str(fd, "stage") || "proposal",
+      start_date: orNull(str(fd, "start_date")),
+      end_date: orNull(str(fd, "end_date")),
+    })
+    .eq("id", id);
+  if (error) return { error: error.message };
+  redirect(`/projects/${id}`);
+}
+
+// ── Archive / restore ───────────────────────────────────────────────────────
+// Soft delete via `archived_at`: lists, the dashboard, and the portal already
+// filter on it, so archived rows hide everywhere and stay fully restorable.
+// All RLS-scoped (the policy USING clause confines changes to the signed-in org).
+
+async function setArchived(table: "projects" | "customers" | "contacts", id: string, archived: boolean) {
+  const supabase = await createClient();
+  await supabase
+    .from(table)
+    .update({ archived_at: archived ? new Date().toISOString() : null })
+    .eq("id", id);
+}
+
+export async function archiveProject(id: string) {
+  await setArchived("projects", id, true);
+  revalidatePath("/projects");
+  revalidatePath("/dashboard");
+  redirect("/projects");
+}
+export async function restoreProject(id: string) {
+  await setArchived("projects", id, false);
+  revalidatePath("/projects");
+  revalidatePath("/dashboard");
+}
+
+export async function archiveCustomer(id: string) {
+  await setArchived("customers", id, true);
+  revalidatePath("/customers");
+  redirect("/customers");
+}
+export async function restoreCustomer(id: string) {
+  await setArchived("customers", id, false);
+  revalidatePath("/customers");
+}
+
+export async function archiveContact(id: string) {
+  await setArchived("contacts", id, true);
+  revalidatePath("/contacts");
+  redirect("/contacts");
+}
+export async function restoreContact(id: string) {
+  await setArchived("contacts", id, false);
+  revalidatePath("/contacts");
+}

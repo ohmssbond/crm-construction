@@ -10,6 +10,8 @@ import { SectionLabel } from "@/components/ui/SectionLabel";
 import { buttonClasses } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getCustomerDetail } from "@/lib/data/customers";
+import { ArchiveButton } from "../../ArchiveButton";
+import { archiveCustomer } from "../../actions";
 
 export default async function CustomerDetailPage({
   params,
@@ -26,9 +28,12 @@ export default async function CustomerDetailPage({
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-title font-semibold">{customer.name}</h2>
-        <Link href={`/customers/${customer.id}/edit`} className={`${buttonClasses("ghost")} hidden lg:inline-flex`}>
-          Edit
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href={`/customers/${customer.id}/edit`} className={`${buttonClasses("ghost", "sm")} hidden lg:inline-flex`}>
+            Edit
+          </Link>
+          <ArchiveButton action={archiveCustomer.bind(null, customer.id)} noun="customer" />
+        </div>
       </div>
 
       <Card className="px-4 py-1">

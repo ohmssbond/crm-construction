@@ -1,7 +1,11 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { Lock } from "lucide-react";
 import { StageChip, type Stage } from "@/components/ui/Chip";
+import { buttonClasses } from "@/components/ui/Button";
 import { Tabs } from "@/components/ui/Tabs";
+import { ArchiveButton } from "../../ArchiveButton";
+import { archiveProject } from "../../actions";
 import { Card } from "@/components/ui/Card";
 import { Composer } from "@/components/ui/Composer";
 import { UpdateCard } from "@/components/ui/UpdateCard";
@@ -60,7 +64,11 @@ export default async function ProjectDetailPage({
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="text-title font-semibold">{project.name}</h2>
         <StageChip stage={project.stage as Stage} />
-        <div className="lg:ml-auto">
+        <div className="lg:ml-auto flex flex-wrap items-center gap-2">
+          <Link href={`/projects/${project.id}/edit`} className={`${buttonClasses("ghost", "sm")} hidden lg:inline-flex`}>
+            Edit
+          </Link>
+          <ArchiveButton action={archiveProject.bind(null, project.id)} noun="project" />
           <StageControl
             current={project.stage}
             action={setProjectStage.bind(null, project.id)}

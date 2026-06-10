@@ -11,6 +11,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { TypeChip, LoginChip, type ContactType } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { contactName, contactInitials } from "@/lib/data/format";
+import { ArchivedSection } from "../ArchivedSection";
 
 type Contact = {
   id: string;
@@ -20,6 +21,7 @@ type Contact = {
   type: string;
   user_id: string | null;
 };
+type ArchivedContact = { id: string; first_name: string | null; last_name: string | null; email: string | null };
 
 const TYPE_FILTERS: Record<string, string | null> = {
   All: null,
@@ -28,7 +30,15 @@ const TYPE_FILTERS: Record<string, string | null> = {
   Customer: "customer",
 };
 
-export function ContactList({ contacts }: { contacts: Contact[] }) {
+export function ContactList({
+  contacts,
+  archived,
+  restoreAction,
+}: {
+  contacts: Contact[];
+  archived: ArchivedContact[];
+  restoreAction: (id: string) => Promise<void>;
+}) {
   const [q, setQ] = useState("");
   const [typeLabel, setTypeLabel] = useState("All");
   const query = q.trim().toLowerCase();
@@ -76,6 +86,11 @@ export function ContactList({ contacts }: { contacts: Contact[] }) {
           })}
         </Card>
       )}
+
+      <ArchivedSection
+        items={archived.map((a) => ({ id: a.id, label: contactName(a) }))}
+        restoreAction={restoreAction}
+      />
     </div>
   );
 }

@@ -24,6 +24,29 @@ export async function listProjects() {
   }));
 }
 
+/** Editable fields for the project edit form. Null if not visible / archived. */
+export async function getProject(id: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("projects")
+    .select("id, name, customer_id, stage, start_date, end_date")
+    .eq("id", id)
+    .is("archived_at", null)
+    .maybeSingle();
+  return data;
+}
+
+/** Archived projects for the restore view, newest-archived first. */
+export async function listArchivedProjects() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("projects")
+    .select("id, name")
+    .not("archived_at", "is", null)
+    .order("archived_at", { ascending: false });
+  return data ?? [];
+}
+
 /**
  * Everything the project detail screen renders, in one place. All reads are
  * RLS-scoped to the signed-in org; returns null when the id isn't visible.
@@ -35,6 +58,7 @@ export async function getProjectDetail(id: string) {
     .from("projects")
     .select("id, name, stage, start_date, end_date, customer:customers(id, name)")
     .eq("id", id)
+    .is("archived_at", null)
     .maybeSingle();
   if (!project) return null;
 

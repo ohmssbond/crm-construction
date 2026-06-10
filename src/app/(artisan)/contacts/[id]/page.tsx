@@ -14,8 +14,9 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { getContactDetail, contactName, contactInitials } from "@/lib/data/contacts";
 import { getOrgContext } from "@/lib/data/org";
 import { getPendingInvitation } from "@/lib/data/invitations";
-import { inviteContact, revokeInvitation } from "../../actions";
+import { inviteContact, revokeInvitation, archiveContact } from "../../actions";
 import { InvitePanel } from "./InvitePanel";
+import { ArchiveButton } from "../../ArchiveButton";
 
 export default async function ContactDetailPage({
   params,
@@ -45,9 +46,12 @@ export default async function ContactDetailPage({
             <LoginChip status={contact.user_id ? "active" : "none"} />
           </div>
         </div>
-        <Link href={`/contacts/${contact.id}/edit`} className={`${buttonClasses("ghost")} hidden lg:inline-flex`}>
-          Edit
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href={`/contacts/${contact.id}/edit`} className={`${buttonClasses("ghost", "sm")} hidden lg:inline-flex`}>
+            Edit
+          </Link>
+          <ArchiveButton action={archiveContact.bind(null, contact.id)} noun="contact" />
+        </div>
       </div>
 
       <Card className="px-4 py-1">

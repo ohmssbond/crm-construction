@@ -12,6 +12,7 @@ import { Thumb } from "@/components/ui/Thumb";
 import { StageChip, type Stage } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { projectMeta } from "@/lib/data/format";
+import { ArchivedSection } from "../ArchivedSection";
 
 type Project = {
   id: string;
@@ -31,7 +32,15 @@ const STAGE_FILTERS: Record<string, string | null> = {
   Completed: "completed",
 };
 
-export function ProjectList({ projects }: { projects: Project[] }) {
+export function ProjectList({
+  projects,
+  archived,
+  restoreAction,
+}: {
+  projects: Project[];
+  archived: { id: string; name: string }[];
+  restoreAction: (id: string) => Promise<void>;
+}) {
   const [q, setQ] = useState("");
   const [stageLabel, setStageLabel] = useState("All");
   const query = q.trim().toLowerCase();
@@ -87,6 +96,11 @@ export function ProjectList({ projects }: { projects: Project[] }) {
           })}
         </Card>
       )}
+
+      <ArchivedSection
+        items={archived.map((a) => ({ id: a.id, label: a.name }))}
+        restoreAction={restoreAction}
+      />
     </div>
   );
 }
