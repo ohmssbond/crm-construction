@@ -6,7 +6,9 @@ import { getSessionRole } from "@/lib/auth";
 // run before routes render. Here it refreshes the Supabase session and
 // gates the two worlds by role.
 
-const PUBLIC = ["/login", "/invite"];
+// /auth covers the recovery code-exchange handler; /forgot-password + /reset-password
+// are the password-reset screens (reachable while signed out).
+const PUBLIC = ["/login", "/invite", "/forgot-password", "/reset-password", "/auth"];
 
 // Roles are stamped into app_metadata at provisioning (scripts/stamp-roles.mjs,
 // scripts/seed-contact-login.mjs), so gating is enforced.
