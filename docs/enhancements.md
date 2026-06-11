@@ -1,0 +1,21 @@
+# Enhancements backlog
+
+Small feature enhancements surfaced from real-world dogfooding. Add new items at
+the bottom with the next number — keep each short, enough to capture the intent.
+
+**Status key:** 💡 idea · 🔨 building · ✅ shipped
+
+---
+
+## 1. Tasks should have owners 💡
+To-dos (tasks) should have an **owner**.
+
+- **Default** the owner to the **person entering the task** (the team member creating it).
+- Allow **changing** it to a **different contact associated with the project**.
+
+_Open questions / notes:_
+- To-dos are currently **internal-only** (never shown in the customer portal). Decide
+  whether assigning a task to a *contact* should surface it to that contact in their
+  portal, or whether "owner" stays a purely internal field.
+- Owner can be a team member **or** a project contact → `todos` likely needs an owner
+  reference (e.g. `owner_contact_id`, plus a way to denote "me/team").
