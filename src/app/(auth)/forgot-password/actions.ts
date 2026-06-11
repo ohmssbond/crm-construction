@@ -18,9 +18,16 @@ export async function requestReset(
   if (!email) return { sent: false, error: "Enter your email." };
 
   const supabase = await createClient();
-  await supabase.auth.resetPasswordForEmail(email, {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${appUrl()}/auth/callback?next=/reset-password`,
   });
+
+  // Surface rate-limiting (a UX issue, not account enumeration) so users aren't
+  // told "check your email" when nothing was sent. Everything else reports
+  // success regardless, to avoid revealing whether the email exists.
+  if (error?.code === "over_email_send_rate_limit" || error?.status === 429) {
+    return { sent: false, error: "Too many reset requests. Please wait a few minutes and try again." };
+  }
 
   return { sent: true, error: null };
 }
