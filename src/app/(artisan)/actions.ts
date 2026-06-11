@@ -282,3 +282,42 @@ export async function restoreContact(id: string) {
   await setArchived("contacts", id, false);
   revalidatePath("/contacts");
 }
+
+// ── Branding (white-label self-service) ─────────────────────────────────────
+
+export type BrandingState = { error: string | null; saved: boolean };
+
+const HEX = /^#[0-9a-fA-F]{6}$/;
+
+/**
+ * Update the org's white-label branding (name, accent color, nouns). RLS-scoped:
+ * the `artisan_all` policy confines the update to the signed-in org. Both the
+ * artisan shell and the customer portal read these live, so a revalidate
+ * re-themes everything.
+ */
+export async function updateBranding(
+  _prev: BrandingState,
+  fd: FormData
+): Promise<BrandingState> {
+  const ctx = await getOrgContext();
+  if (!ctx) return { error: "Not signed in.", saved: false };
+
+  const name = str(fd, "name");
+  const color = str(fd, "primary_color");
+  const memberNoun = str(fd, "member_noun");
+  const clientNoun = str(fd, "client_noun");
+
+  if (!name) return { error: "Business name is required.", saved: false };
+  if (!HEX.test(color)) return { error: "Pick a valid color (e.g. #199DB7).", saved: false };
+  if (!memberNoun || !clientNoun) return { error: "Both nouns are required.", saved: false };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("organizations")
+    .update({ name, primary_color: color, member_noun: memberNoun, client_noun: clientNoun })
+    .eq("id", ctx.org.id);
+  if (error) return { error: error.message, saved: false };
+
+  revalidatePath("/", "layout"); // re-theme the whole shell + portal reads live
+  return { error: null, saved: true };
+}
