@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { getSessionRole } from "@/lib/auth";
+import { getSessionRole, roleFromClaims } from "@/lib/auth";
 
 // Next.js 16 renamed the `middleware` convention to `proxy`. Same job:
 // run before routes render. Here it refreshes the Supabase session and
@@ -59,9 +59,14 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
+  // Role: prefer the fresh JWT claim from the access-token hook; fall back to
+  // app_metadata for tokens minted before the hook was enabled.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const claims = claimsData?.claims as Record<string, unknown> | undefined;
+
   // The contact portal home; everyone else (artisan, or unstamped) lands on the
   // artisan dashboard.
-  const role = getSessionRole(user);
+  const role = roleFromClaims(claims) ?? getSessionRole(user);
   const home = role === "contact" ? "/my-projects" : "/dashboard";
 
   // Unauthenticated → only public routes; everything else bounces to login.

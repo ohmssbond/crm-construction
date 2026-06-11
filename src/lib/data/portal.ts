@@ -12,14 +12,11 @@ export type PortalContext = {
 };
 
 /**
- * Portal identity + branding for the signed-in contact. A contact is NOT an org
- * member, so it can't read the organizations row under RLS — the branding it
- * needs is stamped into `app_metadata` when the portal login is provisioned
- * (see scripts/seed-contact-login.mjs). Project/update/file reads below still go
- * through the live `contact_read` RLS policies. Returns null with no session.
- *
- * TODO(auth-gating): once roles are stamped at login (step 4), back the branding
- * with a `contact_read` policy on `organizations` instead of metadata.
+ * Portal identity + branding for the signed-in contact. Branding is read LIVE
+ * from the `organizations` row via the `contact_read` RLS policy (so tenant
+ * color/noun edits show up immediately), falling back to the `app_metadata`
+ * stamp for sessions provisioned before that policy existed. Project/update/file
+ * reads also go through the live `contact_read` policies. Returns null with no session.
  */
 export const getPortalContext = cache(async (): Promise<PortalContext | null> => {
   const supabase = await createClient();
@@ -28,12 +25,22 @@ export const getPortalContext = cache(async (): Promise<PortalContext | null> =>
   } = await supabase.auth.getUser();
   if (!user) return null;
 
+  // RLS returns only the contact's own org (contact_read on organizations).
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("name, primary_color, client_noun")
+    .maybeSingle();
+
   const m = (user.app_metadata ?? {}) as Record<string, string | undefined>;
-  const orgName = m.org_name || "Project Hub";
-  const accent = m.org_color || "#2f6f5e";
-  const clientNoun = m.client_noun || "Customer";
+  const orgName = org?.name || m.org_name || "Project Hub";
+  const accent = org?.primary_color || m.org_color || "#2f6f5e";
+  const clientNoun = org?.client_noun || m.client_noun || "Customer";
   const email = user.email ?? "";
-  const name = m.full_name || email.split("@")[0] || "Account";
+  const name =
+    (user.user_metadata?.full_name as string | undefined)?.trim() ||
+    m.full_name ||
+    email.split("@")[0] ||
+    "Account";
 
   return {
     accent,

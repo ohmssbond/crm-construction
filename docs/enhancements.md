@@ -19,3 +19,9 @@ _Open questions / notes:_
   portal, or whether "owner" stays a purely internal field.
 - Owner can be a team member **or** a project contact → `todos` likely needs an owner
   reference (e.g. `owner_contact_id`, plus a way to denote "me/team").
+
+## 2. Sign-in should have a generic branding.  Right now it is always defaulting to JH 💡
+
+## 3. Owners can set their colors 💡
+
+## 4. New contact type - employee or team member.  This is an employee of the artisan who is not a partner or customer.  

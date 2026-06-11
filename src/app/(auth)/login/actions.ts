@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getSessionRole } from "@/lib/auth";
+import { getSessionRole, roleFromClaims } from "@/lib/auth";
 
 export type LoginState = { error: string | null };
 
@@ -37,7 +37,9 @@ export async function login(
     return { error: "Invalid email or password." };
   }
 
-  const role = getSessionRole(data.user);
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const claims = claimsData?.claims as Record<string, unknown> | undefined;
+  const role = roleFromClaims(claims) ?? getSessionRole(data.user);
   let dest = role === "contact" ? "/my-projects" : role === "artisan" ? "/dashboard" : null;
 
   if (!dest) {
