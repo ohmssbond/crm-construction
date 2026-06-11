@@ -10,9 +10,18 @@ export function emailEnabled(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
 }
 
-/** Absolute base URL for links embedded in emails (server-side has no origin). */
+/**
+ * Absolute base URL for links embedded in emails (server-side has no origin).
+ * Prefers an explicit APP_URL; otherwise uses Vercel's production domain so prod
+ * links never silently fall back to localhost. Localhost is the last resort
+ * (local dev only).
+ */
 export function appUrl(): string {
-  return process.env.APP_URL || "http://localhost:3000";
+  if (process.env.APP_URL) return process.env.APP_URL;
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  return "http://localhost:3000";
 }
 
 type SendArgs = { to: string; subject: string; html: string };
