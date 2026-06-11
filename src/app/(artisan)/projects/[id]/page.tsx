@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Lock } from "lucide-react";
+import { Eye } from "lucide-react";
 import { StageChip, type Stage } from "@/components/ui/Chip";
 import { buttonClasses } from "@/components/ui/Button";
 import { Tabs } from "@/components/ui/Tabs";
@@ -10,23 +10,25 @@ import { Card } from "@/components/ui/Card";
 import { Composer } from "@/components/ui/Composer";
 import { UpdateCard } from "@/components/ui/UpdateCard";
 import { FileTile } from "@/components/ui/FileTile";
-import { TodoRow } from "@/components/ui/TodoRow";
 import { Banner } from "@/components/ui/Banner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getProjectDetail } from "@/lib/data/projects";
 import { getOrgContext } from "@/lib/data/org";
-import { fmtDate, fmtDateTime } from "@/lib/data/format";
+import { fmtDate, fmtDateTime, contactName } from "@/lib/data/format";
 import { UploadForm } from "./UploadForm";
 import { LinkForm } from "./LinkForm";
 import { StageControl } from "./StageControl";
 import { ContactManager } from "./ContactManager";
 import { TodoComposer } from "./TodoComposer";
+import { TaskRow } from "./TaskRow";
 import {
   postUpdate,
   setUpdateShared,
   setProjectStage,
   setAttachmentShared,
   toggleTodo,
+  setTodoOwner,
+  setTodoShared,
   addTodo,
   addLink,
   attachContact,
@@ -57,6 +59,7 @@ export default async function ProjectDetailPage({
   const { project, updates, todos, contacts, availableContacts, attachments, fileCategories } =
     detail;
   const clientNoun = ctx?.org.client_noun ?? "Customer";
+  const taskContacts = contacts.map((c) => ({ id: c.id, name: contactName(c) }));
 
   return (
     <div className="flex flex-col gap-5">
@@ -137,24 +140,35 @@ export default async function ProjectDetailPage({
             ),
           },
           {
-            label: "To-dos",
+            label: "Tasks",
             content: (
               <div className="flex flex-col gap-3">
-                <Banner icon={<Lock size={15} />}>
-                  To-dos are <strong>internal</strong> — never shown in the {clientNoun.toLowerCase()} portal.
+                <Banner icon={<Eye size={15} />}>
+                  Tasks are <strong>private</strong> by default. Assign one to a{" "}
+                  {clientNoun.toLowerCase()} or mark it shared to show it in their portal.
                 </Banner>
-                <TodoComposer action={addTodo.bind(null, project.id)} />
+                <TodoComposer action={addTodo.bind(null, project.id)} contacts={taskContacts} />
                 {todos.length === 0 ? (
-                  <EmptyState glyph="✅" title="Nothing on the list." />
+                  <EmptyState glyph="✅" title="No tasks yet." />
                 ) : (
                   <Card>
                     {todos.map((t) => (
-                      <TodoRow
+                      <TaskRow
                         key={t.id}
                         text={t.body}
                         due={fmtDate(t.due_date) ?? undefined}
                         done={t.done}
-                        action={toggleTodo.bind(null, project.id, t.id)}
+                        completed={
+                          t.completed_at
+                            ? fmtDate(String(t.completed_at).slice(0, 10)) ?? undefined
+                            : undefined
+                        }
+                        owner={t.owner_contact_id}
+                        shared={t.is_shared}
+                        contacts={taskContacts}
+                        toggleAction={toggleTodo.bind(null, project.id, t.id)}
+                        ownerAction={setTodoOwner.bind(null, project.id, t.id)}
+                        shareAction={setTodoShared.bind(null, project.id, t.id)}
                       />
                     ))}
                   </Card>

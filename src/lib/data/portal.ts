@@ -70,8 +70,8 @@ export async function listPortalProjects() {
 
 /**
  * Read-only project detail for the portal: the project plus ONLY its shared
- * updates and shared attachments. Todos and internal data are excluded by RLS
- * (no contact policy) and never queried here. Null if the id isn't visible.
+ * updates, shared attachments, and the tasks visible to this contact (the ones
+ * they own or that the team shared — RLS does the filtering). Null if not visible.
  */
 export async function getPortalProject(id: string) {
   const supabase = await createClient();
@@ -83,7 +83,7 @@ export async function getPortalProject(id: string) {
     .maybeSingle();
   if (!project) return null;
 
-  const [updates, attachments] = await Promise.all([
+  const [updates, attachments, tasks] = await Promise.all([
     supabase
       .from("status_updates")
       .select("id, body, created_at, is_shared")
@@ -96,11 +96,19 @@ export async function getPortalProject(id: string) {
       .eq("project_id", id)
       .eq("is_shared", true)
       .order("created_at", { ascending: false }),
+    // No is_shared filter — RLS returns only tasks this contact owns or that are shared.
+    supabase
+      .from("todos")
+      .select("id, body, due_date, done, completed_at")
+      .eq("project_id", id)
+      .order("done", { ascending: true })
+      .order("due_date", { ascending: true, nullsFirst: false }),
   ]);
 
   return {
     project: { ...project, customer: one(project.customer) },
     updates: updates.data ?? [],
     attachments: await withAttachmentUrls(supabase, attachments.data ?? []),
+    tasks: tasks.data ?? [],
   };
 }

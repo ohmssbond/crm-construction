@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation";
 import { StageChip, type Stage } from "@/components/ui/Chip";
 import { Tabs } from "@/components/ui/Tabs";
+import { Card } from "@/components/ui/Card";
 import { UpdateCard } from "@/components/ui/UpdateCard";
 import { FileTile } from "@/components/ui/FileTile";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getPortalProject } from "@/lib/data/portal";
-import { fmtDateTime } from "@/lib/data/format";
+import { fmtDate, fmtDateTime } from "@/lib/data/format";
 
 // Glyph + tile color per file category, with a sensible fallback.
 const FILE_STYLE: Record<string, { glyph: string; bg: string }> = {
@@ -28,7 +29,7 @@ export default async function PortalProjectPage({
   const detail = await getPortalProject(id);
   if (!detail) notFound();
 
-  const { project, updates, attachments } = detail;
+  const { project, updates, attachments, tasks } = detail;
 
   return (
     <div className="flex flex-col gap-5">
@@ -82,6 +83,42 @@ export default async function PortalProjectPage({
                     );
                   })}
                 </div>
+              ),
+          },
+          {
+            label: "Tasks",
+            content:
+              tasks.length === 0 ? (
+                <EmptyState glyph="✅" title="No tasks yet." />
+              ) : (
+                <Card>
+                  {tasks.map((t) => (
+                    <div
+                      key={t.id}
+                      className="flex items-center gap-3 px-[15px] py-[12px] border-b border-line-2 last:border-b-0"
+                    >
+                      <span
+                        className={`size-5 rounded-[6px] grid place-items-center shrink-0 text-white text-[12px] ${
+                          t.done ? "bg-accent border-2 border-accent" : "border-2 border-[#cfd4dc]"
+                        }`}
+                      >
+                        {t.done ? "✓" : ""}
+                      </span>
+                      <span className={`text-body flex-1 ${t.done ? "text-faint line-through" : ""}`}>
+                        {t.body}
+                      </span>
+                      <span className="text-meta text-faint">
+                        {t.done
+                          ? t.completed_at
+                            ? `done ${fmtDate(String(t.completed_at).slice(0, 10))}`
+                            : "done"
+                          : t.due_date
+                            ? `due ${fmtDate(t.due_date)}`
+                            : ""}
+                      </span>
+                    </div>
+                  ))}
+                </Card>
               ),
           },
         ]}

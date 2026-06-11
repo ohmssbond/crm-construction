@@ -1,4 +1,4 @@
-import { FolderKanban, Building2, Users, Lock } from "lucide-react";
+import { FolderKanban, Building2, Users, Eye } from "lucide-react";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card } from "@/components/ui/Card";
 import { ListRow } from "@/components/ui/ListRow";
@@ -90,9 +90,10 @@ export default async function DashboardPage() {
       </section>
 
       <section className="flex flex-col gap-2">
-        <SectionLabel>To-dos across projects</SectionLabel>
-        <Banner icon={<Lock size={15} />}>
-          To-dos are <strong>internal</strong> — never shown in the {clientNoun.toLowerCase()} portal.
+        <SectionLabel>Tasks across projects</SectionLabel>
+        <Banner icon={<Eye size={15} />}>
+          Tasks are <strong>private</strong> by default — they appear in the{" "}
+          {clientNoun.toLowerCase()} portal only when assigned to a contact or marked shared.
         </Banner>
         {todoList.length === 0 ? (
           <EmptyState glyph="✅" title="Nothing on the list." />

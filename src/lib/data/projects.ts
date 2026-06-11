@@ -71,7 +71,7 @@ export async function getProjectDetail(id: string) {
         .order("created_at", { ascending: false }),
       supabase
         .from("todos")
-        .select("id, body, due_date, done")
+        .select("id, body, due_date, done, completed_at, is_shared, owner_contact_id")
         .eq("project_id", id)
         .order("done", { ascending: true })
         .order("due_date", { ascending: true, nullsFirst: false }),

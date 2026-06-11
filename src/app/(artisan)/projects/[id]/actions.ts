@@ -92,10 +92,31 @@ export async function setAttachmentShared(projectId: string, attachmentId: strin
   revalidatePath(`/projects/${projectId}`);
 }
 
-/** Check/uncheck a to-do. */
+/** Check/uncheck a task; stamp/clear the completion time. */
 export async function toggleTodo(projectId: string, todoId: string, done: boolean) {
   const supabase = await createClient();
-  await supabase.from("todos").update({ done }).eq("id", todoId);
+  await supabase
+    .from("todos")
+    .update({ done, completed_at: done ? new Date().toISOString() : null })
+    .eq("id", todoId);
+  revalidatePath(`/projects/${projectId}`);
+}
+
+/** Assign a task to a project contact (null = unassigned / your side). */
+export async function setTodoOwner(
+  projectId: string,
+  todoId: string,
+  ownerContactId: string | null
+) {
+  const supabase = await createClient();
+  await supabase.from("todos").update({ owner_contact_id: ownerContactId || null }).eq("id", todoId);
+  revalidatePath(`/projects/${projectId}`);
+}
+
+/** Toggle whether a task is visible to the customer. */
+export async function setTodoShared(projectId: string, todoId: string, shared: boolean) {
+  const supabase = await createClient();
+  await supabase.from("todos").update({ is_shared: shared }).eq("id", todoId);
   revalidatePath(`/projects/${projectId}`);
 }
 
@@ -122,8 +143,14 @@ export async function detachContact(projectId: string, contactId: string) {
   revalidatePath(`/projects/${projectId}`);
 }
 
-/** Add an internal to-do to the project. */
-export async function addTodo(projectId: string, body: string, dueDate: string | null) {
+/** Add a task to the project, optionally assigned to a contact and/or shared. */
+export async function addTodo(
+  projectId: string,
+  body: string,
+  dueDate: string | null,
+  ownerContactId: string | null,
+  isShared: boolean
+) {
   const text = body.trim();
   if (!text) return;
   const ctx = await getOrgContext();
@@ -134,6 +161,8 @@ export async function addTodo(projectId: string, body: string, dueDate: string |
     project_id: projectId,
     body: text,
     due_date: dueDate || null,
+    owner_contact_id: ownerContactId || null,
+    is_shared: isShared,
   });
   revalidatePath(`/projects/${projectId}`);
 }
