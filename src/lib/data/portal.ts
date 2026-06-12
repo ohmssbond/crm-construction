@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { one } from "./rel";
 import { monogram } from "./format";
 import { withAttachmentUrls } from "./attachments";
+import { DEFAULT_TIMEZONE } from "@/lib/timezones";
 
 export type PortalContext = {
   accent: string;
@@ -83,7 +84,7 @@ export async function getPortalProject(id: string) {
     .maybeSingle();
   if (!project) return null;
 
-  const [updates, attachments, tasks, fileCategories] = await Promise.all([
+  const [updates, attachments, tasks, fileCategories, org] = await Promise.all([
     supabase
       .from("status_updates")
       .select("id, body, created_at, is_shared")
@@ -108,6 +109,12 @@ export async function getPortalProject(id: string) {
       .from("file_categories")
       .select("key, label")
       .eq("organization_id", project.organization_id),
+    // Org display timezone; contact_read RLS permits reading the org row.
+    supabase
+      .from("organizations")
+      .select("timezone")
+      .eq("id", project.organization_id)
+      .maybeSingle(),
   ]);
 
   return {
@@ -116,5 +123,6 @@ export async function getPortalProject(id: string) {
     attachments: await withAttachmentUrls(supabase, attachments.data ?? []),
     tasks: tasks.data ?? [],
     fileCategories: fileCategories.data ?? [],
+    timezone: org.data?.timezone ?? DEFAULT_TIMEZONE,
   };
 }
