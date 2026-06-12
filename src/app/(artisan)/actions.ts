@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/data/org";
 import { sendEmail, appUrl, inviteEmailHtml } from "@/lib/email";
+import { DEFAULT_TIMEZONE, isValidTimezone } from "@/lib/timezones";
 
 export type FormState = { error: string | null };
 export type InviteResult = { error: string | null; emailed: boolean };
@@ -306,6 +307,8 @@ export async function updateBranding(
   const color = str(fd, "primary_color");
   const memberNoun = str(fd, "member_noun");
   const clientNoun = str(fd, "client_noun");
+  const tzRaw = str(fd, "timezone");
+  const timezone = isValidTimezone(tzRaw) ? tzRaw : DEFAULT_TIMEZONE;
 
   if (!name) return { error: "Business name is required.", saved: false };
   if (!HEX.test(color)) return { error: "Pick a valid color (e.g. #199DB7).", saved: false };
@@ -314,7 +317,7 @@ export async function updateBranding(
   const supabase = await createClient();
   const { error } = await supabase
     .from("organizations")
-    .update({ name, primary_color: color, member_noun: memberNoun, client_noun: clientNoun })
+    .update({ name, primary_color: color, member_noun: memberNoun, client_noun: clientNoun, timezone })
     .eq("id", ctx.org.id);
   if (error) return { error: error.message, saved: false };
 
