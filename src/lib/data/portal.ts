@@ -78,12 +78,12 @@ export async function getPortalProject(id: string) {
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, name, stage, customer:customers(name)")
+    .select("id, name, stage, organization_id, customer:customers(name)")
     .eq("id", id)
     .maybeSingle();
   if (!project) return null;
 
-  const [updates, attachments, tasks] = await Promise.all([
+  const [updates, attachments, tasks, fileCategories] = await Promise.all([
     supabase
       .from("status_updates")
       .select("id, body, created_at, is_shared")
@@ -92,7 +92,7 @@ export async function getPortalProject(id: string) {
       .order("created_at", { ascending: false }),
     supabase
       .from("attachments")
-      .select("id, filename, category, kind, url, is_shared, storage_path")
+      .select("id, filename, category, kind, url, is_shared, storage_path, created_at")
       .eq("project_id", id)
       .eq("is_shared", true)
       .order("created_at", { ascending: false }),
@@ -103,6 +103,11 @@ export async function getPortalProject(id: string) {
       .eq("project_id", id)
       .order("done", { ascending: true })
       .order("due_date", { ascending: true, nullsFirst: false }),
+    // Category labels for grouping the files view; contact_read RLS permits this.
+    supabase
+      .from("file_categories")
+      .select("key, label")
+      .eq("organization_id", project.organization_id),
   ]);
 
   return {
@@ -110,5 +115,6 @@ export async function getPortalProject(id: string) {
     updates: updates.data ?? [],
     attachments: await withAttachmentUrls(supabase, attachments.data ?? []),
     tasks: tasks.data ?? [],
+    fileCategories: fileCategories.data ?? [],
   };
 }

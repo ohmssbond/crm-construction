@@ -83,7 +83,7 @@ export async function getProjectDetail(id: string) {
         .eq("project_id", id),
       supabase
         .from("attachments")
-        .select("id, filename, category, kind, url, is_shared, storage_path")
+        .select("id, filename, category, kind, url, is_shared, storage_path, created_at")
         .eq("project_id", id)
         .order("created_at", { ascending: false }),
       supabase

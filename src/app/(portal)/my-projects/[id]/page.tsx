@@ -6,6 +6,7 @@ import { UpdateCard } from "@/components/ui/UpdateCard";
 import { FileTile } from "@/components/ui/FileTile";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getPortalProject } from "@/lib/data/portal";
+import { groupAttachmentsByType } from "@/lib/data/attachments";
 import { fmtDate, fmtDateTime } from "@/lib/data/format";
 
 // Glyph + tile color per file category, with a sensible fallback.
@@ -29,7 +30,7 @@ export default async function PortalProjectPage({
   const detail = await getPortalProject(id);
   if (!detail) notFound();
 
-  const { project, updates, attachments, tasks } = detail;
+  const { project, updates, attachments, tasks, fileCategories } = detail;
 
   return (
     <div className="flex flex-col gap-5">
@@ -65,23 +66,32 @@ export default async function PortalProjectPage({
               attachments.length === 0 ? (
                 <EmptyState glyph="🗂" title="No files shared yet." />
               ) : (
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                  {attachments.map((a) => {
-                    const style =
-                      a.kind === "link"
-                        ? { glyph: "🔗", bg: "#6a7c8a" }
-                        : FILE_STYLE[a.category] ?? FILE_FALLBACK;
-                    return (
-                      <FileTile
-                        key={a.id}
-                        name={a.filename ?? a.url ?? "Link"}
-                        glyph={style.glyph}
-                        bg={style.bg}
-                        readOnly
-                        href={a.href}
-                      />
-                    );
-                  })}
+                <div className="flex flex-col gap-4">
+                  {groupAttachmentsByType(attachments, fileCategories).map((group) => (
+                    <div key={group.key} className="flex flex-col gap-2">
+                      <h4 className="text-meta font-semibold text-faint">
+                        {group.label} ({group.items.length})
+                      </h4>
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        {group.items.map((a) => {
+                          const style =
+                            a.kind === "link"
+                              ? { glyph: "🔗", bg: "#6a7c8a" }
+                              : FILE_STYLE[a.category] ?? FILE_FALLBACK;
+                          return (
+                            <FileTile
+                              key={a.id}
+                              name={a.filename ?? a.url ?? "Link"}
+                              glyph={style.glyph}
+                              bg={style.bg}
+                              readOnly
+                              href={a.href}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ),
           },

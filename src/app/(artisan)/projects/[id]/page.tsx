@@ -13,6 +13,7 @@ import { FileTile } from "@/components/ui/FileTile";
 import { Banner } from "@/components/ui/Banner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getProjectDetail } from "@/lib/data/projects";
+import { groupAttachmentsByType } from "@/lib/data/attachments";
 import { getOrgContext } from "@/lib/data/org";
 import { fmtDate, fmtDateTime, contactName } from "@/lib/data/format";
 import { UploadForm } from "./UploadForm";
@@ -116,24 +117,33 @@ export default async function ProjectDetailPage({
                 {attachments.length === 0 ? (
                   <EmptyState glyph="🗂" title="No files yet." />
                 ) : (
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    {attachments.map((a) => {
-                      const style =
-                        a.kind === "link"
-                          ? { glyph: "🔗", bg: "#6a7c8a" }
-                          : FILE_STYLE[a.category] ?? FILE_FALLBACK;
-                      return (
-                        <FileTile
-                          key={a.id}
-                          name={a.filename ?? a.url ?? "Link"}
-                          glyph={style.glyph}
-                          bg={style.bg}
-                          shared={a.is_shared}
-                          href={a.href}
-                          shareAction={setAttachmentShared.bind(null, project.id, a.id)}
-                        />
-                      );
-                    })}
+                  <div className="flex flex-col gap-4">
+                    {groupAttachmentsByType(attachments, fileCategories).map((group) => (
+                      <div key={group.key} className="flex flex-col gap-2">
+                        <h4 className="text-meta font-semibold text-faint">
+                          {group.label} ({group.items.length})
+                        </h4>
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                          {group.items.map((a) => {
+                            const style =
+                              a.kind === "link"
+                                ? { glyph: "🔗", bg: "#6a7c8a" }
+                                : FILE_STYLE[a.category] ?? FILE_FALLBACK;
+                            return (
+                              <FileTile
+                                key={a.id}
+                                name={a.filename ?? a.url ?? "Link"}
+                                glyph={style.glyph}
+                                bg={style.bg}
+                                shared={a.is_shared}
+                                href={a.href}
+                                shareAction={setAttachmentShared.bind(null, project.id, a.id)}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
