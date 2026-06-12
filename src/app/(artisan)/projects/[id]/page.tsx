@@ -15,7 +15,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { getProjectDetail } from "@/lib/data/projects";
 import { groupAttachmentsByType } from "@/lib/data/attachments";
 import { getOrgContext } from "@/lib/data/org";
-import { fmtDate, fmtDateTime, contactName } from "@/lib/data/format";
+import { fmtDate, fmtDateTime, fmtZonedDate, contactName } from "@/lib/data/format";
+import { DEFAULT_TIMEZONE } from "@/lib/timezones";
 import { UploadForm } from "./UploadForm";
 import { LinkForm } from "./LinkForm";
 import { StageControl } from "./StageControl";
@@ -62,6 +63,7 @@ export default async function ProjectDetailPage({
   const clientNoun = ctx?.org.client_noun ?? "Customer";
   const taskContacts = contacts.map((c) => ({ id: c.id, name: contactName(c) }));
   const artisanLabel = `${ctx?.user.name ?? "Artisan"} (you)`;
+  const timezone = ctx?.org.timezone ?? DEFAULT_TIMEZONE;
 
   return (
     <div className="flex flex-col gap-5">
@@ -94,7 +96,7 @@ export default async function ProjectDetailPage({
                   updates.map((u) => (
                     <UpdateCard
                       key={u.id}
-                      when={fmtDateTime(u.created_at)}
+                      when={fmtDateTime(u.created_at, timezone)}
                       body={u.body}
                       shared={u.is_shared}
                       shareAction={setUpdateShared.bind(null, project.id, u.id)}
@@ -174,9 +176,7 @@ export default async function ProjectDetailPage({
                         due={fmtDate(t.due_date) ?? undefined}
                         done={t.done}
                         completed={
-                          t.completed_at
-                            ? fmtDate(String(t.completed_at).slice(0, 10)) ?? undefined
-                            : undefined
+                          t.completed_at ? fmtZonedDate(String(t.completed_at), timezone) : undefined
                         }
                         owner={t.owner_contact_id}
                         shared={t.is_shared}

@@ -30,15 +30,20 @@ export function fmtDate(iso: string | null): string | null {
   return `${month} ${d}`;
 }
 
-/** ISO timestamp → "Jun 2 · 4:10pm". */
-export function fmtDateTime(iso: string): string {
+/** ISO timestamp → "Jun 2 · 4:10pm", rendered in `timeZone` (IANA id). */
+export function fmtDateTime(iso: string, timeZone: string): string {
   const dt = new Date(iso);
-  const date = dt.toLocaleString("en-US", { month: "short", day: "numeric" });
+  const date = dt.toLocaleString("en-US", { month: "short", day: "numeric", timeZone });
   const time = dt
-    .toLocaleString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
-    .replace(" ", "")
+    .toLocaleString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone })
+    .replace(/\s/g, "")
     .toLowerCase();
   return `${date} · ${time}`;
+}
+
+/** ISO timestamp → "Jun 12": the calendar date in `timeZone` (for completed-at). */
+export function fmtZonedDate(iso: string, timeZone: string): string {
+  return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", timeZone });
 }
 
 /** The right-hand date line for a project row, by stage. */

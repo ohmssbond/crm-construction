@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Field, fieldInput, FormError } from "@/components/ui/Field";
 import { updateBranding, type BrandingState } from "../actions";
+import { TIMEZONES } from "@/lib/timezones";
 
 const initial: BrandingState = { error: null, saved: false };
 const PRESETS = ["#2f6f5e", "#199DB7", "#6d5ae6", "#c2410c", "#0f766e", "#be123c"];
@@ -17,6 +18,7 @@ export function BrandingForm({
     primary_color: string;
     member_noun: string;
     client_noun: string;
+    timezone: string;
   };
 }) {
   const [state, formAction, pending] = useActionState(updateBranding, initial);
@@ -84,6 +86,16 @@ export function BrandingForm({
             <input name="client_noun" required defaultValue={defaults.client_noun} className={fieldInput} />
           </Field>
         </div>
+
+        <Field label="Timezone" required>
+          <select name="timezone" defaultValue={defaults.timezone} className={fieldInput}>
+            {TIMEZONES.map((tz) => (
+              <option key={tz.value} value={tz.value}>
+                {tz.label}
+              </option>
+            ))}
+          </select>
+        </Field>
       </Card>
 
       <FormError message={state.error} />

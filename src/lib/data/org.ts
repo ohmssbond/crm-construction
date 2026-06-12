@@ -9,6 +9,7 @@ export type OrgContext = {
     primary_color: string;
     member_noun: string;
     client_noun: string;
+    timezone: string;
     /** Two-letter monogram for the brand tile. */
     initials: string;
   };
@@ -46,7 +47,7 @@ export const getOrgContext = cache(async (): Promise<OrgContext | null> => {
 
   const { data } = await supabase
     .from("organization_members")
-    .select("organizations(id, name, primary_color, member_noun, client_noun)")
+    .select("organizations(id, name, primary_color, member_noun, client_noun, timezone)")
     .eq("user_id", user.id)
     .limit(1)
     .maybeSingle();

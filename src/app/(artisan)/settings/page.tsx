@@ -23,6 +23,7 @@ export default async function SettingsPage() {
               primary_color: ctx.org.primary_color,
               member_noun: ctx.org.member_noun,
               client_noun: ctx.org.client_noun,
+              timezone: ctx.org.timezone,
             }}
           />
         </section>

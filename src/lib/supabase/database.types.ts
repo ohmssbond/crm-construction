@@ -330,6 +330,7 @@ export type Database = {
           member_noun: string
           name: string
           primary_color: string
+          timezone: string
         }
         Insert: {
           client_noun?: string
@@ -338,6 +339,7 @@ export type Database = {
           member_noun?: string
           name: string
           primary_color?: string
+          timezone?: string
         }
         Update: {
           client_noun?: string
@@ -346,6 +348,7 @@ export type Database = {
           member_noun?: string
           name?: string
           primary_color?: string
+          timezone?: string
         }
         Relationships: []
       }
