@@ -32,4 +32,7 @@ _Open questions / notes:_
          - public (can be seen all in project) or private (just for the person making the "to-do")
          - change name from "to-dos" to "tasks"
 
- 
+## 6. Photos & Files listed by type, ordered by date uploaded ✅ shipped
+  Completed: Jun 12, 2026
+  Group attachments into type sections (artisan + portal), ordered alphabetically
+  by category label, newest upload first within each group.
