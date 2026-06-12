@@ -8,6 +8,7 @@ import { ShareToggle } from "@/components/ui/ShareToggle";
 export function TodoComposer({
   action,
   contacts,
+  artisanLabel,
 }: {
   action: (
     body: string,
@@ -16,6 +17,7 @@ export function TodoComposer({
     shared: boolean
   ) => Promise<void>;
   contacts: { id: string; name: string }[];
+  artisanLabel: string;
 }) {
   const [body, setBody] = useState("");
   const [due, setDue] = useState("");
@@ -61,7 +63,7 @@ export function TodoComposer({
         aria-label="Assign to"
         className={`${fieldInput} max-w-[160px]`}
       >
-        <option value="">Unassigned</option>
+        <option value="">{artisanLabel}</option>
         {contacts.map((c) => (
           <option key={c.id} value={c.id}>
             {c.name}

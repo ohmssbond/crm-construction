@@ -12,6 +12,7 @@ export function TaskRow({
   owner: ownerDefault,
   shared,
   contacts,
+  artisanLabel,
   toggleAction,
   ownerAction,
   shareAction,
@@ -23,6 +24,7 @@ export function TaskRow({
   owner: string | null;
   shared: boolean;
   contacts: { id: string; name: string }[];
+  artisanLabel: string;
   toggleAction: (done: boolean) => Promise<void>;
   ownerAction: (owner: string | null) => Promise<void>;
   shareAction: (shared: boolean) => Promise<void>;
@@ -65,7 +67,7 @@ export function TaskRow({
         aria-label="Owner"
         className={`${fieldInput} max-w-[150px] text-meta py-[5px]`}
       >
-        <option value="">Unassigned</option>
+        <option value="">{artisanLabel}</option>
         {contacts.map((c) => (
           <option key={c.id} value={c.id}>
             {c.name}

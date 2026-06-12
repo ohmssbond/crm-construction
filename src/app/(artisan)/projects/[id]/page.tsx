@@ -61,6 +61,7 @@ export default async function ProjectDetailPage({
     detail;
   const clientNoun = ctx?.org.client_noun ?? "Customer";
   const taskContacts = contacts.map((c) => ({ id: c.id, name: contactName(c) }));
+  const artisanLabel = `${ctx?.user.name ?? "Artisan"} (you)`;
 
   return (
     <div className="flex flex-col gap-5">
@@ -157,7 +158,11 @@ export default async function ProjectDetailPage({
                   Tasks are <strong>private</strong> by default. Assign one to a{" "}
                   {clientNoun.toLowerCase()} or mark it shared to show it in their portal.
                 </Banner>
-                <TodoComposer action={addTodo.bind(null, project.id)} contacts={taskContacts} />
+                <TodoComposer
+                  action={addTodo.bind(null, project.id)}
+                  contacts={taskContacts}
+                  artisanLabel={artisanLabel}
+                />
                 {todos.length === 0 ? (
                   <EmptyState glyph="✅" title="No tasks yet." />
                 ) : (
@@ -176,6 +181,7 @@ export default async function ProjectDetailPage({
                         owner={t.owner_contact_id}
                         shared={t.is_shared}
                         contacts={taskContacts}
+                        artisanLabel={artisanLabel}
                         toggleAction={toggleTodo.bind(null, project.id, t.id)}
                         ownerAction={setTodoOwner.bind(null, project.id, t.id)}
                         shareAction={setTodoShared.bind(null, project.id, t.id)}
