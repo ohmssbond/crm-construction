@@ -42,3 +42,43 @@ export async function withAttachmentUrls<T extends AttachmentRef>(
           : null,
   }));
 }
+
+type Categorized = { category: string };
+type CategoryRef = { key: string; label: string };
+
+/**
+ * Groups attachments by their category for display. Builds a group only for
+ * categories present in `attachments` (empty categories are omitted), resolves
+ * each group's display `label` from `categories` (falling back to the raw key),
+ * and returns the groups ordered alphabetically by label. Item order within a
+ * group is preserved from the input — callers pass attachments already sorted
+ * newest-first, so groups inherit that order.
+ */
+export function groupAttachmentsByType<T extends Categorized>(
+  attachments: T[],
+  categories: CategoryRef[]
+): { key: string; label: string; items: T[] }[] {
+  const labelByKey = new Map(categories.map((c) => [c.key, c.label]));
+  const order: string[] = [];
+  const byKey = new Map<string, T[]>();
+
+  for (const a of attachments) {
+    let bucket = byKey.get(a.category);
+    if (!bucket) {
+      bucket = [];
+      byKey.set(a.category, bucket);
+      order.push(a.category);
+    }
+    bucket.push(a);
+  }
+
+  return order
+    .map((key) => ({
+      key,
+      label: labelByKey.get(key) ?? key,
+      items: byKey.get(key) as T[],
+    }))
+    .sort((x, y) =>
+      x.label.localeCompare(y.label, undefined, { sensitivity: "base" })
+    );
+}
