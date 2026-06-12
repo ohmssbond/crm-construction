@@ -7,7 +7,7 @@ import { FileTile } from "@/components/ui/FileTile";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getPortalProject } from "@/lib/data/portal";
 import { groupAttachmentsByType } from "@/lib/data/attachments";
-import { fmtDate, fmtDateTime } from "@/lib/data/format";
+import { fmtDate, fmtDateTime, fmtZonedDate } from "@/lib/data/format";
 
 // Glyph + tile color per file category, with a sensible fallback.
 const FILE_STYLE: Record<string, { glyph: string; bg: string }> = {
@@ -30,7 +30,7 @@ export default async function PortalProjectPage({
   const detail = await getPortalProject(id);
   if (!detail) notFound();
 
-  const { project, updates, attachments, tasks, fileCategories } = detail;
+  const { project, updates, attachments, tasks, fileCategories, timezone } = detail;
 
   return (
     <div className="flex flex-col gap-5">
@@ -51,7 +51,7 @@ export default async function PortalProjectPage({
                   updates.map((u) => (
                     <UpdateCard
                       key={u.id}
-                      when={fmtDateTime(u.created_at)}
+                      when={fmtDateTime(u.created_at, timezone)}
                       body={u.body}
                       portal
                     />
@@ -120,7 +120,7 @@ export default async function PortalProjectPage({
                       <span className="text-meta text-faint">
                         {t.done
                           ? t.completed_at
-                            ? `done ${fmtDate(String(t.completed_at).slice(0, 10))}`
+                            ? `done ${fmtZonedDate(String(t.completed_at), timezone)}`
                             : "done"
                           : t.due_date
                             ? `due ${fmtDate(t.due_date)}`
