@@ -7,7 +7,8 @@ the bottom with the next number — keep each short, enough to capture the inten
 
 ---
 
-## 1. Tasks should have owners 💡
+## 1. Tasks should have owners ✅ shipped
+  Completed: Jun 11, 2026
 To-dos (tasks) should have an **owner**.
 
 - **Default** the owner to the **person entering the task** (the team member creating it).
@@ -27,10 +28,13 @@ _Open questions / notes:_
 
 ## 4. New contact type - employee or team member.  This is an employee of the artisan who is not a partner or customer.  
 
-## 5. Tasks/To-dos records:
+## 5. Tasks/To-dos records: ✅ shipped
 	 - display the date they were completed
-         - public (can be seen all in project) or private (just for the person making the "to-do")
+         - public (can be seen all in project) or private (not just for the person making the "to-do")
          - change name from "to-dos" to "tasks"
+   Completed: June 12th 2026
+   New: add the consultant owner to the pull down list of people to assign tasks ✅ shipped
+     Completed: Jun 12, 2026 — artisan replaces "Unassigned" as the first/default task owner option.
 
 ## 6. Photos & Files listed by type, ordered by date uploaded ✅ shipped
   Completed: Jun 12, 2026
