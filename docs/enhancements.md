@@ -22,6 +22,14 @@ _Open questions / notes:_
 
 ## 2. Sign-in should have a generic branding.  Right now it is always defaulting to JH 💡
 
-## 3. Owners can set their colors 💡
+## 3. Owners can set their colors ✅ shipped
+  Completed: Jun 11, 2026
 
 ## 4. New contact type - employee or team member.  This is an employee of the artisan who is not a partner or customer.  
+
+## 5. Tasks/To-dos records:
+	 - display the date they were completed
+         - public (can be seen all in project) or private (just for the person making the "to-do")
+         - change name from "to-dos" to "tasks"
+
+ 
