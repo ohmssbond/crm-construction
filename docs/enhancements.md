@@ -33,10 +33,17 @@ _Open questions / notes:_
          - public (can be seen all in project) or private (not just for the person making the "to-do")
          - change name from "to-dos" to "tasks"
    Completed: June 12th 2026
-   New: add the consultant owner to the pull down list of people to assign tasks ✅ shipped
+          - add the consultant owner to the pull down list of people to assign tasks ✅ shipped
      Completed: Jun 12, 2026 — artisan replaces "Unassigned" as the first/default task owner option.
 
 ## 6. Photos & Files listed by type, ordered by date uploaded ✅ shipped
   Completed: Jun 12, 2026
   Group attachments into type sections (artisan + portal), ordered alphabetically
   by category label, newest upload first within each group.
+
+## 7. Time in the app.  Currently all time is tracked at UT.  But, it should be an attribute of the artisan what time zone they are in and then all the dates recorded should reflect that time zone. ✅ shipped
+  Completed: Jun 12, 2026
+  Per-workspace (org-level) timezone, editable in Settings (curated US zones).
+  Timestamps render in that zone on artisan + portal; storage stays UTC; calendar
+  dates (due/start/end) don't shift.
+
