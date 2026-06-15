@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { getSessionRole, roleFromClaims } from "@/lib/auth";
+import { productRole, isContact, resolveHome } from "@/lib/auth";
 
 // Next.js 16 renamed the `middleware` convention to `proxy`. Same job:
 // run before routes render. Here it refreshes the Supabase session and
@@ -17,6 +17,7 @@ const ENFORCE_AUTH = true;
 // Route ownership per world — used for the artisan↔contact separation.
 const PORTAL_PREFIXES = ["/my-projects", "/account"];
 const ARTISAN_PREFIXES = ["/dashboard", "/projects", "/customers", "/contacts", "/settings"];
+const WORKER_PREFIXES = ["/log"];
 
 const matches = (pathname: string, prefixes: string[]) =>
   prefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
@@ -59,15 +60,14 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // Role: prefer the fresh JWT claim from the access-token hook; fall back to
-  // app_metadata for tokens minted before the hook was enabled.
+  // Per-product roles from the access-token hook's `roles` claim.
   const { data: claimsData } = await supabase.auth.getClaims();
   const claims = claimsData?.claims as Record<string, unknown> | undefined;
 
-  // The contact portal home; everyone else (artisan, or unstamped) lands on the
-  // artisan dashboard.
-  const role = roleFromClaims(claims) ?? getSessionRole(user);
-  const home = role === "contact" ? "/my-projects" : "/dashboard";
+  const hasCrm = !!productRole(claims, "crm");
+  const isWorker = productRole(claims, "timebilling") === "worker";
+  const contact = isContact(claims);
+  const home = resolveHome(claims);
 
   // Unauthenticated → only public routes; everything else bounces to login.
   if (!user) {
@@ -77,9 +77,10 @@ export async function proxy(request: NextRequest) {
   // Authenticated users have no business on the login screen or bare root.
   if (pathname === "/" || pathname === "/login") return go(home);
 
-  // World separation: keep each role inside its own surface.
-  if (role === "contact" && matches(pathname, ARTISAN_PREFIXES)) return go("/my-projects");
-  if (role === "artisan" && matches(pathname, PORTAL_PREFIXES)) return go("/dashboard");
+  // World separation: keep each surface to the role that owns it.
+  if (!hasCrm && matches(pathname, ARTISAN_PREFIXES)) return go(home);
+  if (!contact && matches(pathname, PORTAL_PREFIXES)) return go(home);
+  if (!isWorker && matches(pathname, WORKER_PREFIXES)) return go(home);
 
   return response;
 }

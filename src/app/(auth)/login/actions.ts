@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getSessionRole, roleFromClaims } from "@/lib/auth";
+import { resolveHome } from "@/lib/auth";
 
 export type LoginState = { error: string | null };
 
@@ -39,20 +39,7 @@ export async function login(
 
   const { data: claimsData } = await supabase.auth.getClaims();
   const claims = claimsData?.claims as Record<string, unknown> | undefined;
-  const role = roleFromClaims(claims) ?? getSessionRole(data.user);
-  let dest = role === "contact" ? "/my-projects" : role === "artisan" ? "/dashboard" : null;
-
-  if (!dest) {
-    const { data: membership } = await supabase
-      .from("memberships")
-      .select("organization_id")
-      .eq("user_id", data.user.id)
-      .eq("product", "crm")
-      .limit(1)
-      .maybeSingle();
-    dest = membership ? "/dashboard" : "/my-projects";
-  }
 
   // redirect() throws a control-flow exception — must be outside any try/catch.
-  redirect(dest);
+  redirect(resolveHome(claims));
 }
