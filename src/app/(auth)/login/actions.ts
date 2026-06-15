@@ -14,7 +14,7 @@ export type LoginState = { error: string | null };
  * Destination follows the role stamped into `app_metadata` (artisan →
  * /dashboard, contact → /my-projects). As a fallback for any not-yet-stamped
  * user, we resolve it from membership — the SECURITY DEFINER RLS helpers let a
- * freshly signed-in user read their own `organization_members` row.
+ * freshly signed-in user read their own `memberships` row.
  */
 export async function login(
   _prev: LoginState,
@@ -44,9 +44,10 @@ export async function login(
 
   if (!dest) {
     const { data: membership } = await supabase
-      .from("organization_members")
+      .from("memberships")
       .select("organization_id")
       .eq("user_id", data.user.id)
+      .eq("product", "crm")
       .limit(1)
       .maybeSingle();
     dest = membership ? "/dashboard" : "/my-projects";

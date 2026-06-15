@@ -8,7 +8,7 @@ function asRole(value: unknown): SessionRole {
 
 /**
  * Role from the JWT custom claim stamped by the `custom_access_token_hook`
- * (derived live from organization_members / contacts at token time). This is the
+ * (derived live from memberships / contacts at token time). This is the
  * source of truth once the hook is registered.
  */
 export function roleFromClaims(

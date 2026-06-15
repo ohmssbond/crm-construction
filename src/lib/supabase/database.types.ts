@@ -293,28 +293,60 @@ export type Database = {
           },
         ]
       }
-      organization_members: {
+      memberships: {
         Row: {
           created_at: string
           organization_id: string
+          product: string
           role: string
           user_id: string
         }
         Insert: {
           created_at?: string
           organization_id: string
-          role?: string
+          product: string
+          role: string
           user_id: string
         }
         Update: {
           created_at?: string
           organization_id?: string
+          product?: string
           role?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "organization_members_organization_id_fkey"
+            foreignKeyName: "memberships_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_products: {
+        Row: {
+          created_at: string
+          organization_id: string
+          product: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          organization_id: string
+          product: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          organization_id?: string
+          product?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_products_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"

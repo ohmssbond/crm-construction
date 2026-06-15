@@ -18,7 +18,7 @@ export async function listTenants(): Promise<TenantRow[]> {
 
   const [orgsRes, membersRes, usersRes] = await Promise.all([
     admin.from("organizations").select("id, name").order("name"),
-    admin.from("organization_members").select("organization_id, user_id, role"),
+    admin.from("memberships").select("organization_id, user_id, role").eq("product", "crm"),
     admin.auth.admin.listUsers({ perPage: 200 }),
   ]);
 
