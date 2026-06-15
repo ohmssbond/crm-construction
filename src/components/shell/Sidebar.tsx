@@ -24,11 +24,13 @@ export function Sidebar({
   brand: brandProp,
   user: userProp,
   clientNoun,
+  showTimeLink,
 }: {
   world: World;
   brand?: Brand;
   user?: ShellUser;
   clientNoun?: string;
+  showTimeLink?: boolean;
 }) {
   const pathname = usePathname() ?? "/";
   const nav = navFor(world);
@@ -68,6 +70,14 @@ export function Sidebar({
             </Link>
           );
         })}
+        {showTimeLink && (
+          <Link
+            href="/log"
+            className="flex items-center gap-2 px-3 py-2 rounded-control text-meta text-muted hover:text-text"
+          >
+            Time logging
+          </Link>
+        )}
       </nav>
 
       {/* Account footer */}
