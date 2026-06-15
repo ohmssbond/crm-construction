@@ -55,3 +55,17 @@ _Open questions / notes:_
   allowlist. Smallest first cut — create/delete/branding/audit deferred.
   Follow-ups: generic action error messages; paginate listUsers beyond 200.
 
+## 9. Multi-product platform foundation (CRM + Time & Billing) — Foundation ✅ shipped
+  Completed: Jun 15, 2026
+  Shared core for running two products on one tenant/login. Direction:
+  `docs/superpowers/specs/2026-06-15-platform-architecture-design.md`;
+  T&B PRD: `docs/timeandbilling~PRD.md`.
+  - 1a: unified per-product `memberships` + `organization_products` entitlements;
+    migrated the access-token hook + `is_org_member` (CRM behavior preserved).
+  - 1b: product-aware routing by the `roles` claim; org-entitlement gates with a
+    friendly "not enabled" page; dedicated minimal worker `/log` shell + CRM
+    cross-link; per-tenant product toggles in `/admin`; dropped the `user_role` claim.
+  Live-verified: worker -> /log, artisan/contact unchanged, admin toggles work.
+  Remaining slices (later): shared customers -> jobs + materials catalog -> time
+  tracking -> materials/attachments -> pre-invoice -> export -> QBO import.
+
