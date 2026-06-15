@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/Card";
 import { requireSuperAdmin } from "@/lib/auth-admin";
 import { listTenants } from "@/lib/data/tenants";
 import { ChangeEmailForm } from "./ChangeEmailForm";
+import { ProductToggles } from "./ProductToggles";
 import { ResetPasswordButton } from "./ResetPasswordButton";
 
 export default async function AdminTenantsPage() {
@@ -19,14 +20,17 @@ export default async function AdminTenantsPage() {
             <div className="text-body font-semibold">{t.name}</div>
             <div className="text-meta text-faint">{t.email ?? "— no login —"}</div>
           </div>
-          {t.userId ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <ChangeEmailForm userId={t.userId} currentEmail={t.email ?? ""} />
-              <ResetPasswordButton userId={t.userId} />
-            </div>
-          ) : (
-            <span className="text-meta text-faint">No owner login</span>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            <ProductToggles orgId={t.orgId} products={t.products} />
+            {t.userId ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <ChangeEmailForm userId={t.userId} currentEmail={t.email ?? ""} />
+                <ResetPasswordButton userId={t.userId} />
+              </div>
+            ) : (
+              <span className="text-meta text-faint">No owner login</span>
+            )}
+          </div>
         </div>
       ))}
     </Card>

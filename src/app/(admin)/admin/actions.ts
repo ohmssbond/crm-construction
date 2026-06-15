@@ -52,3 +52,24 @@ export async function resetTenantPassword(userId: string): Promise<ResetResult> 
 
   return { error: null, password };
 }
+
+export async function setTenantProduct(
+  orgId: string,
+  product: "crm" | "timebilling",
+  active: boolean
+): Promise<{ error: string | null }> {
+  await requireSuperAdmin();
+  if (!orgId) return { error: "Missing tenant." };
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("organization_products")
+    .upsert(
+      { organization_id: orgId, product, status: active ? "active" : "inactive" },
+      { onConflict: "organization_id,product" }
+    );
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin");
+  return { error: null };
+}

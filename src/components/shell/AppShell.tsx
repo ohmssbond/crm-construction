@@ -18,6 +18,7 @@ export default function AppShell({
   brand,
   user,
   clientNoun,
+  showTimeLink,
   children,
 }: {
   world: World;
@@ -25,6 +26,7 @@ export default function AppShell({
   brand?: Brand;
   user?: ShellUser;
   clientNoun?: string;
+  showTimeLink?: boolean;
   children: ReactNode;
 }) {
   // Theme the subtree from the tenant's brand color. We must override the
@@ -48,7 +50,7 @@ export default function AppShell({
     : undefined;
   return (
     <div data-world={world} style={style} className="min-h-dvh flex bg-bg">
-      <Sidebar world={world} brand={brand} user={user} clientNoun={clientNoun} />
+      <Sidebar world={world} brand={brand} user={user} clientNoun={clientNoun} showTimeLink={showTimeLink} />
       <div className="flex-1 flex flex-col min-w-0">
         <TopBar world={world} clientNoun={clientNoun} />
         <main className="flex-1 overflow-y-auto px-4 py-5 lg:px-6 pb-24 lg:pb-6">

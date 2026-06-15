@@ -5,6 +5,7 @@ export type TenantRow = {
   name: string;
   userId: string | null;
   email: string | null;
+  products: { crm: boolean; timebilling: boolean };
 };
 
 /**
@@ -16,11 +17,20 @@ export type TenantRow = {
 export async function listTenants(): Promise<TenantRow[]> {
   const admin = createAdminClient();
 
-  const [orgsRes, membersRes, usersRes] = await Promise.all([
+  const [orgsRes, membersRes, usersRes, productsRes] = await Promise.all([
     admin.from("organizations").select("id, name").order("name"),
     admin.from("memberships").select("organization_id, user_id, role").eq("product", "crm"),
     admin.auth.admin.listUsers({ perPage: 200 }),
+    admin.from("organization_products").select("organization_id, product, status"),
   ]);
+
+  const activeByOrg = new Map<string, Set<string>>();
+  for (const p of productsRes.data ?? []) {
+    if (p.status !== "active") continue;
+    const set = activeByOrg.get(p.organization_id) ?? new Set<string>();
+    set.add(p.product);
+    activeByOrg.set(p.organization_id, set);
+  }
 
   const emailByUid = new Map(
     (usersRes.data?.users ?? []).map((u) => [u.id, u.email ?? null])
@@ -41,6 +51,10 @@ export async function listTenants(): Promise<TenantRow[]> {
       name: o.name,
       userId: owner?.user_id ?? null,
       email: owner ? emailByUid.get(owner.user_id) ?? null : null,
+      products: {
+        crm: activeByOrg.get(o.id)?.has("crm") ?? false,
+        timebilling: activeByOrg.get(o.id)?.has("timebilling") ?? false,
+      },
     };
   });
 }

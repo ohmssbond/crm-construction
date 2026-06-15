@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getSessionRole, roleFromClaims } from "@/lib/auth";
+import { resolveHome } from "@/lib/auth";
 
 export type LoginState = { error: string | null };
 
@@ -11,10 +11,10 @@ export type LoginState = { error: string | null };
  * the session cookies (allowed here because Server Actions can set cookies);
  * `proxy.ts` keeps them refreshed thereafter.
  *
- * Destination follows the role stamped into `app_metadata` (artisan →
- * /dashboard, contact → /my-projects). As a fallback for any not-yet-stamped
- * user, we resolve it from membership — the SECURITY DEFINER RLS helpers let a
- * freshly signed-in user read their own `memberships` row.
+ * The post-login destination is resolved via `resolveHome`, which reads the
+ * per-product `roles` claim and `contact_id` claim from the JWT (populated
+ * live by the access-token hook from `memberships`): artisan → /dashboard,
+ * worker → /log, contact → /my-projects.
  */
 export async function login(
   _prev: LoginState,
@@ -39,20 +39,7 @@ export async function login(
 
   const { data: claimsData } = await supabase.auth.getClaims();
   const claims = claimsData?.claims as Record<string, unknown> | undefined;
-  const role = roleFromClaims(claims) ?? getSessionRole(data.user);
-  let dest = role === "contact" ? "/my-projects" : role === "artisan" ? "/dashboard" : null;
-
-  if (!dest) {
-    const { data: membership } = await supabase
-      .from("memberships")
-      .select("organization_id")
-      .eq("user_id", data.user.id)
-      .eq("product", "crm")
-      .limit(1)
-      .maybeSingle();
-    dest = membership ? "/dashboard" : "/my-projects";
-  }
 
   // redirect() throws a control-flow exception — must be outside any try/catch.
-  redirect(dest);
+  redirect(resolveHome(claims));
 }

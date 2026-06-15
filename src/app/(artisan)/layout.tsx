@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 import AppShell from "@/components/shell/AppShell";
 import { getOrgContext } from "@/lib/data/org";
+import { NotEnabled } from "@/components/NotEnabled";
+import { orgHasProduct } from "@/lib/data/entitlements";
+import { createClient } from "@/lib/supabase/server";
+import { productRole } from "@/lib/auth";
 
 export default async function ArtisanLayout({
   children,
@@ -14,6 +18,18 @@ export default async function ArtisanLayout({
   if (!ctx) return <AppShell world="artisan">{children}</AppShell>;
 
   const { org, user } = ctx;
+
+  // Org must be entitled to CRM (membership is implied by ctx being non-null).
+  if (!(await orgHasProduct(org.id, "crm"))) return <NotEnabled product="CRM" />;
+
+  const supabase = await createClient();
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const showTimeLink =
+    productRole(
+      claimsData?.claims as Record<string, unknown> | undefined,
+      "timebilling"
+    ) === "worker";
+
   return (
     <AppShell
       world="artisan"
@@ -25,6 +41,7 @@ export default async function ArtisanLayout({
       }}
       user={{ tile: user.initials, name: user.name, email: user.email }}
       clientNoun={org.client_noun}
+      showTimeLink={showTimeLink}
     >
       {children}
     </AppShell>
