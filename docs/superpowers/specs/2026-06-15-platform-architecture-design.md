@@ -23,7 +23,7 @@ foundational changes are cheapest to make now.
 | Product architecture | **One repo, one Supabase project.** Shared core + two product modules gated by per-org entitlements. Separate deploys only if later justified. |
 | Customer sharing | **One shared org-level `customers` entity.** CRM projects and T&B jobs both reference the same customer row — that *is* the connection. No sync. |
 | Entitlements | **Per-org `organization_products`**, toggled in the existing `/admin` console. Real self-serve billing is post-MVP. |
-| Roles | **Per-product roles** — an account can hold any mix across orgs/products (e.g. `crm:artisan` in one org, `timebilling:worker` in another). |
+| Roles | **Per-product roles, single org per account (for now)** — within one org an account can hold any mix of product roles (e.g. `crm:artisan` + `timebilling:admin` in the same org). Multi-org-per-account is deferred. |
 | Worker UX | A **dedicated worker path** (`/log`, subdomain later) into a **minimal shell** — no product nav. A product switcher appears only on admin surfaces for multi-product accounts. |
 | Role-model migration | **Unify now.** Replace CRM's `organization_members` with a unified `memberships(organization_id, user_id, product, role)`. Done while usage is low. |
 | First build | **Time & Billing MVP on the shared core**, starting with the Foundation slice (§9.1). |
@@ -61,7 +61,9 @@ product within an org, with product-scoped roles:
 - `crm`: `owner` | `artisan`
 - `timebilling`: `admin` | `worker`
 
-An account may hold several membership rows (different orgs and/or products).
+An account may hold several membership rows **within a single org** (one per
+product); multi-org-per-account is deferred (see Out of scope), so all of an
+account's memberships share one `organization_id` for now.
 **Portal contacts stay as they are** — `contacts.user_id` + the `contact` role is a
 customer-side concept, not org staff, and is out of scope for the `memberships`
 table. The Supabase **access-token hook** and `proxy.ts` are updated to derive
@@ -120,6 +122,8 @@ Each slice is its own spec → plan → build:
 - Payroll / pay rates (T&B captures hours only).
 - Worker-app PWA/offline beyond the photo upload queue.
 - Separate per-product deployments/subdomains (single app for now).
+- **Multi-org per account** — an account belongs to one org for now (a person
+  serving multiple businesses uses separate logins); revisit when needed.
 
 ## Risks & mitigations
 
