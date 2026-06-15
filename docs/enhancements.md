@@ -47,3 +47,11 @@ _Open questions / notes:_
   Timestamps render in that zone on artisan + portal; storage stays UTC; calendar
   dates (due/start/end) don't shift.
 
+## 8. Admin console for tenant management ✅ shipped
+  Completed: Jun 15, 2026
+  Gated /admin surface (super-admin email allowlist via SUPER_ADMIN_EMAILS) to
+  list tenants, change a tenant's login email, and reset a tenant password (temp
+  shown once). Service-role ops are server-only; every action re-checks the
+  allowlist. Smallest first cut — create/delete/branding/audit deferred.
+  Follow-ups: generic action error messages; paginate listUsers beyond 200.
+
