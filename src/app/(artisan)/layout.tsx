@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import AppShell from "@/components/shell/AppShell";
 import { getOrgContext } from "@/lib/data/org";
+import { NotEnabled } from "@/components/NotEnabled";
+import { orgHasProduct } from "@/lib/data/entitlements";
 
 export default async function ArtisanLayout({
   children,
@@ -14,6 +16,10 @@ export default async function ArtisanLayout({
   if (!ctx) return <AppShell world="artisan">{children}</AppShell>;
 
   const { org, user } = ctx;
+
+  // Org must be entitled to CRM (membership is implied by ctx being non-null).
+  if (!(await orgHasProduct(org.id, "crm"))) return <NotEnabled product="CRM" />;
+
   return (
     <AppShell
       world="artisan"
