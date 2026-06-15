@@ -1,3 +1,5 @@
+// DEPRECATED (Foundation 1a): roles are derived live from `memberships` by the
+// access-token hook; the app no longer reads app_metadata.role. Kept for reference.
 // Stamp app_metadata.role + organization_id onto the artisan logins so the proxy
 // can gate worlds from the JWT (zero DB round-trips). Idempotent; does NOT reset
 // passwords. Run from the project root:  node scripts/stamp-roles.mjs

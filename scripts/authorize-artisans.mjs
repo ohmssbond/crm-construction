@@ -58,10 +58,10 @@ for (const t of targets) {
     status = "existed (password reset)";
   }
   const { error: mErr } = await supabase
-    .from("organization_members")
+    .from("memberships")
     .upsert(
-      { organization_id: t.org, user_id: uid, role: "owner" },
-      { onConflict: "organization_id,user_id" }
+      { organization_id: t.org, user_id: uid, product: "crm", role: "owner" },
+      { onConflict: "organization_id,user_id,product" }
     );
   console.log(
     `  ${t.email}  ->  ${t.name}  [${status}]  membership: ${mErr ? "ERROR " + mErr.message : "ok"}`

@@ -46,9 +46,10 @@ export const getOrgContext = cache(async (): Promise<OrgContext | null> => {
   if (!user) return null;
 
   const { data } = await supabase
-    .from("organization_members")
+    .from("memberships")
     .select("organizations(id, name, primary_color, member_noun, client_noun, timezone)")
     .eq("user_id", user.id)
+    .eq("product", "crm")
     .limit(1)
     .maybeSingle();
 
