@@ -11,10 +11,10 @@ export type LoginState = { error: string | null };
  * the session cookies (allowed here because Server Actions can set cookies);
  * `proxy.ts` keeps them refreshed thereafter.
  *
- * Destination follows the role stamped into `app_metadata` (artisan →
- * /dashboard, contact → /my-projects). As a fallback for any not-yet-stamped
- * user, we resolve it from membership — the SECURITY DEFINER RLS helpers let a
- * freshly signed-in user read their own `memberships` row.
+ * The post-login destination is resolved via `resolveHome`, which reads the
+ * per-product `roles` claim and `contact_id` claim from the JWT (populated
+ * live by the access-token hook from `memberships`): artisan → /dashboard,
+ * worker → /log, contact → /my-projects.
  */
 export async function login(
   _prev: LoginState,

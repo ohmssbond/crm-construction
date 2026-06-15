@@ -10,8 +10,8 @@ import { productRole, isContact, resolveHome } from "@/lib/auth";
 // are the password-reset screens (reachable while signed out).
 const PUBLIC = ["/login", "/invite", "/forgot-password", "/reset-password", "/auth"];
 
-// Roles are stamped into app_metadata at provisioning (scripts/stamp-roles.mjs,
-// scripts/seed-contact-login.mjs), so gating is enforced.
+// Gating reads the per-product `roles` claim from the access-token hook
+// (derived live from `memberships`), so no manual provisioning step is needed.
 const ENFORCE_AUTH = true;
 
 // Route ownership per world — used for the artisan↔contact separation.
