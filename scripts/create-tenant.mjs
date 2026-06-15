@@ -1,5 +1,5 @@
 // Provision a new artisan tenant: organizations row + default file_categories +
-// an owner auth user (role stamped in app_metadata) + organization_members link.
+// an owner auth user (role stamped in app_metadata) + memberships + organization_products.
 // The generated password is written to ./rotated-passwords.txt (gitignored), never
 // to stdout. Reusable — pass the tenant via env vars:
 //
@@ -93,9 +93,14 @@ console.log("✓ auth user:", created.user.id, `(${T.email})`);
 
 // 4. membership
 const { error: me } = await admin
-  .from("organization_members")
-  .insert({ organization_id: org.id, user_id: created.user.id, role: "owner" });
+  .from("memberships")
+  .insert({ organization_id: org.id, user_id: created.user.id, product: "crm", role: "owner" });
 console.log("✓ membership:", me ? "ERROR " + me.message : "owner");
+
+// 4b. entitlement
+await admin
+  .from("organization_products")
+  .upsert({ organization_id: org.id, product: "crm", status: "active" });
 
 // 5. verify the login actually works (anon sign-in; password stays in memory)
 const anon = createClient(URL, ANON, { auth: { autoRefreshToken: false, persistSession: false } });
