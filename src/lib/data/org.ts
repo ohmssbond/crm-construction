@@ -72,3 +72,35 @@ export const getOrgContext = cache(async (): Promise<OrgContext | null> => {
     },
   };
 });
+
+/**
+ * Org branding + identity for ANY member (product-agnostic) — used by the T&B
+ * admin shell, where the account may have no CRM membership. Single org per
+ * account, so the first membership resolves the org.
+ */
+export const getWorkspaceContext = cache(async (): Promise<OrgContext | null> => {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from("memberships")
+    .select("organizations(id, name, primary_color, member_noun, client_noun, timezone)")
+    .eq("user_id", user.id)
+    .limit(1)
+    .maybeSingle();
+
+  const orgRow = one(data?.organizations);
+  if (!orgRow) return null;
+  const org = { ...orgRow, initials: initials(orgRow.name) };
+
+  const fullName = (user.user_metadata?.full_name as string | undefined)?.trim() || "";
+  const email = user.email ?? "";
+  const name = fullName || email.split("@")[0] || "Account";
+  return {
+    org,
+    user: { name, email, initials: initials(name), hasName: Boolean(fullName) },
+  };
+});
