@@ -111,14 +111,22 @@ export async function updateJob(
 
 export async function setJobStatus(id: string, status: string): Promise<void> {
   await requireTbAdmin();
+  if (!["open", "in_progress", "completed"].includes(status)) {
+    throw new Error("Invalid job status.");
+  }
   const supabase = await createClient();
-  await supabase.from("jobs").update({ status }).eq("id", id);
+  const { error } = await supabase.from("jobs").update({ status }).eq("id", id);
+  if (error) throw new Error(error.message);
   revalidatePath(`/tb/jobs/${id}`);
 }
 
 export async function archiveJob(id: string): Promise<void> {
   await requireTbAdmin();
   const supabase = await createClient();
-  await supabase.from("jobs").update({ archived_at: new Date().toISOString() }).eq("id", id);
+  const { error } = await supabase
+    .from("jobs")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
   redirect("/tb/jobs");
 }
