@@ -60,7 +60,24 @@ export function projectMeta(p: {
   return null;
 }
 
-/** Joins a customer's structured billing-address parts into a one-line string. */
+/** Joins generic address parts into a one-line string (skips blanks). */
+export function formatAddressParts(p: {
+  line1?: string | null;
+  line2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+}): string {
+  const cityLine = [p.city, p.state].map((x) => (x ?? "").trim()).filter(Boolean).join(", ");
+  const cityZip = [cityLine, (p.postalCode ?? "").trim()].filter(Boolean).join(" ");
+  return [p.line1, p.line2, cityZip, p.country]
+    .map((x) => (x ?? "").trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
+/** Customer billing address → one line. */
 export function fmtAddress(c: {
   bill_line1?: string | null;
   bill_line2?: string | null;
@@ -69,10 +86,31 @@ export function fmtAddress(c: {
   bill_postal_code?: string | null;
   bill_country?: string | null;
 }): string {
-  const cityLine = [c.bill_city, c.bill_state].map((p) => (p ?? "").trim()).filter(Boolean).join(", ");
-  const cityZip = [cityLine, (c.bill_postal_code ?? "").trim()].filter(Boolean).join(" ");
-  return [c.bill_line1, c.bill_line2, cityZip, c.bill_country]
-    .map((p) => (p ?? "").trim())
-    .filter(Boolean)
-    .join(", ");
+  return formatAddressParts({
+    line1: c.bill_line1,
+    line2: c.bill_line2,
+    city: c.bill_city,
+    state: c.bill_state,
+    postalCode: c.bill_postal_code,
+    country: c.bill_country,
+  });
+}
+
+/** Job site address → one line. */
+export function fmtJobLocation(j: {
+  job_line1?: string | null;
+  job_line2?: string | null;
+  job_city?: string | null;
+  job_state?: string | null;
+  job_postal_code?: string | null;
+  job_country?: string | null;
+}): string {
+  return formatAddressParts({
+    line1: j.job_line1,
+    line2: j.job_line2,
+    city: j.job_city,
+    state: j.job_state,
+    postalCode: j.job_postal_code,
+    country: j.job_country,
+  });
 }
