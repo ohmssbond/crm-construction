@@ -33,3 +33,16 @@ export function LoginChip({ status }: { status: LoginStatus }) {
   const [label, cls] = LOGIN[status];
   return <span className={`${chipBase} ${cls}`}>{label}</span>;
 }
+
+const JOB_STATUS = {
+  open: ["Open", "bg-line-2 text-faint"],
+  in_progress: ["In progress", "bg-progress-soft text-progress"],
+  completed: ["Completed", "bg-completed-soft text-completed"],
+} as const;
+
+export type JobStatus = keyof typeof JOB_STATUS;
+
+export function JobStatusChip({ status }: { status: JobStatus }) {
+  const [label, cls] = JOB_STATUS[status];
+  return <span className={`${chipBase} ${cls}`}>{label}</span>;
+}

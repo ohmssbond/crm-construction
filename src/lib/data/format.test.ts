@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { fmtDateTime, fmtZonedDate, fmtAddress } from "./format";
+import { fmtDateTime, fmtZonedDate, fmtAddress, fmtJobLocation } from "./format";
 
 describe("fmtDateTime", () => {
   test("renders a UTC instant in Eastern daylight time (summer)", () => {
@@ -45,5 +45,21 @@ describe("fmtAddress", () => {
   test("all empty → empty string", () => {
     expect(fmtAddress({})).toBe("");
     expect(fmtAddress({ bill_line1: "  ", bill_city: null })).toBe("");
+  });
+});
+
+describe("fmtJobLocation", () => {
+  test("joins job_* parts in order", () => {
+    expect(
+      fmtJobLocation({
+        job_line1: "9 Site Rd",
+        job_city: "Providence",
+        job_state: "RI",
+        job_postal_code: "02903",
+      })
+    ).toBe("9 Site Rd, Providence, RI 02903");
+  });
+  test("empty → empty string", () => {
+    expect(fmtJobLocation({})).toBe("");
   });
 });
