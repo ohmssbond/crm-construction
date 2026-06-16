@@ -1,18 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
+import { fmtAddress } from "./format";
 
 /** Customers list for the artisan, RLS-scoped, newest first (excludes archived). */
 export async function listCustomers() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("customers")
-    .select("id, name, address, projects(count)")
+    .select(
+      "id, name, bill_line1, bill_line2, bill_city, bill_state, bill_postal_code, bill_country, projects(count)"
+    )
     .is("archived_at", null)
     .order("created_at", { ascending: false });
 
   return (data ?? []).map((c) => ({
     id: c.id,
     name: c.name,
-    address: c.address,
+    address: fmtAddress(c) || null,
     projectCount: c.projects?.[0]?.count ?? 0,
   }));
 }
@@ -34,7 +37,9 @@ export async function getCustomerDetail(id: string) {
 
   const { data: customer } = await supabase
     .from("customers")
-    .select("id, name, address, notes")
+    .select(
+      "id, name, bill_line1, bill_line2, bill_city, bill_state, bill_postal_code, bill_country, email, phone, notes"
+    )
     .eq("id", id)
     .is("archived_at", null)
     .maybeSingle();

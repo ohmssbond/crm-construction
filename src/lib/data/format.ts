@@ -59,3 +59,20 @@ export function projectMeta(p: {
   if (p.stage === "completed" && start && end) return `${start} – ${end}`;
   return null;
 }
+
+/** Joins a customer's structured billing-address parts into a one-line string. */
+export function fmtAddress(c: {
+  bill_line1?: string | null;
+  bill_line2?: string | null;
+  bill_city?: string | null;
+  bill_state?: string | null;
+  bill_postal_code?: string | null;
+  bill_country?: string | null;
+}): string {
+  const cityLine = [c.bill_city, c.bill_state].map((p) => (p ?? "").trim()).filter(Boolean).join(", ");
+  const cityZip = [cityLine, (c.bill_postal_code ?? "").trim()].filter(Boolean).join(" ");
+  return [c.bill_line1, c.bill_line2, cityZip, c.bill_country]
+    .map((p) => (p ?? "").trim())
+    .filter(Boolean)
+    .join(", ");
+}

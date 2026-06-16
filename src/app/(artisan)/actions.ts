@@ -30,11 +30,19 @@ export async function createCustomer(
     .insert({
       organization_id: ctx.org.id,
       name,
-      address: orNull(str(fd, "address")),
+      bill_line1: orNull(str(fd, "bill_line1")),
+      bill_line2: orNull(str(fd, "bill_line2")),
+      bill_city: orNull(str(fd, "bill_city")),
+      bill_state: orNull(str(fd, "bill_state")),
+      bill_postal_code: orNull(str(fd, "bill_postal_code")),
+      bill_country: orNull(str(fd, "bill_country")),
+      email: orNull(str(fd, "email")),
+      phone: orNull(str(fd, "phone")),
       notes: orNull(str(fd, "notes")),
     })
     .select("id")
     .single();
+  if (error?.code === "23505") return { error: "A customer with that name already exists." };
   if (error || !data) return { error: error?.message ?? "Could not create." };
   redirect(`/customers/${data.id}`);
 }
@@ -53,10 +61,18 @@ export async function updateCustomer(
     .from("customers")
     .update({
       name,
-      address: orNull(str(fd, "address")),
+      bill_line1: orNull(str(fd, "bill_line1")),
+      bill_line2: orNull(str(fd, "bill_line2")),
+      bill_city: orNull(str(fd, "bill_city")),
+      bill_state: orNull(str(fd, "bill_state")),
+      bill_postal_code: orNull(str(fd, "bill_postal_code")),
+      bill_country: orNull(str(fd, "bill_country")),
+      email: orNull(str(fd, "email")),
+      phone: orNull(str(fd, "phone")),
       notes: orNull(str(fd, "notes")),
     })
     .eq("id", id);
+  if (error?.code === "23505") return { error: "A customer with that name already exists." };
   if (error) return { error: error.message };
   redirect(`/customers/${id}`);
 }

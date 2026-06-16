@@ -168,31 +168,67 @@ export type Database = {
       }
       customers: {
         Row: {
-          address: string | null
           archived_at: string | null
+          bill_city: string | null
+          bill_country: string | null
+          bill_line1: string | null
+          bill_line2: string | null
+          bill_postal_code: string | null
+          bill_state: string | null
           created_at: string
+          email: string | null
           id: string
+          last_synced_at: string | null
           name: string
           notes: string | null
           organization_id: string
+          phone: string | null
+          qbo_id: string | null
+          qbo_sync_token: string | null
+          source: string
+          sync_status: string
         }
         Insert: {
-          address?: string | null
           archived_at?: string | null
+          bill_city?: string | null
+          bill_country?: string | null
+          bill_line1?: string | null
+          bill_line2?: string | null
+          bill_postal_code?: string | null
+          bill_state?: string | null
           created_at?: string
+          email?: string | null
           id?: string
+          last_synced_at?: string | null
           name: string
           notes?: string | null
           organization_id: string
+          phone?: string | null
+          qbo_id?: string | null
+          qbo_sync_token?: string | null
+          source?: string
+          sync_status?: string
         }
         Update: {
-          address?: string | null
           archived_at?: string | null
+          bill_city?: string | null
+          bill_country?: string | null
+          bill_line1?: string | null
+          bill_line2?: string | null
+          bill_postal_code?: string | null
+          bill_state?: string | null
           created_at?: string
+          email?: string | null
           id?: string
+          last_synced_at?: string | null
           name?: string
           notes?: string | null
           organization_id?: string
+          phone?: string | null
+          qbo_id?: string | null
+          qbo_sync_token?: string | null
+          source?: string
+          sync_status?: string
         }
         Relationships: [
           {
