@@ -5,6 +5,7 @@ const staff = { org_id: "o1", roles: { crm: "artisan" } };
 const worker = { org_id: "o1", roles: { timebilling: "worker" } };
 const both = { org_id: "o1", roles: { crm: "owner", timebilling: "worker" } };
 const contact = { org_id: "o1", contact_id: "c1" };
+const tbadmin = { org_id: "o1", roles: { timebilling: "admin" } };
 
 describe("productRole", () => {
   test("returns the role for a product present in the roles claim", () => {
@@ -40,5 +41,14 @@ describe("resolveHome", () => {
   test("nothing → /login", () => {
     expect(resolveHome(undefined)).toBe("/login");
     expect(resolveHome({ org_id: "o1" })).toBe("/login");
+  });
+  test("timebilling admin (no crm) → /tb", () => {
+    expect(resolveHome(tbadmin)).toBe("/tb");
+  });
+  test("crm wins over timebilling admin", () => {
+    expect(resolveHome({ org_id: "o1", roles: { crm: "owner", timebilling: "admin" } })).toBe("/dashboard");
+  });
+  test("timebilling admin wins over worker", () => {
+    expect(resolveHome({ org_id: "o1", roles: { timebilling: "admin" } })).toBe("/tb");
   });
 });
