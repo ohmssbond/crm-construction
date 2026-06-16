@@ -69,6 +69,10 @@ _Open questions / notes:_
   - Shared customers ✅ shipped (Jun 16, 2026): `customers` made shared + QBO-ready
     (structured billing address, email/phone, nullable qbo_* fields, unique active
     name); `member_read` RLS via `is_org_member_any`; CRM still the editor.
-  Remaining slices (later): jobs + materials catalog -> time tracking ->
+  - T&B admin shell (3a) ✅ shipped (Jun 16, 2026): third AppShell `timebilling`
+    world at `/tb`, gated to `timebilling:admin`; resolveHome/proxy routing; org
+    `member_read` RLS + `getWorkspaceContext`; placeholder home. Routing regression
+    live-verified (CRM/portal/worker unchanged).
+  Remaining slices (later): jobs CRUD (3b) -> materials catalog -> time tracking ->
   materials/attachments -> pre-invoice -> export -> QBO import.
 
