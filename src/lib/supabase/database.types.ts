@@ -329,6 +329,105 @@ export type Database = {
           },
         ]
       }
+      jobs: {
+        Row: {
+          archived_at: string | null
+          billing_type: string
+          contract_price: number | null
+          created_at: string
+          currency: string
+          customer_id: string
+          description: string | null
+          end_date: string | null
+          id: string
+          job_city: string | null
+          job_country: string | null
+          job_line1: string | null
+          job_line2: string | null
+          job_postal_code: string | null
+          job_state: string | null
+          last_synced_at: string | null
+          name: string
+          notes: string | null
+          organization_id: string
+          qbo_id: string | null
+          qbo_sync_token: string | null
+          source: string
+          start_date: string | null
+          status: string
+          sync_status: string
+        }
+        Insert: {
+          archived_at?: string | null
+          billing_type: string
+          contract_price?: number | null
+          created_at?: string
+          currency?: string
+          customer_id: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          job_city?: string | null
+          job_country?: string | null
+          job_line1?: string | null
+          job_line2?: string | null
+          job_postal_code?: string | null
+          job_state?: string | null
+          last_synced_at?: string | null
+          name: string
+          notes?: string | null
+          organization_id: string
+          qbo_id?: string | null
+          qbo_sync_token?: string | null
+          source?: string
+          start_date?: string | null
+          status?: string
+          sync_status?: string
+        }
+        Update: {
+          archived_at?: string | null
+          billing_type?: string
+          contract_price?: number | null
+          created_at?: string
+          currency?: string
+          customer_id?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          job_city?: string | null
+          job_country?: string | null
+          job_line1?: string | null
+          job_line2?: string | null
+          job_postal_code?: string | null
+          job_state?: string | null
+          last_synced_at?: string | null
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          qbo_id?: string | null
+          qbo_sync_token?: string | null
+          source?: string
+          start_date?: string | null
+          status?: string
+          sync_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memberships: {
         Row: {
           created_at: string
