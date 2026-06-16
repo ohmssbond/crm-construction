@@ -73,6 +73,10 @@ _Open questions / notes:_
     world at `/tb`, gated to `timebilling:admin`; resolveHome/proxy routing; org
     `member_read` RLS + `getWorkspaceContext`; placeholder home. Routing regression
     live-verified (CRM/portal/worker unchanged).
-  Remaining slices (later): jobs CRUD (3b) -> materials catalog -> time tracking ->
+  - Jobs CRUD (3b) ✅ shipped (Jun 16, 2026): `jobs` table (customer-scoped, structured
+    site address, billing type, status lifecycle, nullable qbo_* fields) + `is_tb_member`
+    /`is_tb_admin` RLS; admin CRUD under `/tb/jobs` with a customer picker that prefills
+    the site address. Live-verified.
+  Remaining slices (later): materials catalog -> time tracking ->
   materials/attachments -> pre-invoice -> export -> QBO import.
 

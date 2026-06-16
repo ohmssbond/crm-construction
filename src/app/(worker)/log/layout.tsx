@@ -34,7 +34,7 @@ export default async function WorkerLayout({ children }: { children: ReactNode }
             </Link>
           )}
           <form action={signOut}>
-            <button type="submit" className="text-muted hover:text-text">
+            <button type="submit" className="text-body font-semibold hover:text-accent">
               Sign out
             </button>
           </form>
