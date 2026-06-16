@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navFor, navLabel, type World } from "./nav";
+import { signOut } from "@/lib/auth-actions";
 
 export type Brand = { tile: string; name: string; label: string };
 export type ShellUser = { tile: string; name: string; email: string };
@@ -12,6 +13,7 @@ export type ShellUser = { tile: string; name: string; email: string };
 const FALLBACK_BRAND: Record<World, Brand> = {
   artisan: { tile: "JH", name: "J Huber Restorations", label: "Artisan workspace" },
   portal: { tile: "JH", name: "J Huber Restorations", label: "Customer portal" },
+  timebilling: { tile: "TB", name: "Workspace", label: "Time & Billing" },
 };
 const FALLBACK_USER: ShellUser = {
   tile: "JH",
@@ -82,18 +84,34 @@ export function Sidebar({
 
       {/* Account footer */}
       <div className="p-3 border-t border-line">
-        <Link
-          href={world === "portal" ? "/account" : "/settings"}
-          className="flex items-center gap-3 px-2 py-2 rounded-control hover:bg-line-2"
-        >
-          <div className="size-8 rounded-full bg-[#d4dae3] text-[#475467] grid place-items-center text-meta font-bold">
-            {user.tile}
+        {world === "timebilling" ? (
+          <div className="flex items-center gap-3 px-2 py-2">
+            <div className="size-8 rounded-full bg-[#d4dae3] text-[#475467] grid place-items-center text-meta font-bold">
+              {user.tile}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sub font-semibold truncate">{user.name}</div>
+              <form action={signOut}>
+                <button type="submit" className="text-meta text-faint hover:text-text">
+                  Sign out
+                </button>
+              </form>
+            </div>
           </div>
-          <div className="min-w-0">
-            <div className="text-sub font-semibold truncate">{user.name}</div>
-            <div className="text-meta text-faint truncate">{user.email}</div>
-          </div>
-        </Link>
+        ) : (
+          <Link
+            href={world === "portal" ? "/account" : "/settings"}
+            className="flex items-center gap-3 px-2 py-2 rounded-control hover:bg-line-2"
+          >
+            <div className="size-8 rounded-full bg-[#d4dae3] text-[#475467] grid place-items-center text-meta font-bold">
+              {user.tile}
+            </div>
+            <div className="min-w-0">
+              <div className="text-sub font-semibold truncate">{user.name}</div>
+              <div className="text-meta text-faint truncate">{user.email}</div>
+            </div>
+          </Link>
+        )}
       </div>
     </aside>
   );

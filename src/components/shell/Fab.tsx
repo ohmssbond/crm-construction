@@ -10,8 +10,8 @@ const CREATABLE_LISTS = ["projects", "customers", "contacts"];
 export function Fab({ world }: { world: World }) {
   const pathname = usePathname() ?? "/";
 
-  // No create verb in the read-only portal.
-  if (world === "portal") return null;
+  // No create verb in the read-only portal, and none yet in T&B admin.
+  if (world === "portal" || world === "timebilling") return null;
 
   const seg = pathname.split("/").filter(Boolean);
   const isList = seg.length === 1 && CREATABLE_LISTS.includes(seg[0]);

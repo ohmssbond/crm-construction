@@ -9,7 +9,7 @@ import {
   User,
 } from "lucide-react";
 
-export type World = "artisan" | "portal";
+export type World = "artisan" | "portal" | "timebilling";
 
 export type NavItem = {
   href: string;
@@ -45,8 +45,13 @@ export const portalNav: NavItem[] = [
 ];
 export const portalTabs = ["/my-projects", "/account"];
 
+export const timebillingNav: NavItem[] = [
+  { href: "/tb", label: "Jobs", icon: FolderKanban },
+];
+export const timebillingTabs = ["/tb"];
+
 export const navFor = (world: World): NavItem[] =>
-  world === "portal" ? portalNav : artisanNav;
+  world === "portal" ? portalNav : world === "timebilling" ? timebillingNav : artisanNav;
 
 export const tabsFor = (world: World): string[] =>
-  world === "portal" ? portalTabs : artisanTabs;
+  world === "portal" ? portalTabs : world === "timebilling" ? timebillingTabs : artisanTabs;
