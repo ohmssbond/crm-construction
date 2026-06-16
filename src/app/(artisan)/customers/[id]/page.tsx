@@ -10,6 +10,7 @@ import { SectionLabel } from "@/components/ui/SectionLabel";
 import { buttonClasses } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getCustomerDetail } from "@/lib/data/customers";
+import { fmtAddress } from "@/lib/data/format";
 import { ArchiveButton } from "../../ArchiveButton";
 import { archiveCustomer } from "../../actions";
 
@@ -37,7 +38,9 @@ export default async function CustomerDetailPage({
       </div>
 
       <Card className="px-4 py-1">
-        <KeyValue label="Address" value={customer.address ?? "—"} />
+        <KeyValue label="Address" value={fmtAddress(customer) || "—"} />
+        <KeyValue label="Email" value={customer.email ?? "—"} />
+        <KeyValue label="Phone" value={customer.phone ?? "—"} />
         <KeyValue label="Notes" value={customer.notes ?? "—"} />
       </Card>
 
