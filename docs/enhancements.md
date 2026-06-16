@@ -66,6 +66,9 @@ _Open questions / notes:_
     friendly "not enabled" page; dedicated minimal worker `/log` shell + CRM
     cross-link; per-tenant product toggles in `/admin`; dropped the `user_role` claim.
   Live-verified: worker -> /log, artisan/contact unchanged, admin toggles work.
-  Remaining slices (later): shared customers -> jobs + materials catalog -> time
-  tracking -> materials/attachments -> pre-invoice -> export -> QBO import.
+  - Shared customers ✅ shipped (Jun 16, 2026): `customers` made shared + QBO-ready
+    (structured billing address, email/phone, nullable qbo_* fields, unique active
+    name); `member_read` RLS via `is_org_member_any`; CRM still the editor.
+  Remaining slices (later): jobs + materials catalog -> time tracking ->
+  materials/attachments -> pre-invoice -> export -> QBO import.
 
