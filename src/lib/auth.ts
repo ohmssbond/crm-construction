@@ -21,6 +21,7 @@ export function isContact(claims: Claims): boolean {
 /** Where a freshly-authenticated user should land, by role precedence. */
 export function resolveHome(claims: Claims): string {
   if (productRole(claims, "crm")) return "/dashboard";
+  if (productRole(claims, "timebilling") === "admin") return "/tb";
   if (productRole(claims, "timebilling") === "worker") return "/log";
   if (isContact(claims)) return "/my-projects";
   return "/login";

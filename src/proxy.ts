@@ -18,6 +18,7 @@ const ENFORCE_AUTH = true;
 const PORTAL_PREFIXES = ["/my-projects", "/account"];
 const ARTISAN_PREFIXES = ["/dashboard", "/projects", "/customers", "/contacts", "/settings"];
 const WORKER_PREFIXES = ["/log"];
+const TB_ADMIN_PREFIXES = ["/tb"];
 
 const matches = (pathname: string, prefixes: string[]) =>
   prefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
@@ -66,6 +67,7 @@ export async function proxy(request: NextRequest) {
 
   const hasCrm = !!productRole(claims, "crm");
   const isWorker = productRole(claims, "timebilling") === "worker";
+  const isTbAdmin = productRole(claims, "timebilling") === "admin";
   const contact = isContact(claims);
   const home = resolveHome(claims);
 
@@ -81,6 +83,7 @@ export async function proxy(request: NextRequest) {
   if (!hasCrm && matches(pathname, ARTISAN_PREFIXES)) return go(home);
   if (!contact && matches(pathname, PORTAL_PREFIXES)) return go(home);
   if (!isWorker && matches(pathname, WORKER_PREFIXES)) return go(home);
+  if (!isTbAdmin && matches(pathname, TB_ADMIN_PREFIXES)) return go(home);
 
   return response;
 }
