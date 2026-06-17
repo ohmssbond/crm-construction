@@ -1,5 +1,14 @@
 # Status & Next Steps
 
+> **⚠️ This file is the MVP-era record (through 2026-06-08).** The app has since
+> become a **two-product platform** (CRM + a **Time & Billing** field app) and is
+> live in production at **app.build-it-together.com**. The current build state and
+> resume point live in **[`docs/enhancements.md`](enhancements.md)** (backlog item
+> #9 tracks every T&B slice) and the T&B specs/plans under
+> **`docs/superpowers/`**. As of 2026-06-17 the T&B worker app is shipped through
+> **slice 5b (materials-used)**; the next slice is **5c photos/attachments**.
+> Everything below is retained as MVP history.
+
 _Last updated: 2026-06-08._
 
 ## Done
