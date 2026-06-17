@@ -78,8 +78,14 @@ _Open questions / notes:_
     /`is_tb_admin` RLS; admin CRUD under `/tb/jobs` with a customer picker that prefills
     the site address. Live-verified.
   - Materials catalog (slice 4) ✅ shipped (Jun 17, 2026): `materials` table (per-org,
-    name/sku/type/unit_price, QBO-ready core fields, unique active name) reusing
+    name/sku/type/unit_price, QBO-ready core fields, unique active+SKU) reusing
     is_tb_member/is_tb_admin RLS; admin CRUD under `/tb/materials`.
-  Remaining slices (later): time tracking (⚠️ user has worker UI/UX notes to share) ->
-  materials-used/attachments -> pre-invoice -> export -> QBO import.
+  - Time tracking (slice 5a) ✅ shipped (Jun 17, 2026): worker app at `/log` (org-branded
+    shell, start-of-day WorkDay bookend, today's job list) + job-detail Time tab (live
+    clock in/out, 0.25h-rounded total, no-charge toggle). Tables work_days/
+    job_time_entries/job_time_segments (time-of-day) + worker-self/admin-read RLS;
+    worktime helpers; built per the operator's worker prototype. Materials/Photos tabs
+    stubbed. Worker = logged-in user_id; cross-midnight & manual edits deferred.
+  Remaining slices (later): 5b materials-used -> 5c photos/attachments ->
+  pre-invoice -> export -> QBO import.
 
