@@ -6,8 +6,16 @@ import { Button } from "@/components/ui/Button";
 import { fieldInput, FormError } from "@/components/ui/Field";
 import { addJobMaterial, updateJobMaterialQty, removeJobMaterial } from "./actions";
 
-type Line = { id: string; item: string; qty: number; material_id: string | null };
+// Postgres `numeric` deserializes as a string via PostgREST, so qty arrives as a
+// string (e.g. "3.000"). Keep that, and format for display/editing.
+type Line = { id: string; item: string; qty: string; material_id: string | null };
 type Material = { id: string; name: string };
+
+/** Trim insignificant trailing zeros for display ("3.000" -> "3", "2.500" -> "2.5"). */
+function fmtQty(qty: string): string {
+  const n = Number(qty);
+  return Number.isFinite(n) ? String(n) : qty;
+}
 
 export function MaterialsControl({
   jobId,
@@ -82,7 +90,7 @@ export function MaterialsControl({
 
 function MaterialLineRow({ jobId, line }: { jobId: string; line: Line }) {
   const [editing, setEditing] = useState(false);
-  const [qty, setQty] = useState(String(line.qty));
+  const [qty, setQty] = useState(fmtQty(line.qty));
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -123,7 +131,7 @@ function MaterialLineRow({ jobId, line }: { jobId: string; line: Line }) {
               type="button"
               onClick={() => {
                 setEditing(false);
-                setQty(String(line.qty));
+                setQty(fmtQty(line.qty));
                 setError(null);
               }}
               className="text-faint"
@@ -133,7 +141,7 @@ function MaterialLineRow({ jobId, line }: { jobId: string; line: Line }) {
           </>
         ) : (
           <>
-            <span className="text-faint">{line.qty}</span>
+            <span className="text-faint">{fmtQty(line.qty)}</span>
             <button type="button" onClick={() => setEditing(true)} className="text-muted hover:text-text">
               Edit
             </button>

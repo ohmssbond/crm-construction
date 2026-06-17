@@ -329,6 +329,172 @@ export type Database = {
           },
         ]
       }
+      job_material_lines: {
+        Row: {
+          created_at: string
+          currency: string
+          id: string
+          item: string
+          job_id: string
+          material_id: string | null
+          organization_id: string
+          qty: number
+          unit_cost: number | null
+          worker_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          id?: string
+          item: string
+          job_id: string
+          material_id?: string | null
+          organization_id: string
+          qty: number
+          unit_cost?: number | null
+          worker_user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          id?: string
+          item?: string
+          job_id?: string
+          material_id?: string | null
+          organization_id?: string
+          qty?: number
+          unit_cost?: number | null
+          worker_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_material_lines_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_material_lines_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_material_lines_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_time_entries: {
+        Row: {
+          created_at: string
+          entry_date: string
+          id: string
+          job_id: string
+          last_synced_at: string | null
+          no_charge: boolean
+          organization_id: string
+          qbo_id: string | null
+          qbo_sync_token: string | null
+          source: string
+          sync_status: string
+          worker_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entry_date: string
+          id?: string
+          job_id: string
+          last_synced_at?: string | null
+          no_charge?: boolean
+          organization_id: string
+          qbo_id?: string | null
+          qbo_sync_token?: string | null
+          source?: string
+          sync_status?: string
+          worker_user_id: string
+        }
+        Update: {
+          created_at?: string
+          entry_date?: string
+          id?: string
+          job_id?: string
+          last_synced_at?: string | null
+          no_charge?: boolean
+          organization_id?: string
+          qbo_id?: string | null
+          qbo_sync_token?: string | null
+          source?: string
+          sync_status?: string
+          worker_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_time_entries_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_time_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_time_segments: {
+        Row: {
+          created_at: string
+          entry_id: string
+          id: string
+          organization_id: string
+          time_in: string
+          time_out: string | null
+          worker_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entry_id: string
+          id?: string
+          organization_id: string
+          time_in: string
+          time_out?: string | null
+          worker_user_id: string
+        }
+        Update: {
+          created_at?: string
+          entry_id?: string
+          id?: string
+          organization_id?: string
+          time_in?: string
+          time_out?: string | null
+          worker_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_time_segments_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "job_time_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_time_segments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           archived_at: string | null
@@ -726,29 +892,38 @@ export type Database = {
       todos: {
         Row: {
           body: string
+          completed_at: string | null
           created_at: string
           done: boolean
           due_date: string | null
           id: string
+          is_shared: boolean
           organization_id: string
+          owner_contact_id: string | null
           project_id: string
         }
         Insert: {
           body: string
+          completed_at?: string | null
           created_at?: string
           done?: boolean
           due_date?: string | null
           id?: string
+          is_shared?: boolean
           organization_id: string
+          owner_contact_id?: string | null
           project_id: string
         }
         Update: {
           body?: string
+          completed_at?: string | null
           created_at?: string
           done?: boolean
           due_date?: string | null
           id?: string
+          is_shared?: boolean
           organization_id?: string
+          owner_contact_id?: string | null
           project_id?: string
         }
         Relationships: [
@@ -757,6 +932,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "todos_owner_contact_id_fkey"
+            columns: ["owner_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
           {
@@ -809,111 +991,6 @@ export type Database = {
           },
         ]
       }
-      job_time_entries: {
-        Row: {
-          created_at: string
-          entry_date: string
-          id: string
-          job_id: string
-          last_synced_at: string | null
-          no_charge: boolean
-          organization_id: string
-          qbo_id: string | null
-          qbo_sync_token: string | null
-          source: string
-          sync_status: string
-          worker_user_id: string
-        }
-        Insert: {
-          created_at?: string
-          entry_date: string
-          id?: string
-          job_id: string
-          last_synced_at?: string | null
-          no_charge?: boolean
-          organization_id: string
-          qbo_id?: string | null
-          qbo_sync_token?: string | null
-          source?: string
-          sync_status?: string
-          worker_user_id: string
-        }
-        Update: {
-          created_at?: string
-          entry_date?: string
-          id?: string
-          job_id?: string
-          last_synced_at?: string | null
-          no_charge?: boolean
-          organization_id?: string
-          qbo_id?: string | null
-          qbo_sync_token?: string | null
-          source?: string
-          sync_status?: string
-          worker_user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "job_time_entries_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "jobs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_time_entries_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      job_time_segments: {
-        Row: {
-          created_at: string
-          entry_id: string
-          id: string
-          organization_id: string
-          time_in: string
-          time_out: string | null
-          worker_user_id: string
-        }
-        Insert: {
-          created_at?: string
-          entry_id: string
-          id?: string
-          organization_id: string
-          time_in: string
-          time_out?: string | null
-          worker_user_id: string
-        }
-        Update: {
-          created_at?: string
-          entry_id?: string
-          id?: string
-          organization_id?: string
-          time_in?: string
-          time_out?: string | null
-          worker_user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "job_time_segments_entry_id_fkey"
-            columns: ["entry_id"]
-            isOneToOne: false
-            referencedRelation: "job_time_entries"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_time_segments_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       [_ in never]: never
@@ -921,7 +998,12 @@ export type Database = {
     Functions: {
       contact_can_see_project: { Args: { proj: string }; Returns: boolean }
       current_contact_id: { Args: never; Returns: string }
+      current_contact_org: { Args: never; Returns: string }
+      custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       is_org_member: { Args: { org: string }; Returns: boolean }
+      is_org_member_any: { Args: { org: string }; Returns: boolean }
+      is_tb_admin: { Args: { org: string }; Returns: boolean }
+      is_tb_member: { Args: { org: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

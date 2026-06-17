@@ -15,8 +15,10 @@ export default async function WorkerJobPage({ params }: { params: Promise<{ jobI
   if (!data) notFound();
   const { job, entry } = data;
 
-  const materialLines = await getJobMaterialsForWorker(jobId);
-  const catalog = await listMaterialsForPicker();
+  const [materialLines, catalog] = await Promise.all([
+    getJobMaterialsForWorker(jobId),
+    listMaterialsForPicker(),
+  ]);
 
   const segments = entry?.segments ?? [];
   const openSeg = segments.find((s) => !s.time_out) ?? null;
