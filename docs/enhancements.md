@@ -86,6 +86,13 @@ _Open questions / notes:_
     job_time_entries/job_time_segments (time-of-day) + worker-self/admin-read RLS;
     worktime helpers; built per the operator's worker prototype. Materials/Photos tabs
     stubbed. Worker = logged-in user_id; cross-midnight & manual edits deferred.
+  - Worker clock-out follow-ups ✅ shipped (Jun 17, 2026): "End my day" same-day
+    workday clock-out on the Today screen (next-morning bookend stays the fallback;
+    resume-day undo); and retrospective (pick-a-time) clock in/out on the job Time
+    tab — one-tap "now" stays default, opt-in time field back-dates a segment.
+    Validated by `validateSegmentTime` (no future times; clock-out after clock-in);
+    actions return an inline error string. No migration. Overlap repair & full
+    segment edit/delete stay in the later admin-CRUD slice.
   Remaining slices (later): 5b materials-used -> 5c photos/attachments ->
   pre-invoice -> export -> QBO import.
 
