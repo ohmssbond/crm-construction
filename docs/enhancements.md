@@ -77,6 +77,9 @@ _Open questions / notes:_
     site address, billing type, status lifecycle, nullable qbo_* fields) + `is_tb_member`
     /`is_tb_admin` RLS; admin CRUD under `/tb/jobs` with a customer picker that prefills
     the site address. Live-verified.
-  Remaining slices (later): materials catalog -> time tracking ->
-  materials/attachments -> pre-invoice -> export -> QBO import.
+  - Materials catalog (slice 4) ✅ shipped (Jun 17, 2026): `materials` table (per-org,
+    name/sku/type/unit_price, QBO-ready core fields, unique active name) reusing
+    is_tb_member/is_tb_admin RLS; admin CRUD under `/tb/materials`.
+  Remaining slices (later): time tracking (⚠️ user has worker UI/UX notes to share) ->
+  materials-used/attachments -> pre-invoice -> export -> QBO import.
 
