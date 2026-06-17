@@ -26,6 +26,7 @@ and Photos tabs are stubbed until 5b/5c.
 | no_charge grain | Per **job_time_entry** (worker × job × day) — resolves the PRD's open question. |
 | Entry mode | **Live clock in/out only**; corrections are an admin CRUD function later. |
 | Rounding | 0.25h, **derived** from segments (not stored); applied once to the day's total per job. |
+| Worker shell branding | The `/log` shell **inherits the org's design** (accent color + brand name/tile) like every other surface — revising the 1b generic shell, which skipped branding. |
 
 ## Schema — migration `supabase/migrations/20260617000003_time_tracking.sql`
 
@@ -127,7 +128,17 @@ from `getWorkspaceContext()`.
 
 All write own rows; RLS enforces it.
 
-## UI — under `src/app/(worker)/log/` (inside the 1b worker shell)
+## UI — under `src/app/(worker)/log/`
+
+**Shell branding (revise the 1b `/log` layout):** the worker layout loads
+`getWorkspaceContext()` and **themes the shell with the org's accent** — the same
+CSS-variable override `AppShell` uses (`--accent` / `--accent-soft` / `--color-accent`
+/ `--color-accent-soft`, with `soft = color-mix(in srgb, <accent> 14%, #fff)`) applied
+on the shell root — so the worker's primary actions (Start my day, Clock in/out) carry
+the org's brand color. The header shows the org **brand tile + name** (from
+`org.initials`/`org.name`) instead of the generic "Time logging", keeping the layout
+otherwise minimal (no sidebar). Falls back gracefully (no accent / generic label) if
+`getWorkspaceContext()` is null.
 
 - **`log/page.tsx` (home):** if no `work_day` today and an open prior exists → the
   **bookend** (close-out the prior with an editable end time; start today, defaulting to
