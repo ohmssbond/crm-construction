@@ -42,6 +42,8 @@ create table job_time_segments (
   created_at      timestamptz not null default now()
 );
 create index on job_time_segments (entry_id);
+-- At most one OPEN (un-clocked-out) segment per entry — backs the clock-in guard.
+create unique index on job_time_segments (entry_id) where time_out is null;
 
 alter table work_days enable row level security;
 alter table job_time_entries enable row level security;

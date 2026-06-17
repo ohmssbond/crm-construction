@@ -27,6 +27,9 @@ describe("sumSegmentHours", () => {
   test("empty → 0", () => {
     expect(sumSegmentHours([])).toBe(0);
   });
+  test("clamps an out-before-in (cross-midnight) segment to 0", () => {
+    expect(sumSegmentHours([{ time_in: "22:00", time_out: "01:00" }])).toBe(0);
+  });
 });
 
 describe("roundQuarterHours", () => {

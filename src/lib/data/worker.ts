@@ -14,19 +14,22 @@ export async function getWorkerDay() {
   if (!user) return null;
 
   const today = todayInZone(ctx.org.timezone);
-  const { data } = await supabase
+  const { data: todayDay } = await supabase
     .from("work_days")
     .select("id, work_date, start_time, end_time, status")
     .eq("worker_user_id", user.id)
+    .eq("work_date", today)
+    .maybeSingle();
+  const { data: openPrior } = await supabase
+    .from("work_days")
+    .select("id, work_date, start_time, end_time, status")
+    .eq("worker_user_id", user.id)
+    .eq("status", "open")
+    .lt("work_date", today)
     .order("work_date", { ascending: false })
-    .limit(20);
-  const list = data ?? [];
-  return {
-    tz: ctx.org.timezone,
-    today,
-    todayDay: list.find((d) => d.work_date === today) ?? null,
-    openPrior: list.find((d) => d.status === "open" && d.work_date < today) ?? null,
-  };
+    .limit(1)
+    .maybeSingle();
+  return { tz: ctx.org.timezone, today, todayDay: todayDay ?? null, openPrior: openPrior ?? null };
 }
 
 /** The org's active (open/in_progress) jobs for the worker's Today list. */

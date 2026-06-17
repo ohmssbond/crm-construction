@@ -21,7 +21,7 @@ export async function startDay(
   const { userId, orgId, tz } = await workerCtx();
   const supabase = await createClient();
   if (priorId && priorEnd) {
-    await supabase.from("work_days").update({ end_time: priorEnd, status: "closed" }).eq("id", priorId);
+    await supabase.from("work_days").update({ end_time: priorEnd, status: "closed" }).eq("id", priorId).eq("worker_user_id", userId);
   }
   await supabase.from("work_days").upsert(
     {

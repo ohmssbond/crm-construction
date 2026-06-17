@@ -10,7 +10,8 @@ export function sumSegmentHours(
 ): number {
   return segments.reduce((acc, s) => {
     if (!s.time_out) return acc;
-    return acc + (timeToMinutes(s.time_out) - timeToMinutes(s.time_in)) / 60;
+    const diff = timeToMinutes(s.time_out) - timeToMinutes(s.time_in);
+    return acc + Math.max(0, diff) / 60; // clamp: cross-midnight is out of MVP scope
   }, 0);
 }
 
