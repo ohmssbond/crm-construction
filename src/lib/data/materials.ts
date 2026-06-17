@@ -22,3 +22,15 @@ export async function getMaterialDetail(id: string) {
     .maybeSingle();
   return data ?? null;
 }
+
+/** Org's non-archived catalog as cost-free picker options (id + name only), so
+ *  no price ever reaches the worker client. */
+export async function listMaterialsForPicker() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("materials")
+    .select("id, name")
+    .is("archived_at", null)
+    .order("name");
+  return data ?? [];
+}

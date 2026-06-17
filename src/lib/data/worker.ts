@@ -77,3 +77,19 @@ export async function getJobTimeForWorker(jobId: string) {
 
   return { job, entry: entry ?? null };
 }
+
+/** The signed-in worker's own material lines for a job (no cost fields). */
+export async function getJobMaterialsForWorker(jobId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("job_material_lines")
+    .select("id, item, qty, material_id")
+    .eq("job_id", jobId)
+    .eq("worker_user_id", user.id)
+    .order("created_at", { ascending: true });
+  return data ?? [];
+}
