@@ -36,6 +36,31 @@ export async function startDay(
   revalidatePath("/log");
 }
 
+/** End the workday now (same-day clock-out). The next-morning bookend is the
+ *  fallback for when a worker forgets. */
+export async function endDay(workDayId: string): Promise<void> {
+  const { userId, tz } = await workerCtx();
+  const supabase = await createClient();
+  await supabase
+    .from("work_days")
+    .update({ end_time: nowTimeInZone(tz), status: "closed" })
+    .eq("id", workDayId)
+    .eq("worker_user_id", userId);
+  revalidatePath("/log");
+}
+
+/** Reopen today's workday (undo an accidental "End my day"). */
+export async function resumeDay(workDayId: string): Promise<void> {
+  const { userId } = await workerCtx();
+  const supabase = await createClient();
+  await supabase
+    .from("work_days")
+    .update({ end_time: null, status: "open" })
+    .eq("id", workDayId)
+    .eq("worker_user_id", userId);
+  revalidatePath("/log");
+}
+
 export async function clockIn(jobId: string): Promise<void> {
   const { userId, orgId, tz } = await workerCtx();
   const supabase = await createClient();

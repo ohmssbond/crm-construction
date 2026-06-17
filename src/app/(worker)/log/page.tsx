@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getWorkerDay, listActiveJobs } from "@/lib/data/worker";
 import { fmtTimeOfDay, nowTimeInZone } from "@/lib/data/worktime";
 import { fmtDate } from "@/lib/data/format";
 import { StartDayForm } from "./StartDayForm";
+import { endDay, resumeDay } from "./actions";
 
 export default async function WorkerHome() {
   const day = await getWorkerDay();
@@ -15,6 +17,24 @@ export default async function WorkerHome() {
       ? { id: day.openPrior.id, label: fmtDate(day.openPrior.work_date) ?? "last workday" }
       : null;
     return <StartDayForm prior={prior} defaultStart={nowTimeInZone(day.tz)} />;
+  }
+
+  // Day already ended (same-day clock-out) — show a summary with a Resume escape hatch.
+  if (day.todayDay.status === "closed") {
+    return (
+      <div className="flex flex-col gap-4">
+        <h1 className="text-title font-semibold">Day complete</h1>
+        <Card className="p-4 flex items-center justify-between">
+          <span className="text-meta text-muted">
+            {fmtTimeOfDay(day.todayDay.start_time)} – {fmtTimeOfDay(day.todayDay.end_time)}
+          </span>
+          <form action={resumeDay.bind(null, day.todayDay.id)}>
+            <Button size="sm" variant="ghost" type="submit">Resume day</Button>
+          </form>
+        </Card>
+        <p className="text-meta text-faint text-center">See you tomorrow.</p>
+      </div>
+    );
   }
 
   const jobs = await listActiveJobs();
@@ -41,6 +61,9 @@ export default async function WorkerHome() {
           ))}
         </Card>
       )}
+      <form action={endDay.bind(null, day.todayDay.id)}>
+        <Button variant="ghost" type="submit" className="w-full justify-center">End my day</Button>
+      </form>
     </div>
   );
 }
