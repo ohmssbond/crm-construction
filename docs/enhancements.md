@@ -93,6 +93,13 @@ _Open questions / notes:_
     Validated by `validateSegmentTime` (no future times; clock-out after clock-in);
     actions return an inline error string. No migration. Overlap repair & full
     segment edit/delete stay in the later admin-CRUD slice.
-  Remaining slices (later): 5b materials-used -> 5c photos/attachments ->
+  - Materials-used (slice 5b) ✅ shipped (Jun 17, 2026): worker Materials tab on the
+    job detail — pick a catalog item + qty (cost hidden), add/edit-qty/remove. New
+    `job_material_lines` table (per-worker, worker_rw/admin_read RLS mirroring time
+    tracking; `material_id` on delete restrict). Lines snapshot item name + unit_cost
+    ("your cost") + currency at add time; cost never reaches the worker client
+    (cost-free picker + line reads). `validateQty` helper (qty > 0). Catalog-only —
+    ad-hoc free-text lines & crew-shared visibility deferred.
+  Remaining slices (later): 5c photos/attachments ->
   pre-invoice -> export -> QBO import.
 
