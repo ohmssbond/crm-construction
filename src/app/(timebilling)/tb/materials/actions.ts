@@ -45,7 +45,7 @@ export async function createMaterial(
   const { error } = await supabase
     .from("materials")
     .insert({ organization_id: ctx.org.id, ...m });
-  if (error?.code === "23505") return { error: "A material with that name already exists." };
+  if (error?.code === "23505") return { error: "A material with that name or SKU already exists." };
   if (error) return { error: error.message };
   redirect("/tb/materials");
 }
@@ -62,7 +62,7 @@ export async function updateMaterial(
 
   const supabase = await createClient();
   const { error } = await supabase.from("materials").update(m).eq("id", id);
-  if (error?.code === "23505") return { error: "A material with that name already exists." };
+  if (error?.code === "23505") return { error: "A material with that name or SKU already exists." };
   if (error) return { error: error.message };
   redirect("/tb/materials");
 }
