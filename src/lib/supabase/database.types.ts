@@ -768,6 +768,152 @@ export type Database = {
           },
         ]
       }
+      work_days: {
+        Row: {
+          created_at: string
+          end_time: string | null
+          id: string
+          organization_id: string
+          start_time: string
+          status: string
+          work_date: string
+          worker_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          organization_id: string
+          start_time: string
+          status?: string
+          work_date: string
+          worker_user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          organization_id?: string
+          start_time?: string
+          status?: string
+          work_date?: string
+          worker_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_days_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_time_entries: {
+        Row: {
+          created_at: string
+          entry_date: string
+          id: string
+          job_id: string
+          last_synced_at: string | null
+          no_charge: boolean
+          organization_id: string
+          qbo_id: string | null
+          qbo_sync_token: string | null
+          source: string
+          sync_status: string
+          worker_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entry_date: string
+          id?: string
+          job_id: string
+          last_synced_at?: string | null
+          no_charge?: boolean
+          organization_id: string
+          qbo_id?: string | null
+          qbo_sync_token?: string | null
+          source?: string
+          sync_status?: string
+          worker_user_id: string
+        }
+        Update: {
+          created_at?: string
+          entry_date?: string
+          id?: string
+          job_id?: string
+          last_synced_at?: string | null
+          no_charge?: boolean
+          organization_id?: string
+          qbo_id?: string | null
+          qbo_sync_token?: string | null
+          source?: string
+          sync_status?: string
+          worker_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_time_entries_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_time_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_time_segments: {
+        Row: {
+          created_at: string
+          entry_id: string
+          id: string
+          organization_id: string
+          time_in: string
+          time_out: string | null
+          worker_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entry_id: string
+          id?: string
+          organization_id: string
+          time_in: string
+          time_out?: string | null
+          worker_user_id: string
+        }
+        Update: {
+          created_at?: string
+          entry_id?: string
+          id?: string
+          organization_id?: string
+          time_in?: string
+          time_out?: string | null
+          worker_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_time_segments_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "job_time_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_time_segments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
