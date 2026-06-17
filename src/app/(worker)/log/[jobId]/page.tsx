@@ -1,12 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Card } from "@/components/ui/Card";
 import { Tabs } from "@/components/ui/Tabs";
-import { Button } from "@/components/ui/Button";
 import { getJobTimeForWorker } from "@/lib/data/worker";
 import { fmtJobLocation } from "@/lib/data/format";
 import { fmtTimeOfDay, sumSegmentHours, roundQuarterHours } from "@/lib/data/worktime";
-import { clockIn, clockOut } from "../actions";
+import { ClockControl } from "../ClockControl";
 import { NoChargeToggle } from "../NoChargeToggle";
 
 export default async function WorkerJobPage({ params }: { params: Promise<{ jobId: string }> }) {
@@ -22,21 +20,7 @@ export default async function WorkerJobPage({ params }: { params: Promise<{ jobI
 
   const timeTab = (
     <div className="flex flex-col gap-3">
-      {openSeg ? (
-        <Card className="p-3 flex items-center justify-between">
-          <span className="text-meta text-accent font-semibold">On the job since {fmtTimeOfDay(openSeg.time_in)}</span>
-          <form action={clockOut.bind(null, jobId)}>
-            <Button size="sm" variant="ghost" type="submit">Clock out</Button>
-          </form>
-        </Card>
-      ) : (
-        <Card className="p-3 flex items-center justify-between">
-          <span className="text-meta text-muted">Not on the job right now</span>
-          <form action={clockIn.bind(null, jobId)}>
-            <Button size="sm" type="submit">Clock in</Button>
-          </form>
-        </Card>
-      )}
+      <ClockControl jobId={jobId} openSegment={openSeg ? { time_in: openSeg.time_in } : null} />
 
       <div className="flex flex-col">
         {closed.length === 0 ? (

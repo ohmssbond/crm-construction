@@ -4,6 +4,21 @@ export function timeToMinutes(t: string): number {
   return (h || 0) * 60 + (m || 0);
 }
 
+/** Validate a worker-picked clock time. Returns null if OK, else a user-facing
+ *  message. `now` and (for "out") `openIn` are "HH:MM[:SS]" in the worker's zone.
+ *  Overlap with other segments is intentionally not checked (admin CRUD later). */
+export function validateSegmentTime(
+  picked: string,
+  now: string,
+  kind: "in" | "out",
+  openIn?: string
+): string | null {
+  if (timeToMinutes(picked) > timeToMinutes(now)) return "That time is in the future.";
+  if (kind === "out" && openIn && timeToMinutes(picked) <= timeToMinutes(openIn))
+    return "Clock-out must be after clock-in.";
+  return null;
+}
+
 /** Sum of (out − in)/60 over CLOSED segments only (open ones excluded). */
 export function sumSegmentHours(
   segments: { time_in: string; time_out: string | null }[]

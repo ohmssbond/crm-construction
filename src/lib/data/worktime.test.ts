@@ -6,6 +6,7 @@ import {
   fmtTimeOfDay,
   nowTimeInZone,
   todayInZone,
+  validateSegmentTime,
 } from "./worktime";
 
 describe("timeToMinutes", () => {
@@ -55,5 +56,32 @@ describe("zone helpers", () => {
   });
   test("todayInZone is YYYY-MM-DD", () => {
     expect(todayInZone("America/New_York")).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+});
+
+describe("validateSegmentTime", () => {
+  test("rejects a future clock-in", () => {
+    expect(validateSegmentTime("10:00", "09:30", "in")).toBe("That time is in the future.");
+  });
+
+  test("rejects a future clock-out", () => {
+    expect(validateSegmentTime("10:00", "09:30", "out", "08:00")).toBe("That time is in the future.");
+  });
+
+  test("rejects a clock-out at or before the clock-in", () => {
+    expect(validateSegmentTime("08:00", "12:00", "out", "08:00")).toBe("Clock-out must be after clock-in.");
+    expect(validateSegmentTime("07:30", "12:00", "out", "08:00")).toBe("Clock-out must be after clock-in.");
+  });
+
+  test("accepts a clock-out after the clock-in and not in the future", () => {
+    expect(validateSegmentTime("09:15", "12:00", "out", "08:00")).toBeNull();
+  });
+
+  test("accepts a non-future clock-in", () => {
+    expect(validateSegmentTime("08:00", "09:30", "in")).toBeNull();
+  });
+
+  test("skips the order check for 'out' when openIn is omitted", () => {
+    expect(validateSegmentTime("09:15", "12:00", "out")).toBeNull();
   });
 });
