@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireTbWorker } from "@/lib/auth-tb";
 import { getWorkspaceContext } from "@/lib/data/org";
-import { nowTimeInZone, todayInZone } from "@/lib/data/worktime";
+import { nowTimeInZone, todayInZone, validateSegmentTime } from "@/lib/data/worktime";
 
 async function workerCtx() {
   const user = await requireTbWorker();
@@ -61,9 +61,15 @@ export async function resumeDay(workDayId: string): Promise<void> {
   revalidatePath("/log");
 }
 
-export async function clockIn(jobId: string): Promise<void> {
+export async function clockIn(jobId: string, atTime?: string): Promise<string | void> {
   const { userId, orgId, tz } = await workerCtx();
   const supabase = await createClient();
+
+  if (atTime) {
+    const err = validateSegmentTime(atTime, nowTimeInZone(tz), "in");
+    if (err) return err;
+  }
+
   const { data: entry } = await supabase
     .from("job_time_entries")
     .upsert(
@@ -85,13 +91,13 @@ export async function clockIn(jobId: string): Promise<void> {
       entry_id: entry.id,
       organization_id: orgId,
       worker_user_id: userId,
-      time_in: nowTimeInZone(tz),
+      time_in: atTime || nowTimeInZone(tz),
     });
   }
   revalidatePath(`/log/${jobId}`);
 }
 
-export async function clockOut(jobId: string): Promise<void> {
+export async function clockOut(jobId: string, atTime?: string): Promise<string | void> {
   const { userId, tz } = await workerCtx();
   const supabase = await createClient();
   const { data: entry } = await supabase
@@ -104,14 +110,23 @@ export async function clockOut(jobId: string): Promise<void> {
   if (!entry) return;
   const { data: open } = await supabase
     .from("job_time_segments")
-    .select("id")
+    .select("id, time_in")
     .eq("entry_id", entry.id)
     .is("time_out", null)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (!open) return;
-  await supabase.from("job_time_segments").update({ time_out: nowTimeInZone(tz) }).eq("id", open.id);
+
+  if (atTime) {
+    const err = validateSegmentTime(atTime, nowTimeInZone(tz), "out", open.time_in);
+    if (err) return err;
+  }
+
+  await supabase
+    .from("job_time_segments")
+    .update({ time_out: atTime || nowTimeInZone(tz) })
+    .eq("id", open.id);
   revalidatePath(`/log/${jobId}`);
 }
 
