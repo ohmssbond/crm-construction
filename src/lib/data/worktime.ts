@@ -19,6 +19,15 @@ export function validateSegmentTime(
   return null;
 }
 
+/** Parse and validate a worker-entered quantity. Returns the number if it is a
+ *  finite value > 0, else null (caller surfaces a user-facing error).
+ *  Note: `Number("")` is 0, so empty string is correctly rejected by `<= 0`. */
+export function validateQty(input: string): number | null {
+  const n = Number(input);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n;
+}
+
 /** Sum of (out − in)/60 over CLOSED segments only (open ones excluded). */
 export function sumSegmentHours(
   segments: { time_in: string; time_out: string | null }[]

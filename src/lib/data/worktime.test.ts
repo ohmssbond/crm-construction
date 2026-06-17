@@ -7,6 +7,7 @@ import {
   nowTimeInZone,
   todayInZone,
   validateSegmentTime,
+  validateQty,
 } from "./worktime";
 
 describe("timeToMinutes", () => {
@@ -83,5 +84,31 @@ describe("validateSegmentTime", () => {
 
   test("skips the order check for 'out' when openIn is omitted", () => {
     expect(validateSegmentTime("09:15", "12:00", "out")).toBeNull();
+  });
+});
+
+describe("validateQty", () => {
+  test("accepts a positive integer", () => {
+    expect(validateQty("3")).toBe(3);
+  });
+
+  test("accepts a positive decimal", () => {
+    expect(validateQty("2.5")).toBe(2.5);
+  });
+
+  test("rejects zero", () => {
+    expect(validateQty("0")).toBeNull();
+  });
+
+  test("rejects a negative number", () => {
+    expect(validateQty("-1")).toBeNull();
+  });
+
+  test("rejects non-numeric input", () => {
+    expect(validateQty("abc")).toBeNull();
+  });
+
+  test("rejects an empty string", () => {
+    expect(validateQty("")).toBeNull();
   });
 });

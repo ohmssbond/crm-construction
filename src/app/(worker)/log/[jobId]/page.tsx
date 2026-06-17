@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Tabs } from "@/components/ui/Tabs";
-import { getJobTimeForWorker } from "@/lib/data/worker";
+import { getJobTimeForWorker, getJobMaterialsForWorker } from "@/lib/data/worker";
+import { listMaterialsForPicker } from "@/lib/data/materials";
+import { MaterialsControl } from "../MaterialsControl";
 import { fmtJobLocation } from "@/lib/data/format";
 import { fmtTimeOfDay, sumSegmentHours, roundQuarterHours } from "@/lib/data/worktime";
 import { ClockControl } from "../ClockControl";
@@ -12,6 +14,9 @@ export default async function WorkerJobPage({ params }: { params: Promise<{ jobI
   const data = await getJobTimeForWorker(jobId);
   if (!data) notFound();
   const { job, entry } = data;
+
+  const materialLines = await getJobMaterialsForWorker(jobId);
+  const catalog = await listMaterialsForPicker();
 
   const segments = entry?.segments ?? [];
   const openSeg = segments.find((s) => !s.time_out) ?? null;
@@ -44,6 +49,10 @@ export default async function WorkerJobPage({ params }: { params: Promise<{ jobI
     </div>
   );
 
+  const materialsTab = (
+    <MaterialsControl jobId={jobId} lines={materialLines} catalog={catalog} />
+  );
+
   const stub = <p className="text-meta text-faint py-4">Coming soon.</p>;
 
   return (
@@ -58,7 +67,7 @@ export default async function WorkerJobPage({ params }: { params: Promise<{ jobI
       <Tabs
         tabs={[
           { label: "Time", content: timeTab },
-          { label: "Materials", content: stub },
+          { label: "Materials", content: materialsTab },
           { label: "Photos", content: stub },
         ]}
       />

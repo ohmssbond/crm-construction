@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireTbWorker } from "@/lib/auth-tb";
 import { getWorkspaceContext } from "@/lib/data/org";
-import { nowTimeInZone, todayInZone, validateSegmentTime } from "@/lib/data/worktime";
+import { nowTimeInZone, todayInZone, validateSegmentTime, validateQty } from "@/lib/data/worktime";
 
 async function workerCtx() {
   const user = await requireTbWorker();
@@ -134,5 +134,66 @@ export async function setNoCharge(entryId: string, jobId: string, value: boolean
   await requireTbWorker();
   const supabase = await createClient();
   await supabase.from("job_time_entries").update({ no_charge: value }).eq("id", entryId);
+  revalidatePath(`/log/${jobId}`);
+}
+
+export async function addJobMaterial(
+  jobId: string,
+  materialId: string,
+  qtyInput: string
+): Promise<string | void> {
+  const { userId, orgId } = await workerCtx();
+  const qty = validateQty(qtyInput);
+  if (qty === null) return "Enter a quantity greater than zero.";
+
+  const supabase = await createClient();
+  // Snapshot the catalog name + cost at add time (cost never returned to client).
+  const { data: material } = await supabase
+    .from("materials")
+    .select("name, unit_price, currency")
+    .eq("id", materialId)
+    .is("archived_at", null)
+    .maybeSingle();
+  if (!material) return "That material is no longer available.";
+
+  await supabase.from("job_material_lines").insert({
+    organization_id: orgId,
+    job_id: jobId,
+    worker_user_id: userId,
+    material_id: materialId,
+    item: material.name,
+    unit_cost: material.unit_price,
+    currency: material.currency,
+    qty,
+  });
+  revalidatePath(`/log/${jobId}`);
+}
+
+export async function updateJobMaterialQty(
+  lineId: string,
+  jobId: string,
+  qtyInput: string
+): Promise<string | void> {
+  const { userId } = await workerCtx();
+  const qty = validateQty(qtyInput);
+  if (qty === null) return "Enter a quantity greater than zero.";
+
+  const supabase = await createClient();
+  await supabase
+    .from("job_material_lines")
+    .update({ qty })
+    .eq("id", lineId)
+    .eq("worker_user_id", userId);
+  revalidatePath(`/log/${jobId}`);
+}
+
+export async function removeJobMaterial(lineId: string, jobId: string): Promise<void> {
+  const { userId } = await workerCtx();
+  const supabase = await createClient();
+  await supabase
+    .from("job_material_lines")
+    .delete()
+    .eq("id", lineId)
+    .eq("worker_user_id", userId);
   revalidatePath(`/log/${jobId}`);
 }
