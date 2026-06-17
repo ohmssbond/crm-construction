@@ -428,6 +428,68 @@ export type Database = {
           },
         ]
       }
+      materials: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          last_synced_at: string | null
+          name: string
+          organization_id: string
+          qbo_id: string | null
+          qbo_sync_token: string | null
+          sku: string | null
+          source: string
+          sync_status: string
+          type: string
+          unit_price: number | null
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          last_synced_at?: string | null
+          name: string
+          organization_id: string
+          qbo_id?: string | null
+          qbo_sync_token?: string | null
+          sku?: string | null
+          source?: string
+          sync_status?: string
+          type?: string
+          unit_price?: number | null
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          last_synced_at?: string | null
+          name?: string
+          organization_id?: string
+          qbo_id?: string | null
+          qbo_sync_token?: string | null
+          sku?: string | null
+          source?: string
+          sync_status?: string
+          type?: string
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materials_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memberships: {
         Row: {
           created_at: string

@@ -7,6 +7,7 @@ import {
   MoreHorizontal,
   FileText,
   User,
+  Package,
 } from "lucide-react";
 
 export type World = "artisan" | "portal" | "timebilling";
@@ -47,8 +48,9 @@ export const portalTabs = ["/my-projects", "/account"];
 
 export const timebillingNav: NavItem[] = [
   { href: "/tb/jobs", label: "Jobs", icon: FolderKanban },
+  { href: "/tb/materials", label: "Materials", icon: Package },
 ];
-export const timebillingTabs = ["/tb/jobs"];
+export const timebillingTabs = ["/tb/jobs", "/tb/materials"];
 
 export const navFor = (world: World): NavItem[] =>
   world === "portal" ? portalNav : world === "timebilling" ? timebillingNav : artisanNav;
