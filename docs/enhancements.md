@@ -100,6 +100,14 @@ _Open questions / notes:_
     ("your cost") + currency at add time; cost never reaches the worker client
     (cost-free picker + line reads). `validateQty` helper (qty > 0). Catalog-only —
     ad-hoc free-text lines & crew-shared visibility deferred.
-  Remaining slices (later): 5c photos/attachments ->
-  pre-invoice -> export -> QBO import.
+  - Photos/attachments (slice 5c) ✅ shipped (Jun 18, 2026): worker Photos tab on the
+    job detail — capture/upload a labeled photo/receipt, see it with its added
+    timestamp + upload status, remove your own. New `job_attachments` table (per-worker,
+    worker_rw/admin_read RLS mirroring 5b) + new private `job-files` Storage bucket with
+    a T&B-membership storage policy (mirrors the CRM `project-files` pattern). Direct
+    browser→Storage upload then record-after-upload (orphan object cleaned on record
+    failure); signed-URL thumbnails (glyph for non-images). `validateLabel` helper.
+    Store-only (no OCR). Offline queue deferred but schema-ready (status queued/uploaded,
+    added_at vs uploaded_at); relabel & crew-shared visibility deferred.
+  Remaining slices (later): pre-invoice -> export -> QBO import.
 
