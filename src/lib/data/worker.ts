@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "./org";
 import { todayInZone } from "./worktime";
 import { one } from "./rel";
+import { fmtDateTime } from "./format";
 
 /** Today's work_day for the signed-in worker (+ any open prior day) in org tz. */
 export async function getWorkerDay() {
@@ -92,4 +93,42 @@ export async function getJobMaterialsForWorker(jobId: string) {
     .eq("worker_user_id", user.id)
     .order("created_at", { ascending: true });
   return data ?? [];
+}
+
+/** The signed-in worker's own photos for a job, newest first, each resolved to a
+ *  short-lived signed URL + a display timestamp (org tz). No storage_path leaks. */
+export async function getJobPhotosForWorker(jobId: string) {
+  const ctx = await getWorkspaceContext();
+  if (!ctx) return [];
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data } = await supabase
+    .from("job_attachments")
+    .select("id, label, filename, mime_type, status, added_at, storage_path")
+    .eq("job_id", jobId)
+    .eq("worker_user_id", user.id)
+    .order("added_at", { ascending: false });
+  const rows = data ?? [];
+
+  const signed: Record<string, string> = {};
+  const paths = rows.map((r) => r.storage_path as string);
+  if (paths.length) {
+    const { data: urls } = await supabase.storage.from("job-files").createSignedUrls(paths, 3600);
+    urls?.forEach((u) => {
+      if (u.path && u.signedUrl) signed[u.path] = u.signedUrl;
+    });
+  }
+
+  return rows.map((r) => ({
+    id: r.id as string,
+    label: r.label as string,
+    status: r.status as string,
+    addedLabel: fmtDateTime(r.added_at as string, ctx.org.timezone),
+    href: signed[r.storage_path as string] ?? null,
+    isImage: ((r.mime_type as string | null) ?? "").startsWith("image/"),
+  }));
 }

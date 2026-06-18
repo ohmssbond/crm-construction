@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireTbWorker } from "@/lib/auth-tb";
 import { getWorkspaceContext } from "@/lib/data/org";
-import { nowTimeInZone, todayInZone, validateSegmentTime, validateQty } from "@/lib/data/worktime";
+import { nowTimeInZone, todayInZone, validateSegmentTime, validateQty, validateLabel } from "@/lib/data/worktime";
 
 async function workerCtx() {
   const user = await requireTbWorker();
@@ -195,5 +195,45 @@ export async function removeJobMaterial(lineId: string, jobId: string): Promise<
     .delete()
     .eq("id", lineId)
     .eq("worker_user_id", userId);
+  revalidatePath(`/log/${jobId}`);
+}
+
+export async function recordJobPhoto(
+  jobId: string,
+  meta: { path: string; label: string; filename: string | null; mime: string | null; size: number }
+): Promise<string | void> {
+  const { userId, orgId } = await workerCtx();
+  const label = validateLabel(meta.label);
+  if (label === null) return "Add a label for the photo.";
+  if (!meta.path.startsWith(`${orgId}/${jobId}/`)) return "Invalid upload path.";
+
+  const supabase = await createClient();
+  await supabase.from("job_attachments").insert({
+    organization_id: orgId,
+    job_id: jobId,
+    worker_user_id: userId,
+    storage_path: meta.path,
+    label,
+    filename: meta.filename,
+    mime_type: meta.mime,
+    size_bytes: meta.size,
+    status: "uploaded",
+    uploaded_at: new Date().toISOString(),
+  });
+  revalidatePath(`/log/${jobId}`);
+}
+
+export async function removeJobPhoto(photoId: string, jobId: string): Promise<void> {
+  const { userId } = await workerCtx();
+  const supabase = await createClient();
+  const { data: row } = await supabase
+    .from("job_attachments")
+    .select("storage_path")
+    .eq("id", photoId)
+    .eq("worker_user_id", userId)
+    .maybeSingle();
+  if (!row) return;
+  await supabase.from("job_attachments").delete().eq("id", photoId).eq("worker_user_id", userId);
+  await supabase.storage.from("job-files").remove([row.storage_path as string]);
   revalidatePath(`/log/${jobId}`);
 }

@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Tabs } from "@/components/ui/Tabs";
-import { getJobTimeForWorker, getJobMaterialsForWorker } from "@/lib/data/worker";
+import { getJobTimeForWorker, getJobMaterialsForWorker, getJobPhotosForWorker } from "@/lib/data/worker";
 import { listMaterialsForPicker } from "@/lib/data/materials";
+import { getWorkspaceContext } from "@/lib/data/org";
 import { MaterialsControl } from "../MaterialsControl";
+import { PhotosControl } from "../PhotosControl";
 import { fmtJobLocation } from "@/lib/data/format";
 import { fmtTimeOfDay, sumSegmentHours, roundQuarterHours } from "@/lib/data/worktime";
 import { ClockControl } from "../ClockControl";
@@ -15,9 +17,11 @@ export default async function WorkerJobPage({ params }: { params: Promise<{ jobI
   if (!data) notFound();
   const { job, entry } = data;
 
-  const [materialLines, catalog] = await Promise.all([
+  const [materialLines, catalog, photos, ctx] = await Promise.all([
     getJobMaterialsForWorker(jobId),
     listMaterialsForPicker(),
+    getJobPhotosForWorker(jobId),
+    getWorkspaceContext(),
   ]);
 
   const segments = entry?.segments ?? [];
@@ -55,7 +59,11 @@ export default async function WorkerJobPage({ params }: { params: Promise<{ jobI
     <MaterialsControl jobId={jobId} lines={materialLines} catalog={catalog} />
   );
 
-  const stub = <p className="text-meta text-faint py-4">Coming soon.</p>;
+  const photosTab = ctx ? (
+    <PhotosControl jobId={jobId} orgId={ctx.org.id} photos={photos} />
+  ) : (
+    <p className="text-meta text-faint py-4">No workspace.</p>
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -70,7 +78,7 @@ export default async function WorkerJobPage({ params }: { params: Promise<{ jobI
         tabs={[
           { label: "Time", content: timeTab },
           { label: "Materials", content: materialsTab },
-          { label: "Photos", content: stub },
+          { label: "Photos", content: photosTab },
         ]}
       />
     </div>
