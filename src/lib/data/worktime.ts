@@ -35,6 +35,26 @@ export function validateLabel(input: string): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+/** Extended cost of a material line = qty × unit_cost, rounded to cents. Non-numeric
+ *  inputs (or a null unit cost) yield 0. qty/unitCost may arrive as strings (PostgREST
+ *  serializes `numeric` as a string). */
+export function materialExtended(
+  qty: string | number,
+  unitCost: string | number | null
+): number {
+  const q = Number(qty);
+  const u = Number(unitCost);
+  if (!Number.isFinite(q) || !Number.isFinite(u)) return 0;
+  // Round to cents: multiply by 100, round, divide by 100.
+  // Add a tiny epsilon (0.0001) to handle floating-point precision issues.
+  return Math.round(q * u * 100 + 0.0001) / 100;
+}
+
+/** Format money as "<CURRENCY> <amount>" with 2 decimals (e.g. "USD 42.50"). */
+export function fmtMoney(amount: number, currency: string): string {
+  return `${currency} ${amount.toFixed(2)}`;
+}
+
 /** Sum of (out − in)/60 over CLOSED segments only (open ones excluded). */
 export function sumSegmentHours(
   segments: { time_in: string; time_out: string | null }[]

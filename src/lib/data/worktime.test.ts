@@ -9,6 +9,8 @@ import {
   validateSegmentTime,
   validateQty,
   validateLabel,
+  materialExtended,
+  fmtMoney,
 } from "./worktime";
 
 describe("timeToMinutes", () => {
@@ -129,5 +131,37 @@ describe("validateLabel", () => {
 
   test("rejects a whitespace-only string", () => {
     expect(validateLabel("   ")).toBeNull();
+  });
+});
+
+describe("materialExtended", () => {
+  test("multiplies qty by unit cost", () => {
+    expect(materialExtended("3", "4.50")).toBe(13.5);
+  });
+
+  test("rounds to cents", () => {
+    expect(materialExtended("3", "1.005")).toBe(3.02);
+  });
+
+  test("accepts numbers", () => {
+    expect(materialExtended(2, 2.5)).toBe(5);
+  });
+
+  test("returns 0 for a null unit cost", () => {
+    expect(materialExtended("3", null)).toBe(0);
+  });
+
+  test("returns 0 for non-numeric input", () => {
+    expect(materialExtended("abc", "2")).toBe(0);
+  });
+});
+
+describe("fmtMoney", () => {
+  test("formats with two decimals and the currency", () => {
+    expect(fmtMoney(42.5, "USD")).toBe("USD 42.50");
+  });
+
+  test("pads whole numbers", () => {
+    expect(fmtMoney(7, "USD")).toBe("USD 7.00");
   });
 });
