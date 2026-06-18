@@ -18,6 +18,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
     <div className="flex flex-col gap-5">
       <div className="flex items-center gap-3">
         <h2 className="text-title font-semibold flex-1">{job.name}</h2>
+        <Link href={`/tb/jobs/${id}/report`} className={buttonClasses("ghost", "sm")}>View report</Link>
         <Link href={`/tb/jobs/${id}/edit`} className={`${buttonClasses("ghost", "sm")} hidden lg:inline-flex`}>Edit</Link>
         <ArchiveButton action={archiveJob.bind(null, id)} noun="job" />
       </div>
