@@ -13,6 +13,7 @@ type Photo = {
   id: string;
   label: string;
   status: string;
+  filename: string | null;
   addedLabel: string;
   href: string | null;
   isImage: boolean;
@@ -123,7 +124,12 @@ function PhotoTile({ jobId, photo }: { jobId: string; photo: Photo }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={photo.href} alt={photo.label} className="w-full h-full object-cover" />
         ) : (
-          <span className="text-2xl">📄</span>
+          <div className="flex flex-col items-center gap-1 p-2 text-center">
+            <span className="text-2xl">📄</span>
+            {photo.filename && (
+              <span className="text-[11px] text-faint break-all line-clamp-2">{photo.filename}</span>
+            )}
+          </div>
         )}
       </a>
       <div className="p-2 flex flex-col gap-1">

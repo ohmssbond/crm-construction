@@ -127,6 +127,7 @@ export async function getJobPhotosForWorker(jobId: string) {
     id: r.id as string,
     label: r.label as string,
     status: r.status as string,
+    filename: (r.filename as string | null) ?? null,
     addedLabel: fmtDateTime(r.added_at as string, ctx.org.timezone),
     href: signed[r.storage_path as string] ?? null,
     isImage: ((r.mime_type as string | null) ?? "").startsWith("image/"),
