@@ -109,5 +109,19 @@ _Open questions / notes:_
     failure); signed-URL thumbnails (glyph for non-images). `validateLabel` helper.
     Store-only (no OCR). Offline queue deferred but schema-ready (status queued/uploaded,
     added_at vs uploaded_at); relabel & crew-shared visibility deferred.
-  Remaining slices (later): pre-invoice -> export -> QBO import.
+  - Pre-invoice / completed-job report (slice 6) ✅ shipped (Jun 18, 2026): read-only
+    admin report at `/tb/jobs/[id]/report` (+ "View report" link on the job detail, any
+    status) assembling the PRD §8.2b staging record — customer + contact, site address,
+    time per tech (grouped worker→date, 0.25h daily totals + grand total, no_charge
+    flagged not subtracted), materials (extended cost + your-cost subtotal), signed-URL
+    photos, description/notes. `getJobReport` in `src/lib/data/tb-report.ts` reads across
+    all workers via the `admin_read` RLS; tech labels resolved to login emails via the
+    service-role admin client. `materialExtended` (round-half-up to cents) + `fmtMoney`
+    helpers. NO migration. Captured quantities only — no priced invoice total (no labor
+    rate/markup in MVP); fixed-price shows contract price. On-screen only.
+  Remaining slices (later): .xlsx export -> QBO import.
+  Deferred follow-ups: customer-clean work-order variant + print/PDF of the report;
+  ad-hoc material lines; offline photo upload queue; crew-shared visibility; a formal
+  Worker entity (display names instead of emails); mixed-currency + batched email lookup
+  refinements in getJobReport.
 
