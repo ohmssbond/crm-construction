@@ -8,6 +8,7 @@ import {
   todayInZone,
   validateSegmentTime,
   validateQty,
+  validateLabel,
 } from "./worktime";
 
 describe("timeToMinutes", () => {
@@ -110,5 +111,23 @@ describe("validateQty", () => {
 
   test("rejects an empty string", () => {
     expect(validateQty("")).toBeNull();
+  });
+});
+
+describe("validateLabel", () => {
+  test("accepts a non-empty label", () => {
+    expect(validateLabel("Home Depot")).toBe("Home Depot");
+  });
+
+  test("trims surrounding whitespace", () => {
+    expect(validateLabel("  receipt  ")).toBe("receipt");
+  });
+
+  test("rejects an empty string", () => {
+    expect(validateLabel("")).toBeNull();
+  });
+
+  test("rejects a whitespace-only string", () => {
+    expect(validateLabel("   ")).toBeNull();
   });
 });

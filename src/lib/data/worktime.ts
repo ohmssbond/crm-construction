@@ -28,6 +28,13 @@ export function validateQty(input: string): number | null {
   return n;
 }
 
+/** Validate a worker-entered photo label. Returns the trimmed label if non-empty,
+ *  else null (caller surfaces a user-facing error). */
+export function validateLabel(input: string): string | null {
+  const trimmed = input.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 /** Sum of (out − in)/60 over CLOSED segments only (open ones excluded). */
 export function sumSegmentHours(
   segments: { time_in: string; time_out: string | null }[]
