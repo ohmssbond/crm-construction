@@ -49,8 +49,9 @@ export const portalTabs = ["/my-projects", "/account"];
 export const timebillingNav: NavItem[] = [
   { href: "/tb/jobs", label: "Jobs", icon: FolderKanban },
   { href: "/tb/materials", label: "Materials", icon: Package },
+  { href: "/tb/workers", label: "Workers", icon: Users },
 ];
-export const timebillingTabs = ["/tb/jobs", "/tb/materials"];
+export const timebillingTabs = ["/tb/jobs", "/tb/materials", "/tb/workers"];
 
 export const navFor = (world: World): NavItem[] =>
   world === "portal" ? portalNav : world === "timebilling" ? timebillingNav : artisanNav;

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { productRole, resolveHome } from "@/lib/auth";
 import { orgHasProduct } from "@/lib/data/entitlements";
 import { getWorkspaceContext } from "@/lib/data/org";
+import { getWorkerName } from "@/lib/data/tb-workers";
 import { NotEnabled } from "@/components/NotEnabled";
 import { signOut } from "@/lib/auth-actions";
 
@@ -15,6 +16,7 @@ export default async function WorkerLayout({ children }: { children: ReactNode }
   if (productRole(claims, "timebilling") !== "worker") redirect(resolveHome(claims));
 
   const ctx = await getWorkspaceContext();
+  const workerName = await getWorkerName();
   if (!(await orgHasProduct(ctx?.org.id, "timebilling"))) {
     return <NotEnabled product="Time & Billing" />;
   }
@@ -36,6 +38,7 @@ export default async function WorkerLayout({ children }: { children: ReactNode }
             </div>
           )}
           <span className="text-body font-semibold truncate">{ctx?.org.name ?? "Time logging"}</span>
+          {workerName && <span className="text-meta text-muted truncate">· Hi, {workerName}</span>}
         </div>
         <div className="flex items-center gap-3 text-meta shrink-0">
           {hasCrm && (

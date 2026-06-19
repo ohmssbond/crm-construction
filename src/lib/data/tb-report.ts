@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getWorkspaceContext } from "./org";
 import { one } from "./rel";
-import { sumSegmentHours, roundQuarterHours, materialExtended } from "./worktime";
+import { sumSegmentHours, roundQuarterHours, materialExtended, workerLabel } from "./worktime";
 import { fmtDateTime, fmtJobLocation } from "./format";
 
 /** Assemble the completed-job report for a job (admin-only surface). Reads time /
@@ -72,6 +72,19 @@ export async function getJobReport(jobId: string) {
     );
   }
 
+  // Worker names (override the email label when set)
+  const names: Record<string, string> = {};
+  if (workerIds.length) {
+    const { data: nameRows } = await supabase
+      .from("tb_workers")
+      .select("user_id, name")
+      .eq("organization_id", ctx.org.id)
+      .in("user_id", workerIds);
+    (nameRows ?? []).forEach((r) => {
+      names[r.user_id as string] = r.name as string;
+    });
+  }
+
   // Group time by worker -> date
   type Day = { date: string; total: number; noCharge: boolean; segments: { in: string; out: string }[] };
   const byWorker = new Map<string, Day[]>();
@@ -89,7 +102,7 @@ export async function getJobReport(jobId: string) {
     byWorker.get(wid)!.push(day);
   }
   const workers = [...byWorker.entries()].map(([wid, days]) => ({
-    email: emails[wid] ?? wid.slice(0, 8),
+    label: workerLabel(names[wid] ?? null, emails[wid] ?? null, wid),
     totalHours: days.reduce((sum, d) => sum + d.total, 0),
     days,
   }));
