@@ -45,9 +45,9 @@ export default async function JobReportPage({ params }: { params: Promise<{ id: 
         ) : (
           <Card className="flex flex-col">
             {time.workers.map((w) => (
-              <div key={w.email} className="px-4 py-3 border-b border-line-2 last:border-b-0 flex flex-col gap-1">
+              <div key={w.label} className="px-4 py-3 border-b border-line-2 last:border-b-0 flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-meta font-semibold truncate">{w.email}</span>
+                  <span className="text-meta font-semibold truncate">{w.label}</span>
                   <span className="text-meta text-faint shrink-0">{w.totalHours.toFixed(2)} h</span>
                 </div>
                 {w.days.map((d, i) => (
