@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { getWorkerDay, listActiveJobs } from "@/lib/data/worker";
 import { fmtTimeOfDay, nowTimeInZone } from "@/lib/data/worktime";
 import { fmtDate } from "@/lib/data/format";
+import { getWorkerName } from "@/lib/data/tb-workers";
 import { StartDayForm } from "./StartDayForm";
 import { endDay, resumeDay } from "./actions";
 
@@ -16,7 +17,8 @@ export default async function WorkerHome() {
     const prior = day.openPrior
       ? { id: day.openPrior.id, label: fmtDate(day.openPrior.work_date) ?? "last workday" }
       : null;
-    return <StartDayForm prior={prior} defaultStart={nowTimeInZone(day.tz)} />;
+    const name = await getWorkerName();
+    return <StartDayForm prior={prior} defaultStart={nowTimeInZone(day.tz)} name={name} />;
   }
 
   // Day already ended (same-day clock-out) — show a summary with a Resume escape hatch.

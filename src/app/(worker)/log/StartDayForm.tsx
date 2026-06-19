@@ -9,9 +9,11 @@ import { startDay } from "./actions";
 export function StartDayForm({
   prior,
   defaultStart,
+  name,
 }: {
   prior: { id: string; label: string } | null;
   defaultStart: string;
+  name: string | null;
 }) {
   const [pending, start] = useTransition();
 
@@ -25,7 +27,7 @@ export function StartDayForm({
       }}
     >
       <div>
-        <h1 className="text-title font-semibold">Good morning</h1>
+        <h1 className="text-title font-semibold">Good morning{name ? `, ${name}` : ""}</h1>
         <p className="text-meta text-muted">Set your hours to get started.</p>
       </div>
       <Card className="p-4 flex flex-col gap-3">
