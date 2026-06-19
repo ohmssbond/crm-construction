@@ -119,7 +119,17 @@ _Open questions / notes:_
     service-role admin client. `materialExtended` (round-half-up to cents) + `fmtMoney`
     helpers. NO migration. Captured quantities only — no priced invoice total (no labor
     rate/markup in MVP); fixed-price shows contract price. On-screen only.
-  Remaining slices (later): .xlsx export -> QBO import.
+  - Worker names (slice 7a) ✅ shipped (Jun 19, 2026): surfaced from dogfooding the
+    slice-6 report (techs were labeled by email). New `tb_workers(org,user_id,name)`
+    table (admin_rw + worker_read_own RLS) + a `/tb/workers` admin screen (with a Workers
+    nav item) to name existing workers — list built via the service-role client scoped to
+    the admin's org (memberships aren't admin-readable under RLS). `workerLabel` helper
+    (name > email > id). The completed-job report now labels each tech by name (email
+    fallback; `getJobReport` field `email`→`label`), and the worker `/log` header greets
+    "· Hi, {name}" (worker-reads-own). Naming existing workers only — net-new onboarding
+    out of scope. Migration `20260619000001`. Deferred: getWorkerName org-scope hardening
+    (only matters once a worker is in 2 T&B orgs; single-org for now).
+  Remaining slices (later): 7b collapse job detail + report -> .xlsx export -> QBO import.
   Deferred follow-ups: customer-clean work-order variant + print/PDF of the report;
   ad-hoc material lines; offline photo upload queue; crew-shared visibility; a formal
   Worker entity (display names instead of emails); mixed-currency + batched email lookup
