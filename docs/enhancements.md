@@ -125,11 +125,19 @@ _Open questions / notes:_
     nav item) to name existing workers — list built via the service-role client scoped to
     the admin's org (memberships aren't admin-readable under RLS). `workerLabel` helper
     (name > email > id). The completed-job report now labels each tech by name (email
-    fallback; `getJobReport` field `email`→`label`), and the worker `/log` header greets
-    "· Hi, {name}" (worker-reads-own). Naming existing workers only — net-new onboarding
-    out of scope. Migration `20260619000001`. Deferred: getWorkerName org-scope hardening
-    (only matters once a worker is in 2 T&B orgs; single-org for now).
-  Remaining slices (later): 7b collapse job detail + report -> .xlsx export -> QBO import.
+    fallback; `getJobReport` field `email`→`label`), and the worker is greeted by name
+    (worker-reads-own). Naming existing workers only — net-new onboarding out of scope.
+    Migration `20260619000001`. Deferred: getWorkerName org-scope hardening (only matters
+    once a worker is in 2 T&B orgs; single-org for now).
+    UX tweak (Jun 19): moved the worker greeting out of the `/log` header into the
+    start-of-day screen heading — "Good morning, {name}".
+  - Collapse job detail + report (slice 7b) ✅ shipped (Jun 19, 2026): admin asked "why a
+    separate report button?" — folded the completed-job report into `/tb/jobs/[id]`. The
+    job detail is rebuilt on `getJobReport`: info Card (now incl. Email/Phone, fmtMoney for
+    fixed price) + Status/Edit/Archive controls + the Time/Materials/Photos sections inline
+    (extracted verbatim into a `ReportSections` component). Deleted the `/tb/jobs/[id]/report`
+    route + "View report" button. NO migration; `getJobDetail`/edit page unchanged.
+  Remaining slices (later): .xlsx export -> QBO import.
   Deferred follow-ups: customer-clean work-order variant + print/PDF of the report;
   ad-hoc material lines; offline photo upload queue; crew-shared visibility; a formal
   Worker entity (display names instead of emails); mixed-currency + batched email lookup
