@@ -1,43 +1,29 @@
-import { notFound } from "next/navigation";
-import Link from "next/link";
 import { Card } from "@/components/ui/Card";
-import { KeyValue } from "@/components/ui/KeyValue";
-import { getJobReport } from "@/lib/data/tb-report";
 import { fmtDate } from "@/lib/data/format";
 import { fmtTimeOfDay, fmtMoney } from "@/lib/data/worktime";
 
-export default async function JobReportPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const report = await getJobReport(id);
-  if (!report) notFound();
-  const { job, customer, time, materials, photos } = report;
+type ReportSectionsProps = {
+  time: {
+    workers: {
+      label: string;
+      totalHours: number;
+      days: { date: string; total: number; noCharge: boolean; segments: { in: string; out: string }[] }[];
+    }[];
+    grandTotalHours: number;
+  };
+  materials: {
+    lines: { item: string; qty: string; unitCost: string | null; extended: number; currency: string }[];
+    subtotal: number;
+    currency: string;
+  };
+  photos: { label: string; filename: string | null; addedLabel: string; href: string | null; isImage: boolean }[];
+};
 
-  const billing =
-    job.billingType === "fixed_price"
-      ? `Fixed price — ${fmtMoney(Number(job.contractPrice ?? 0), job.currency)}`
-      : "Time & materials";
-  const dates = [fmtDate(job.startDate), fmtDate(job.endDate)].filter(Boolean).join(" – ") || "—";
-
+/** The completed-job report's captured-work sections (Time / Materials / Photos),
+ *  rendered inline on the job detail page. Read-only presentational component. */
+export function ReportSections({ time, materials, photos }: ReportSectionsProps) {
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex items-center gap-3">
-        <Link href={`/tb/jobs/${id}`} className="text-muted text-xl leading-none">‹</Link>
-        <h2 className="text-title font-semibold flex-1">{job.name}</h2>
-        <span className="text-meta text-faint">Completed-job report</span>
-      </div>
-
-      <Card className="px-4 py-1">
-        <KeyValue label="Customer" value={customer.name} />
-        <KeyValue label="Email" value={customer.email ?? "—"} />
-        <KeyValue label="Phone" value={customer.phone ?? "—"} />
-        <KeyValue label="Site address" value={job.siteAddress || "—"} />
-        <KeyValue label="Billing" value={billing} />
-        <KeyValue label="Status" value={job.status} />
-        <KeyValue label="Dates" value={dates} />
-        <KeyValue label="Description" value={job.description ?? "—"} />
-        <KeyValue label="Notes" value={job.notes ?? "—"} />
-      </Card>
-
+    <>
       <section className="flex flex-col gap-2">
         <h3 className="text-body font-semibold">Time on the job</h3>
         {time.workers.length === 0 ? (
@@ -136,6 +122,6 @@ export default async function JobReportPage({ params }: { params: Promise<{ id: 
           </div>
         )}
       </section>
-    </div>
+    </>
   );
 }
