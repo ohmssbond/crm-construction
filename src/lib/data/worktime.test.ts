@@ -11,6 +11,7 @@ import {
   validateLabel,
   materialExtended,
   fmtMoney,
+  workerLabel,
 } from "./worktime";
 
 describe("timeToMinutes", () => {
@@ -163,5 +164,23 @@ describe("fmtMoney", () => {
 
   test("pads whole numbers", () => {
     expect(fmtMoney(7, "USD")).toBe("USD 7.00");
+  });
+});
+
+describe("workerLabel", () => {
+  test("uses the name when set", () => {
+    expect(workerLabel("Jose Ramirez", "jose@acme.com", "abcd1234")).toBe("Jose Ramirez");
+  });
+
+  test("falls back to email when name is null", () => {
+    expect(workerLabel(null, "jose@acme.com", "abcd1234")).toBe("jose@acme.com");
+  });
+
+  test("falls back to email when name is blank", () => {
+    expect(workerLabel("   ", "jose@acme.com", "abcd1234")).toBe("jose@acme.com");
+  });
+
+  test("falls back to a short id when name and email are null", () => {
+    expect(workerLabel(null, null, "abcd1234ef")).toBe("abcd1234");
   });
 });

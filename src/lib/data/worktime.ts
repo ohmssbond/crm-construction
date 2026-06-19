@@ -55,6 +55,16 @@ export function fmtMoney(amount: number, currency: string): string {
   return `${currency} ${amount.toFixed(2)}`;
 }
 
+/** Display label for a worker: their set name, else their login email, else a short
+ *  id fallback. Used by the report and anywhere a worker is named. */
+export function workerLabel(
+  name: string | null,
+  email: string | null,
+  id: string
+): string {
+  return name?.trim() || email || id.slice(0, 8);
+}
+
 /** Sum of (out − in)/60 over CLOSED segments only (open ones excluded). */
 export function sumSegmentHours(
   segments: { time_in: string; time_out: string | null }[]
