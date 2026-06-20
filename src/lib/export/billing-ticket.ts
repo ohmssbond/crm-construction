@@ -20,6 +20,7 @@ export type BillingReport = {
     subtotal: number;
     currency: string;
   };
+  workNotes: { dateLabel: string; body: string }[];
 };
 
 export type BillingRows = {
@@ -40,6 +41,7 @@ export type BillingRows = {
   totalMaterialCost: number;
   currency: string;
   notes: string | null;
+  workNotes: { dateLabel: string; body: string }[];
 };
 
 /** Transform a completed-job report into the billing-ticket row structures. Pivots
@@ -85,6 +87,7 @@ export function jobBillingRows(report: BillingReport): BillingRows {
     totalMaterialCost: report.materials.subtotal,
     currency: report.materials.currency,
     notes: report.job.notes,
+    workNotes: report.workNotes.map((n) => ({ dateLabel: n.dateLabel, body: n.body })),
   };
 }
 
@@ -106,6 +109,9 @@ export function buildBillingWorkbook(rows: BillingRows): ExcelJS.Workbook {
   ws.addRow(["Name", rows.customer.name, "", "Phone", rows.customer.phone ?? ""]);
   ws.addRow(["Email", rows.customer.email ?? "", "", "Site address", rows.siteAddress || ""]);
   ws.addRow(["Description of work", rows.description ?? ""]);
+  for (const n of rows.workNotes) {
+    ws.addRow(["", `${n.dateLabel} — ${n.body}`]);
+  }
   ws.addRow([]);
 
   // Time On Site

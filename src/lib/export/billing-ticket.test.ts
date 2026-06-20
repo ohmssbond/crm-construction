@@ -7,6 +7,7 @@ function baseReport(over: Partial<BillingReport> = {}): BillingReport {
     customer: { name: "Acme", email: "a@acme.com", phone: "555-1212" },
     time: { workers: [], grandTotalHours: 0 },
     materials: { lines: [], subtotal: 0, currency: "USD" },
+    workNotes: [],
     ...over,
   };
 }
@@ -137,5 +138,26 @@ describe("jobBillingRows — header, materials, totals", () => {
       { item: "Pipe", qty: "3", unitCost: 4.5, cost: 13.5 },
       { item: "Glue", qty: "1", unitCost: null, cost: 0 },
     ]);
+  });
+});
+
+describe("jobBillingRows — work notes", () => {
+  test("passes work notes through (date + body)", () => {
+    const r = jobBillingRows(
+      baseReport({
+        workNotes: [
+          { dateLabel: "Jun 20", body: "Primary Bedroom - Rough wired" },
+          { dateLabel: "Jun 21", body: "Kitchen - Trim out" },
+        ],
+      })
+    );
+    expect(r.workNotes).toEqual([
+      { dateLabel: "Jun 20", body: "Primary Bedroom - Rough wired" },
+      { dateLabel: "Jun 21", body: "Kitchen - Trim out" },
+    ]);
+  });
+
+  test("empty work notes → empty array", () => {
+    expect(jobBillingRows(baseReport()).workNotes).toEqual([]);
   });
 });
