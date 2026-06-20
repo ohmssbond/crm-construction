@@ -44,20 +44,24 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         <KeyValue label="Site address" value={job.siteAddress || "—"} />
         <KeyValue label="Billing" value={billing} />
         <KeyValue label="Dates" value={dates} />
+        <KeyValue label="Description" value={job.description ?? "—"} />
         <KeyValue
-          label="Description"
+          label="Notes of the Work Completed"
           value={
-            <div className="flex flex-col gap-1">
-              <span>{job.description ?? "—"}</span>
-              {report.workNotes.map((n, i) => (
-                <span key={i} className="text-faint">
-                  {n.dateLabel} · {n.tech} — {n.body}
-                </span>
-              ))}
-            </div>
+            job.notes || report.workNotes.length > 0 ? (
+              <div className="flex flex-col gap-1">
+                {job.notes && <span>{job.notes}</span>}
+                {report.workNotes.map((n, i) => (
+                  <span key={i} className="text-faint">
+                    {n.dateLabel} · {n.tech} — {n.body}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              "—"
+            )
           }
         />
-        <KeyValue label="Notes" value={job.notes ?? "—"} />
       </Card>
 
       <ReportSections time={report.time} materials={report.materials} photos={report.photos} />
