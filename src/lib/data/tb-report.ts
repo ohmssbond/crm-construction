@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getWorkspaceContext } from "./org";
 import { one } from "./rel";
 import { sumSegmentHours, roundQuarterHours, materialExtended, workerLabel } from "./worktime";
-import { fmtDateTime, fmtJobLocation } from "./format";
+import { fmtDateTime, fmtJobLocation, fmtZonedDate } from "./format";
 
 /** Assemble the completed-job report for a job (admin-only surface). Reads time /
  *  materials / photos across all workers via the admin's is_tb_admin RLS, resolves
@@ -59,8 +59,21 @@ export async function getJobReport(jobId: string) {
     });
   }
 
-  // 5. Worker emails (service-role; only ids that appear in time entries)
-  const workerIds = [...new Set(timeEntries.map((e) => e.worker_user_id as string))];
+  // 4b. Work notes (across all workers; admin_read)
+  const { data: noteRows } = await supabase
+    .from("job_work_notes")
+    .select("worker_user_id, body, created_at")
+    .eq("job_id", jobId)
+    .order("created_at", { ascending: true });
+  const notes = noteRows ?? [];
+
+  // 5. Worker emails/names (service-role; ids across time entries + work notes)
+  const workerIds = [
+    ...new Set([
+      ...timeEntries.map((e) => e.worker_user_id as string),
+      ...notes.map((n) => n.worker_user_id as string),
+    ]),
+  ];
   const emails: Record<string, string> = {};
   if (workerIds.length) {
     const admin = createAdminClient();
@@ -84,6 +97,12 @@ export async function getJobReport(jobId: string) {
       names[r.user_id as string] = r.name as string;
     });
   }
+
+  const workNotes = notes.map((n) => ({
+    tech: workerLabel(names[n.worker_user_id as string] ?? null, emails[n.worker_user_id as string] ?? null, n.worker_user_id as string),
+    dateLabel: fmtZonedDate(n.created_at as string, tz),
+    body: n.body as string,
+  }));
 
   // Group time by worker -> date
   type Day = { date: string; total: number; noCharge: boolean; segments: { in: string; out: string }[] };
@@ -150,5 +169,6 @@ export async function getJobReport(jobId: string) {
     time: { workers, grandTotalHours },
     materials: { lines, subtotal, currency: matCurrency },
     photos,
+    workNotes,
   };
 }
