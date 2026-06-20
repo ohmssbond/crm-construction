@@ -156,6 +156,11 @@ _Open questions / notes:_
     report/job page, date-prefixed body rows in the `.xlsx` export. `validateLabel` reused
     for the non-empty body. Migration `20260620000001`. Per-worker visibility (admin
     aggregates all); admin `job.description` unchanged.
+  - Description vs Notes layout (slice 10) ✅ shipped (Jun 20, 2026): per operator feedback,
+    **Description** stays the admin-only `job.description`; worker work-notes moved out of it
+    into a relabeled **"Notes of the Work Completed"** area, merged with the admin `job.notes`
+    (admin notes first, then the worker notes). Applies to the admin job page + the `.xlsx`
+    export. Presentation-only — no schema, no `getJobReport`/`jobBillingRows` change.
   Remaining slices (later): QBO import (OAuth connect; import customers + materials).
   Deferred follow-ups: customer-clean work-order variant + print/PDF of the report;
   ad-hoc material lines; offline photo upload queue; crew-shared visibility; a formal
