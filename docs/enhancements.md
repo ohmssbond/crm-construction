@@ -147,6 +147,15 @@ _Open questions / notes:_
     `exceljs` dep; pure `jobBillingRows` transform (unit-tested) + thin `buildBillingWorkbook`
     writer in `src/lib/export/billing-ticket.ts`. Billing only — payroll/reported-hours is a
     SEPARATE future report; the full multi-entity PRD §8.6 company dump is also deferred.
+  - Worker work-notes → Description of Work (slice 9) ✅ shipped (Jun 20, 2026): workers
+    append short work-performed notes on a job (e.g. "Primary Bedroom - Rough wired") via a
+    new **Notes** tab on `/log/[jobId]` (add / inline-edit / remove their own). New
+    `job_work_notes` table (per-worker; worker_rw + admin_read RLS). `getJobReport` reads
+    all the job's notes (worker-id union → labeled by tech name + date); they show under
+    **Description of Work** beneath the admin `job.description` — date·tech on the admin
+    report/job page, date-prefixed body rows in the `.xlsx` export. `validateLabel` reused
+    for the non-empty body. Migration `20260620000001`. Per-worker visibility (admin
+    aggregates all); admin `job.description` unchanged.
   Remaining slices (later): QBO import (OAuth connect; import customers + materials).
   Deferred follow-ups: customer-clean work-order variant + print/PDF of the report;
   ad-hoc material lines; offline photo upload queue; crew-shared visibility; a formal
