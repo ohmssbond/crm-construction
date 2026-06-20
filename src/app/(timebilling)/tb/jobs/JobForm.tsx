@@ -117,7 +117,7 @@ export function JobForm({
         )}
 
         <Field label="Description"><textarea name="description" rows={2} defaultValue={defaults?.description ?? ""} className={fieldInput} /></Field>
-        <Field label="Notes"><textarea name="notes" rows={2} defaultValue={defaults?.notes ?? ""} className={fieldInput} /></Field>
+        <Field label="Admin Notes"><textarea name="notes" rows={2} defaultValue={defaults?.notes ?? ""} className={fieldInput} /></Field>
       </Card>
       <FormError message={state.error} />
       <div>

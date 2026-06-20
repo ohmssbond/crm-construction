@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { jobBillingRows, type BillingReport } from "./billing-ticket";
+import { jobBillingRows, estimateWrapHeight, type BillingReport } from "./billing-ticket";
 
 function baseReport(over: Partial<BillingReport> = {}): BillingReport {
   return {
@@ -159,5 +159,23 @@ describe("jobBillingRows — work notes", () => {
 
   test("empty work notes → empty array", () => {
     expect(jobBillingRows(baseReport()).workNotes).toEqual([]);
+  });
+});
+
+describe("estimateWrapHeight", () => {
+  test("single short line → one line of height", () => {
+    expect(estimateWrapHeight("short", 74)).toBe(15);
+  });
+
+  test("text longer than the width wraps to multiple lines", () => {
+    expect(estimateWrapHeight("x".repeat(100), 74)).toBe(30); // ceil(100/74)=2 → 30
+  });
+
+  test("explicit newlines each count, wrapped per segment", () => {
+    expect(estimateWrapHeight("a\nb", 74)).toBe(30);
+  });
+
+  test("empty text → one line", () => {
+    expect(estimateWrapHeight("", 74)).toBe(15);
   });
 });

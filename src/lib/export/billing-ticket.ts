@@ -93,6 +93,15 @@ export function jobBillingRows(report: BillingReport): BillingRows {
 
 /** Render the prepared billing rows into an exceljs workbook (one "Billing" sheet).
  *  Pure formatting — no business logic. */
+/** Estimate a wrapped row's height (points) for `text` in a merged cell `widthChars`
+ *  wide. Excel does not auto-fit row height for merged cells, so we size it ourselves:
+ *  count wrapped lines (honoring explicit newlines) at ~15pt each. */
+export function estimateWrapHeight(text: string, widthChars: number): number {
+  const w = Math.max(1, widthChars);
+  const lines = (text || "").split("\n").reduce((sum, ln) => sum + Math.max(1, Math.ceil(ln.length / w)), 0);
+  return Math.max(1, lines) * 15;
+}
+
 export function buildBillingWorkbook(rows: BillingRows): ExcelJS.Workbook {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("Billing");
@@ -108,7 +117,11 @@ export function buildBillingWorkbook(rows: BillingRows): ExcelJS.Workbook {
   section("Customer");
   ws.addRow(["Name", rows.customer.name, "", "Phone", rows.customer.phone ?? ""]);
   ws.addRow(["Email", rows.customer.email ?? "", "", "Site address", rows.siteAddress || ""]);
-  ws.addRow(["Description of work", rows.description ?? ""]);
+  // Description: label in col A; value merged across B:G and wrapped.
+  const descRow = ws.addRow(["Description of work", rows.description ?? ""]);
+  ws.mergeCells(`B${descRow.number}:G${descRow.number}`);
+  descRow.getCell(2).alignment = { wrapText: true, vertical: "top" };
+  descRow.height = estimateWrapHeight(rows.description ?? "", 74); // B:G ≈ 74 chars
   ws.addRow([]);
 
   // Time On Site
@@ -136,11 +149,17 @@ export function buildBillingWorkbook(rows: BillingRows): ExcelJS.Workbook {
   mt.getCell(4).numFmt = "#,##0.00";
   ws.addRow([]);
 
-  // Notes of the Work Completed
+  // Notes of the Work Completed: admin notes (if any), then worker notes — each a row
+  // merged A:G and wrapped, so all note lines share one consistent width.
   section("Notes of the Work Completed");
-  if (rows.notes) ws.addRow([rows.notes]);
-  for (const n of rows.workNotes) {
-    ws.addRow([`${n.dateLabel} — ${n.body}`]);
+  const noteLines: string[] = [];
+  if (rows.notes) noteLines.push(rows.notes);
+  for (const n of rows.workNotes) noteLines.push(`${n.dateLabel} — ${n.body}`);
+  for (const line of noteLines) {
+    const r = ws.addRow([line]);
+    ws.mergeCells(`A${r.number}:G${r.number}`);
+    r.getCell(1).alignment = { wrapText: true, vertical: "top" };
+    r.height = estimateWrapHeight(line, 92); // A:G ≈ 92 chars
   }
 
   return wb;
