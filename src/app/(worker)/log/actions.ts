@@ -237,3 +237,37 @@ export async function removeJobPhoto(photoId: string, jobId: string): Promise<vo
   await supabase.storage.from("job-files").remove([row.storage_path as string]);
   revalidatePath(`/log/${jobId}`);
 }
+
+export async function addJobWorkNote(jobId: string, body: string): Promise<string | void> {
+  const { userId, orgId } = await workerCtx();
+  const text = validateLabel(body);
+  if (text === null) return "Enter a note.";
+  const supabase = await createClient();
+  await supabase.from("job_work_notes").insert({
+    organization_id: orgId,
+    job_id: jobId,
+    worker_user_id: userId,
+    body: text,
+  });
+  revalidatePath(`/log/${jobId}`);
+}
+
+export async function updateJobWorkNote(noteId: string, jobId: string, body: string): Promise<string | void> {
+  const { userId } = await workerCtx();
+  const text = validateLabel(body);
+  if (text === null) return "Enter a note.";
+  const supabase = await createClient();
+  await supabase
+    .from("job_work_notes")
+    .update({ body: text, updated_at: new Date().toISOString() })
+    .eq("id", noteId)
+    .eq("worker_user_id", userId);
+  revalidatePath(`/log/${jobId}`);
+}
+
+export async function removeJobWorkNote(noteId: string, jobId: string): Promise<void> {
+  const { userId } = await workerCtx();
+  const supabase = await createClient();
+  await supabase.from("job_work_notes").delete().eq("id", noteId).eq("worker_user_id", userId);
+  revalidatePath(`/log/${jobId}`);
+}

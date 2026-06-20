@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "./org";
 import { todayInZone } from "./worktime";
 import { one } from "./rel";
-import { fmtDateTime } from "./format";
+import { fmtDateTime, fmtZonedDate } from "./format";
 
 /** Today's work_day for the signed-in worker (+ any open prior day) in org tz. */
 export async function getWorkerDay() {
@@ -131,5 +131,28 @@ export async function getJobPhotosForWorker(jobId: string) {
     addedLabel: fmtDateTime(r.added_at as string, ctx.org.timezone),
     href: signed[r.storage_path as string] ?? null,
     isImage: ((r.mime_type as string | null) ?? "").startsWith("image/"),
+  }));
+}
+
+/** The signed-in worker's own work notes for a job (chronological), each with a
+ *  display date in the org tz. */
+export async function getJobWorkNotesForWorker(jobId: string) {
+  const ctx = await getWorkspaceContext();
+  if (!ctx) return [];
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("job_work_notes")
+    .select("id, body, created_at")
+    .eq("job_id", jobId)
+    .eq("worker_user_id", user.id)
+    .order("created_at", { ascending: true });
+  return (data ?? []).map((n) => ({
+    id: n.id as string,
+    body: n.body as string,
+    dateLabel: fmtZonedDate(n.created_at as string, ctx.org.timezone),
   }));
 }
