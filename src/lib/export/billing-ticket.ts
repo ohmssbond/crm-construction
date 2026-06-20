@@ -1,3 +1,4 @@
+import ExcelJS from "exceljs";
 import { fmtTimeOfDay } from "@/lib/data/worktime";
 import { fmtDate } from "@/lib/data/format";
 
@@ -85,4 +86,56 @@ export function jobBillingRows(report: BillingReport): BillingRows {
     currency: report.materials.currency,
     notes: report.job.notes,
   };
+}
+
+/** Render the prepared billing rows into an exceljs workbook (one "Billing" sheet).
+ *  Pure formatting — no business logic. */
+export function buildBillingWorkbook(rows: BillingRows): ExcelJS.Workbook {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Billing");
+  ws.columns = [{ width: 18 }, { width: 14 }, { width: 12 }, { width: 12 }, { width: 12 }, { width: 12 }, { width: 12 }];
+
+  const section = (title: string) => {
+    const r = ws.addRow([title]);
+    r.font = { bold: true };
+    r.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFEFEF" } };
+  };
+
+  // Customer
+  section("Customer");
+  ws.addRow(["Name", rows.customer.name, "", "Phone", rows.customer.phone ?? ""]);
+  ws.addRow(["Email", rows.customer.email ?? "", "", "Site address", rows.siteAddress || ""]);
+  ws.addRow(["Description of work", rows.description ?? ""]);
+  ws.addRow([]);
+
+  // Time On Site
+  section("Time On Site");
+  const th = ws.addRow(["Tech", "Date", "In", "Out", "In", "Out", "Total Hours"]);
+  th.font = { bold: true };
+  for (const t of rows.timeRows) {
+    ws.addRow([t.tech, t.date, t.in1, t.out1, t.in2, t.out2, t.totalHours]);
+  }
+  const tl = ws.addRow(["", "", "", "", "", "Total Labor", `${rows.totalLaborHours.toFixed(2)} h`]);
+  tl.font = { bold: true };
+  ws.addRow([]);
+
+  // Materials
+  section("Materials");
+  const mh = ws.addRow(["Item", "Quantity", `Unit Cost (${rows.currency})`, `Cost (${rows.currency})`]);
+  mh.font = { bold: true };
+  for (const m of rows.materialRows) {
+    const r = ws.addRow([m.item, m.qty, m.unitCost ?? "", m.cost]);
+    r.getCell(3).numFmt = "#,##0.00";
+    r.getCell(4).numFmt = "#,##0.00";
+  }
+  const mt = ws.addRow(["", "", "Total Material Cost", rows.totalMaterialCost]);
+  mt.font = { bold: true };
+  mt.getCell(4).numFmt = "#,##0.00";
+  ws.addRow([]);
+
+  // Notes
+  section("Notes");
+  ws.addRow([rows.notes ?? ""]);
+
+  return wb;
 }
