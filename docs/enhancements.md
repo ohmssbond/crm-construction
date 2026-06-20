@@ -161,6 +161,10 @@ _Open questions / notes:_
     into a relabeled **"Notes of the Work Completed"** area, merged with the admin `job.notes`
     (admin notes first, then the worker notes). Applies to the admin job page + the `.xlsx`
     export. Presentation-only — no schema, no `getJobReport`/`jobBillingRows` change.
+    Tweaks (Jun 20): job form "Notes" field relabeled **"Admin Notes"**; in the export the
+    Description value (merged B:G) + the admin/worker note rows (each merged A:G) now
+    **wrap** at a uniform width, sized by a unit-tested `estimateWrapHeight` helper (Excel
+    can't auto-fit merged-cell row height).
   Remaining slices (later): QBO import (OAuth connect; import customers + materials).
   Deferred follow-ups: customer-clean work-order variant + print/PDF of the report;
   ad-hoc material lines; offline photo upload queue; crew-shared visibility; a formal
