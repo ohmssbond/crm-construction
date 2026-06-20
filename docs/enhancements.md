@@ -137,7 +137,17 @@ _Open questions / notes:_
     fixed price) + Status/Edit/Archive controls + the Time/Materials/Photos sections inline
     (extracted verbatim into a `ReportSections` component). Deleted the `/tb/jobs/[id]/report`
     route + "View report" button. NO migration; `getJobDetail`/edit page unchanged.
-  Remaining slices (later): .xlsx export -> QBO import.
+  - Per-job billing-ticket .xlsx export (slice 8) ✅ shipped (Jun 20, 2026): scoped from a
+    photo of the customer's handwritten billing form. An "Export billing ticket" button on
+    `/tb/jobs/[id]` (GET route handler `/tb/jobs/[id]/export`, admin-gated, streams a
+    download) produces an .xlsx mirroring that form: Customer header + site address +
+    description; Time On Site (Tech·Date·In·Out·In·Out·Total, two pairs/row, >2 segments
+    overflow to a continuation row) + Total Labor (hours); Materials (Item·Qty·Unit Cost·Cost)
+    + Total Material Cost; Notes. Reuses `getJobReport` (no new queries, NO migration). New
+    `exceljs` dep; pure `jobBillingRows` transform (unit-tested) + thin `buildBillingWorkbook`
+    writer in `src/lib/export/billing-ticket.ts`. Billing only — payroll/reported-hours is a
+    SEPARATE future report; the full multi-entity PRD §8.6 company dump is also deferred.
+  Remaining slices (later): QBO import (OAuth connect; import customers + materials).
   Deferred follow-ups: customer-clean work-order variant + print/PDF of the report;
   ad-hoc material lines; offline photo upload queue; crew-shared visibility; a formal
   Worker entity (display names instead of emails); mixed-currency + batched email lookup
