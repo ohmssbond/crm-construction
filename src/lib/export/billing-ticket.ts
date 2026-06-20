@@ -109,9 +109,6 @@ export function buildBillingWorkbook(rows: BillingRows): ExcelJS.Workbook {
   ws.addRow(["Name", rows.customer.name, "", "Phone", rows.customer.phone ?? ""]);
   ws.addRow(["Email", rows.customer.email ?? "", "", "Site address", rows.siteAddress || ""]);
   ws.addRow(["Description of work", rows.description ?? ""]);
-  for (const n of rows.workNotes) {
-    ws.addRow(["", `${n.dateLabel} — ${n.body}`]);
-  }
   ws.addRow([]);
 
   // Time On Site
@@ -139,9 +136,12 @@ export function buildBillingWorkbook(rows: BillingRows): ExcelJS.Workbook {
   mt.getCell(4).numFmt = "#,##0.00";
   ws.addRow([]);
 
-  // Notes
-  section("Notes");
-  ws.addRow([rows.notes ?? ""]);
+  // Notes of the Work Completed
+  section("Notes of the Work Completed");
+  if (rows.notes) ws.addRow([rows.notes]);
+  for (const n of rows.workNotes) {
+    ws.addRow([`${n.dateLabel} — ${n.body}`]);
+  }
 
   return wb;
 }
