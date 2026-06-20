@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server";
 import { requireTbAdmin } from "@/lib/auth-tb";
 import { getJobReport } from "@/lib/data/tb-report";
+import { getWorkspaceContext } from "@/lib/data/org";
+import { todayInZone } from "@/lib/data/worktime";
 import { jobBillingRows, buildBillingWorkbook } from "@/lib/export/billing-ticket";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -14,12 +16,17 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const workbook = buildBillingWorkbook(jobBillingRows(report));
   const buffer = await workbook.xlsx.writeBuffer();
-  const safeName = report.job.name.replace(/[^A-Za-z0-9._-]+/g, "_") || "job";
+
+  // Filename: customer name (no spaces, safe chars) + today's date in the org tz.
+  const ctx = await getWorkspaceContext();
+  const today = todayInZone(ctx?.org.timezone ?? "UTC");
+  const customer = report.customer.name.replace(/\s+/g, "").replace(/[^A-Za-z0-9._-]+/g, "") || "customer";
+  const filename = `${customer}-${today}.xlsx`;
 
   return new Response(buffer as ArrayBuffer, {
     headers: {
       "Content-Type": XLSX_MIME,
-      "Content-Disposition": `attachment; filename="${safeName}-billing.xlsx"`,
+      "Content-Disposition": `attachment; filename="${filename}"`,
     },
   });
 }
