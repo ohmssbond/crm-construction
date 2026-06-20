@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Tabs } from "@/components/ui/Tabs";
-import { getJobTimeForWorker, getJobMaterialsForWorker, getJobPhotosForWorker } from "@/lib/data/worker";
+import { getJobTimeForWorker, getJobMaterialsForWorker, getJobPhotosForWorker, getJobWorkNotesForWorker } from "@/lib/data/worker";
 import { listMaterialsForPicker } from "@/lib/data/materials";
 import { getWorkspaceContext } from "@/lib/data/org";
 import { MaterialsControl } from "../MaterialsControl";
 import { PhotosControl } from "../PhotosControl";
+import { WorkNotesControl } from "../WorkNotesControl";
 import { fmtJobLocation } from "@/lib/data/format";
 import { fmtTimeOfDay, sumSegmentHours, roundQuarterHours } from "@/lib/data/worktime";
 import { ClockControl } from "../ClockControl";
@@ -17,11 +18,12 @@ export default async function WorkerJobPage({ params }: { params: Promise<{ jobI
   if (!data) notFound();
   const { job, entry } = data;
 
-  const [materialLines, catalog, photos, ctx] = await Promise.all([
+  const [materialLines, catalog, photos, ctx, workNotes] = await Promise.all([
     getJobMaterialsForWorker(jobId),
     listMaterialsForPicker(),
     getJobPhotosForWorker(jobId),
     getWorkspaceContext(),
+    getJobWorkNotesForWorker(jobId),
   ]);
 
   const segments = entry?.segments ?? [];
@@ -65,6 +67,8 @@ export default async function WorkerJobPage({ params }: { params: Promise<{ jobI
     <p className="text-meta text-faint py-4">No workspace.</p>
   );
 
+  const notesTab = <WorkNotesControl jobId={jobId} notes={workNotes} />;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
@@ -79,6 +83,7 @@ export default async function WorkerJobPage({ params }: { params: Promise<{ jobI
           { label: "Time", content: timeTab },
           { label: "Materials", content: materialsTab },
           { label: "Photos", content: photosTab },
+          { label: "Notes", content: notesTab },
         ]}
       />
     </div>
