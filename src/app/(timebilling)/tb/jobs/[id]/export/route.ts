@@ -17,11 +17,11 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   const workbook = buildBillingWorkbook(jobBillingRows(report));
   const buffer = await workbook.xlsx.writeBuffer();
 
-  // Filename: customer name (no spaces, safe chars) + today's date in the org tz.
+  // Filename: job name (no spaces, safe chars) + today's date in the org tz.
   const ctx = await getWorkspaceContext();
   const today = todayInZone(ctx?.org.timezone ?? "UTC");
-  const customer = report.customer.name.replace(/\s+/g, "").replace(/[^A-Za-z0-9._-]+/g, "") || "customer";
-  const filename = `${customer}-${today}.xlsx`;
+  const job = report.job.name.replace(/\s+/g, "").replace(/[^A-Za-z0-9._-]+/g, "") || "job";
+  const filename = `${job}-${today}.xlsx`;
 
   return new Response(buffer as ArrayBuffer, {
     headers: {
