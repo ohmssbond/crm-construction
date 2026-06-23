@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "./org";
-import { todayInZone } from "./worktime";
+import { todayInZone, groupTimeByDay } from "./worktime";
 import { one } from "./rel";
 import { fmtDateTime, fmtZonedDate } from "./format";
 
@@ -155,4 +155,29 @@ export async function getJobWorkNotesForWorker(jobId: string) {
     body: n.body as string,
     dateLabel: fmtZonedDate(n.created_at as string, ctx.org.timezone),
   }));
+}
+
+/** The signed-in worker's full time history for a job, grouped by day across all
+ *  dates. Self-scoped via worker_rw RLS — no service-role, no cost. */
+export async function getJobTimeHistoryForWorker(jobId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { days: [], grandTotalHours: 0 };
+
+  const { data } = await supabase
+    .from("job_time_entries")
+    .select("entry_date, no_charge, segments:job_time_segments(time_in, time_out)")
+    .eq("job_id", jobId)
+    .eq("worker_user_id", user.id)
+    .order("entry_date", { ascending: true });
+
+  return groupTimeByDay(
+    (data ?? []).map((e) => ({
+      entry_date: e.entry_date as string,
+      no_charge: !!e.no_charge,
+      segments: (e.segments ?? []) as { time_in: string; time_out: string | null }[],
+    }))
+  );
 }

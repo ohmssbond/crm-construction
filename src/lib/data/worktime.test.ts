@@ -12,6 +12,7 @@ import {
   materialExtended,
   fmtMoney,
   workerLabel,
+  groupTimeByDay,
 } from "./worktime";
 
 describe("timeToMinutes", () => {
@@ -182,5 +183,74 @@ describe("workerLabel", () => {
 
   test("falls back to a short id when name and email are null", () => {
     expect(workerLabel(null, null, "abcd1234ef")).toBe("abcd1234");
+  });
+});
+
+describe("groupTimeByDay", () => {
+  test("maps entries to days with rounded totals and closed segments", () => {
+    const { days, grandTotalHours } = groupTimeByDay([
+      {
+        entry_date: "2026-06-20",
+        no_charge: false,
+        segments: [
+          { time_in: "08:00", time_out: "10:00" },
+          { time_in: "10:30", time_out: "12:00" },
+        ],
+      },
+      {
+        entry_date: "2026-06-21",
+        no_charge: true,
+        segments: [{ time_in: "09:00", time_out: "09:45" }],
+      },
+    ]);
+    expect(days).toEqual([
+      {
+        date: "2026-06-20",
+        total: 3.5,
+        noCharge: false,
+        segments: [
+          { in: "08:00", out: "10:00" },
+          { in: "10:30", out: "12:00" },
+        ],
+      },
+      {
+        date: "2026-06-21",
+        total: 0.75,
+        noCharge: true,
+        segments: [{ in: "09:00", out: "09:45" }],
+      },
+    ]);
+    expect(grandTotalHours).toBe(4.25);
+  });
+
+  test("omits a day whose only segment is still open", () => {
+    const { days, grandTotalHours } = groupTimeByDay([
+      {
+        entry_date: "2026-06-22",
+        no_charge: false,
+        segments: [{ time_in: "08:00", time_out: null }],
+      },
+    ]);
+    expect(days).toEqual([]);
+    expect(grandTotalHours).toBe(0);
+  });
+
+  test("excludes open segments from a day that also has closed ones", () => {
+    const { days } = groupTimeByDay([
+      {
+        entry_date: "2026-06-22",
+        no_charge: false,
+        segments: [
+          { time_in: "08:00", time_out: "09:00" },
+          { time_in: "09:30", time_out: null },
+        ],
+      },
+    ]);
+    expect(days[0].segments).toEqual([{ in: "08:00", out: "09:00" }]);
+    expect(days[0].total).toBe(1);
+  });
+
+  test("empty input -> empty result", () => {
+    expect(groupTimeByDay([])).toEqual({ days: [], grandTotalHours: 0 });
   });
 });

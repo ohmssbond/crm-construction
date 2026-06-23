@@ -1,12 +1,13 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Tabs } from "@/components/ui/Tabs";
-import { getJobTimeForWorker, getJobMaterialsForWorker, getJobPhotosForWorker, getJobWorkNotesForWorker } from "@/lib/data/worker";
+import { getJobTimeForWorker, getJobMaterialsForWorker, getJobPhotosForWorker, getJobWorkNotesForWorker, getJobTimeHistoryForWorker } from "@/lib/data/worker";
 import { listMaterialsForPicker } from "@/lib/data/materials";
 import { getWorkspaceContext } from "@/lib/data/org";
 import { MaterialsControl } from "../MaterialsControl";
 import { PhotosControl } from "../PhotosControl";
 import { WorkNotesControl } from "../WorkNotesControl";
+import { WorkerHistory } from "../WorkerHistory";
 import { fmtJobLocation } from "@/lib/data/format";
 import { fmtTimeOfDay, sumSegmentHours, roundQuarterHours } from "@/lib/data/worktime";
 import { ClockControl } from "../ClockControl";
@@ -18,12 +19,13 @@ export default async function WorkerJobPage({ params }: { params: Promise<{ jobI
   if (!data) notFound();
   const { job, entry } = data;
 
-  const [materialLines, catalog, photos, ctx, workNotes] = await Promise.all([
+  const [materialLines, catalog, photos, ctx, workNotes, timeHistory] = await Promise.all([
     getJobMaterialsForWorker(jobId),
     listMaterialsForPicker(),
     getJobPhotosForWorker(jobId),
     getWorkspaceContext(),
     getJobWorkNotesForWorker(jobId),
+    getJobTimeHistoryForWorker(jobId),
   ]);
 
   const segments = entry?.segments ?? [];
@@ -86,6 +88,15 @@ export default async function WorkerJobPage({ params }: { params: Promise<{ jobI
           { label: "Notes", content: notesTab },
         ]}
       />
+      <div className="flex flex-col gap-3 border-t border-line pt-4">
+        <h2 className="text-body font-semibold">Your entries on this job</h2>
+        <WorkerHistory
+          time={timeHistory}
+          materials={materialLines}
+          photos={photos}
+          notes={workNotes}
+        />
+      </div>
     </div>
   );
 }
