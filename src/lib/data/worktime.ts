@@ -106,7 +106,7 @@ export function groupTimeByDay(
     if (closed.length === 0) continue;
     days.push({
       date: e.entry_date,
-      total: roundQuarterHours(sumSegmentHours(e.segments)),
+      total: roundQuarterHours(sumSegmentHours(closed)),
       noCharge: e.no_charge,
       segments: closed.map((s) => ({ in: s.time_in, out: s.time_out })),
     });
