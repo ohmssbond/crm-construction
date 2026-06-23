@@ -81,6 +81,40 @@ export function roundQuarterHours(hours: number): number {
   return Math.round(hours / 0.25) * 0.25;
 }
 
+export type TimeHistoryDay = {
+  date: string;
+  total: number;
+  noCharge: boolean;
+  segments: { in: string; out: string }[];
+};
+
+/** Shape a worker's time entries into per-day history (mirrors the admin report's
+ *  per-day shape). Closed segments only; a day with no closed segment is omitted so an
+ *  in-progress clock doesn't yield an empty 0.00 h row. */
+export function groupTimeByDay(
+  entries: {
+    entry_date: string;
+    no_charge: boolean;
+    segments: { time_in: string; time_out: string | null }[];
+  }[]
+): { days: TimeHistoryDay[]; grandTotalHours: number } {
+  const days: TimeHistoryDay[] = [];
+  for (const e of entries) {
+    const closed = e.segments.filter(
+      (s): s is { time_in: string; time_out: string } => !!s.time_out
+    );
+    if (closed.length === 0) continue;
+    days.push({
+      date: e.entry_date,
+      total: roundQuarterHours(sumSegmentHours(e.segments)),
+      noCharge: e.no_charge,
+      segments: closed.map((s) => ({ in: s.time_in, out: s.time_out })),
+    });
+  }
+  const grandTotalHours = days.reduce((sum, d) => sum + d.total, 0);
+  return { days, grandTotalHours };
+}
+
 /** "HH:MM[:SS]" → "h:MM AM/PM" (empty string for null). */
 export function fmtTimeOfDay(t: string | null): string {
   if (!t) return "";
