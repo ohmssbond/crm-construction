@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "./org";
-import { todayInZone, groupTimeByDay, type TimeHistoryDay } from "./worktime";
+import { todayInZone, groupTimeByDay } from "./worktime";
 import { one } from "./rel";
 import { fmtDateTime, fmtZonedDate } from "./format";
 
