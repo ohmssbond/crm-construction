@@ -19,8 +19,9 @@ export async function requireTbAdmin(): Promise<User> {
 }
 
 /**
- * Gate for the worker surface: returns the user if they're a `timebilling` worker,
- * else redirects to their role-home. Used by the worker time-tracking actions.
+ * Gate for the field time-logging surface (/log): returns the user if they're a
+ * `timebilling` worker OR admin, else redirects to their role-home. Admins can log
+ * their own time too (admin ⊇ worker). Used by the worker time-tracking actions.
  */
 export async function requireTbWorker(): Promise<User> {
   const { createClient } = await import("@/lib/supabase/server");
@@ -32,6 +33,7 @@ export async function requireTbWorker(): Promise<User> {
   } = await supabase.auth.getUser();
   const { data: claimsData } = await supabase.auth.getClaims();
   const claims = claimsData?.claims as Record<string, unknown> | undefined;
-  if (!user || productRole(claims, "timebilling") !== "worker") redirect(resolveHome(claims));
+  const role = productRole(claims, "timebilling");
+  if (!user || (role !== "worker" && role !== "admin")) redirect(resolveHome(claims));
   return user as User;
 }

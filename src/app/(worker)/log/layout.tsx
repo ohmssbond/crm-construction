@@ -12,7 +12,8 @@ export default async function WorkerLayout({ children }: { children: ReactNode }
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
   const claims = claimsData?.claims as Record<string, unknown> | undefined;
-  if (productRole(claims, "timebilling") !== "worker") redirect(resolveHome(claims));
+  const tbRole = productRole(claims, "timebilling");
+  if (tbRole !== "worker" && tbRole !== "admin") redirect(resolveHome(claims));
 
   const ctx = await getWorkspaceContext();
   if (!(await orgHasProduct(ctx?.org.id, "timebilling"))) {
@@ -25,6 +26,7 @@ export default async function WorkerLayout({ children }: { children: ReactNode }
     ? ({ "--accent": accent, "--accent-soft": soft, "--color-accent": accent, "--color-accent-soft": soft } as CSSProperties)
     : undefined;
   const hasCrm = !!productRole(claims, "crm");
+  const isTbAdmin = tbRole === "admin";
 
   return (
     <div style={style} className="min-h-dvh flex flex-col bg-bg">
@@ -38,6 +40,9 @@ export default async function WorkerLayout({ children }: { children: ReactNode }
           <span className="text-body font-semibold truncate">{ctx?.org.name ?? "Time logging"}</span>
         </div>
         <div className="flex items-center gap-3 text-meta shrink-0">
+          {isTbAdmin && (
+            <Link href="/tb" className="text-muted hover:text-text">T&amp;B admin</Link>
+          )}
           {hasCrm && (
             <Link href="/dashboard" className="text-muted hover:text-text">Back to CRM</Link>
           )}
