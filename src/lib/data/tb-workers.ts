@@ -14,12 +14,12 @@ export async function listTbWorkers() {
   const admin = createAdminClient();
   const { data: members } = await admin
     .from("memberships")
-    .select("user_id")
+    .select("user_id, role")
     .eq("organization_id", orgId)
     .eq("product", "timebilling")
-    .eq("role", "worker");
-  const ids = (members ?? []).map((m) => m.user_id as string);
-  if (ids.length === 0) return [];
+    .in("role", ["worker", "admin"]);
+  const memberRows = (members ?? []) as { user_id: string; role: string }[];
+  if (memberRows.length === 0) return [];
 
   const supabase = await createClient();
   const { data: nameRows } = await supabase
@@ -32,9 +32,10 @@ export async function listTbWorkers() {
   });
 
   const out = await Promise.all(
-    ids.map(async (uid) => {
+    memberRows.map(async (m) => {
+      const uid = m.user_id;
       const { data } = await admin.auth.admin.getUserById(uid);
-      return { userId: uid, email: data.user?.email ?? null, name: names[uid] ?? null };
+      return { userId: uid, email: data.user?.email ?? null, name: names[uid] ?? null, role: m.role };
     })
   );
   return out.sort((a, b) =>
