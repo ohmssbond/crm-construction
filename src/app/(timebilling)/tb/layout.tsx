@@ -21,6 +21,7 @@ export default async function TbLayout({ children }: { children: ReactNode }) {
       accent={org.primary_color}
       brand={{ tile: org.initials, name: org.name, label: "Time & Billing" }}
       user={{ tile: user.initials, name: user.name, email: user.email }}
+      showTimeLink
     >
       {children}
     </AppShell>
