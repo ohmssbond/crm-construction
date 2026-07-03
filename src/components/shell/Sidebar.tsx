@@ -17,9 +17,9 @@ const FALLBACK_BRAND: Record<World, Brand> = {
   timebilling: { tile: "BIT", name: "Workspace", label: productLabel("timebilling") },
 };
 const FALLBACK_USER: ShellUser = {
-  tile: "JH",
-  name: "Jordan Huber",
-  email: "jordan@jhuber.co",
+  tile: "BIT",
+  name: "Account",
+  email: "",
 };
 
 export function Sidebar({
