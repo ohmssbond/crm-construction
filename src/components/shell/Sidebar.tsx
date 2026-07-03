@@ -2,18 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { navFor, navLabel, type World } from "./nav";
+import { navFor, navLabel, productLabel, type World } from "./nav";
 import { signOut } from "@/lib/auth-actions";
+import { PoweredByFooter } from "@/components/brand/PoweredByFooter";
 
 export type Brand = { tile: string; name: string; label: string };
 export type ShellUser = { tile: string; name: string; email: string };
 
-// Fallback for worlds whose layout hasn't been wired to real org data yet
-// (currently the portal). Once wired, the layout passes `brand`/`user` in.
+// Fallback for worlds whose layout hasn't been wired to real org data yet.
+// Neutral platform placeholders (no tenant identity here).
 const FALLBACK_BRAND: Record<World, Brand> = {
-  artisan: { tile: "JH", name: "J Huber Restorations", label: "Artisan workspace" },
-  portal: { tile: "JH", name: "J Huber Restorations", label: "Customer portal" },
-  timebilling: { tile: "TB", name: "Workspace", label: "Time & Billing" },
+  artisan: { tile: "BIT", name: "Workspace", label: productLabel("artisan") },
+  portal: { tile: "BIT", name: "Workspace", label: productLabel("portal") },
+  timebilling: { tile: "BIT", name: "Workspace", label: productLabel("timebilling") },
 };
 const FALLBACK_USER: ShellUser = {
   tile: "JH",
@@ -112,6 +113,11 @@ export function Sidebar({
             </div>
           </Link>
         )}
+      </div>
+
+      {/* Platform footer */}
+      <div className="px-4 py-3 border-t border-line">
+        <PoweredByFooter />
       </div>
     </aside>
   );

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import AppShell from "@/components/shell/AppShell";
 import { getOrgContext } from "@/lib/data/org";
+import { productLabel } from "@/components/shell/nav";
 import { NotEnabled } from "@/components/NotEnabled";
 import { orgHasProduct } from "@/lib/data/entitlements";
 import { createClient } from "@/lib/supabase/server";
@@ -37,7 +38,7 @@ export default async function ArtisanLayout({
       brand={{
         tile: org.initials,
         name: org.name,
-        label: `${org.member_noun} workspace`,
+        label: productLabel("artisan"),
       }}
       user={{ tile: user.initials, name: user.name, email: user.email }}
       clientNoun={org.client_noun}

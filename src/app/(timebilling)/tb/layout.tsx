@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import AppShell from "@/components/shell/AppShell";
 import { requireTbAdmin } from "@/lib/auth-tb";
+import { productLabel } from "@/components/shell/nav";
 import { getWorkspaceContext } from "@/lib/data/org";
 import { orgHasProduct } from "@/lib/data/entitlements";
 import { NotEnabled } from "@/components/NotEnabled";
@@ -19,7 +20,7 @@ export default async function TbLayout({ children }: { children: ReactNode }) {
     <AppShell
       world="timebilling"
       accent={org.primary_color}
-      brand={{ tile: org.initials, name: org.name, label: "Time & Billing" }}
+      brand={{ tile: org.initials, name: org.name, label: productLabel("timebilling") }}
       user={{ tile: user.initials, name: user.name, email: user.email }}
       showTimeLink
     >
