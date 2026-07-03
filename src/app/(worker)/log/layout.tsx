@@ -7,6 +7,7 @@ import { orgHasProduct } from "@/lib/data/entitlements";
 import { getWorkspaceContext } from "@/lib/data/org";
 import { NotEnabled } from "@/components/NotEnabled";
 import { signOut } from "@/lib/auth-actions";
+import { PoweredByFooter } from "@/components/brand/PoweredByFooter";
 
 export default async function WorkerLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient();
@@ -54,6 +55,9 @@ export default async function WorkerLayout({ children }: { children: ReactNode }
       <main className="flex-1 overflow-y-auto px-4 py-5">
         <div className="mx-auto w-full max-w-[560px]">{children}</div>
       </main>
+      <footer className="px-4 py-3 border-t border-line bg-surface flex justify-center">
+        <PoweredByFooter />
+      </footer>
     </div>
   );
 }

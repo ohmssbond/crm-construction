@@ -4,6 +4,7 @@ import { one } from "./rel";
 import { monogram } from "./format";
 import { withAttachmentUrls } from "./attachments";
 import { DEFAULT_TIMEZONE } from "@/lib/timezones";
+import { productLabel } from "@/components/shell/nav";
 
 export type PortalContext = {
   accent: string;
@@ -46,7 +47,7 @@ export const getPortalContext = cache(async (): Promise<PortalContext | null> =>
   return {
     accent,
     orgName,
-    brand: { name: orgName, tile: monogram(orgName), label: `${clientNoun} portal` },
+    brand: { name: orgName, tile: monogram(orgName), label: productLabel("portal") },
     user: { name, email, tile: monogram(name) },
   };
 });

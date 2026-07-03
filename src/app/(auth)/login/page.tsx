@@ -16,11 +16,7 @@ export default function LoginPage() {
   return (
     <div className="rounded-card border border-line bg-surface shadow-card p-6">
       <div className="mb-5">
-        <div className="size-10 rounded-control bg-accent text-white grid place-items-center font-bold mb-3">
-          JH
-        </div>
         <h1 className="text-title font-semibold">Sign in</h1>
-        <p className="text-sub text-muted mt-1">Artisan Project Hub</p>
       </div>
 
       <form action={formAction} className="flex flex-col gap-3">
