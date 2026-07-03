@@ -3,8 +3,12 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Artisan Project Hub",
-  description: "A shared workspace for independent artisans and their customers.",
+  title: {
+    default: "Build It Together",
+    template: "%s · Build It Together",
+  },
+  description:
+    "Run your projects, your crew, and your customers — together.",
 };
 
 export const viewport: Viewport = {
