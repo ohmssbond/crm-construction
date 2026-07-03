@@ -58,3 +58,15 @@ export const navFor = (world: World): NavItem[] =>
 
 export const tabsFor = (world: World): string[] =>
   world === "portal" ? portalTabs : world === "timebilling" ? timebillingTabs : artisanTabs;
+
+/** The product name shown as the sidebar's world label. Single source of truth. */
+export function productLabel(world: World): string {
+  switch (world) {
+    case "portal":
+      return "Customer portal";
+    case "timebilling":
+      return "Time & Billing";
+    default:
+      return "Project Hub"; // artisan
+  }
+}
