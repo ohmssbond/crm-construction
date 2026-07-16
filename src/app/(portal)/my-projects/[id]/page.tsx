@@ -1,25 +1,13 @@
 import { notFound } from "next/navigation";
-import { StageChip, type Stage } from "@/components/ui/Chip";
 import { Tabs } from "@/components/ui/Tabs";
 import { Card } from "@/components/ui/Card";
-import { UpdateCard } from "@/components/ui/UpdateCard";
-import { FileTile } from "@/components/ui/FileTile";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ProjectHero } from "@/components/portal/ProjectHero";
+import { BeforeAfterStrip } from "@/components/portal/BeforeAfterStrip";
+import { PhotoGallery } from "@/components/portal/PhotoGallery";
+import { FilesList } from "@/components/portal/FilesList";
 import { getPortalProject } from "@/lib/data/portal";
-import { groupAttachmentsByType } from "@/lib/data/attachments";
 import { fmtDate, fmtDateTime, fmtZonedDate } from "@/lib/data/format";
-
-// Glyph + tile color per file category, with a sensible fallback.
-const FILE_STYLE: Record<string, { glyph: string; bg: string }> = {
-  before_photo: { glyph: "📷", bg: "#7a9e93" },
-  after_photo: { glyph: "🖼", bg: "#9e8a7a" },
-  plans: { glyph: "📐", bg: "#7a8a9e" },
-  permits: { glyph: "📋", bg: "#9e7a8a" },
-  proposal: { glyph: "📝", bg: "#8a7a9e" },
-  contract: { glyph: "✍️", bg: "#7a9e8a" },
-  invoice: { glyph: "🧾", bg: "#9e9a7a" },
-};
-const FILE_FALLBACK = { glyph: "📄", bg: "#8a93a0" };
 
 export default async function PortalProjectPage({
   params,
@@ -30,14 +18,14 @@ export default async function PortalProjectPage({
   const detail = await getPortalProject(id);
   if (!detail) notFound();
 
-  const { project, updates, attachments, tasks, fileCategories, timezone } = detail;
+  const { project, status, hero, before, after, beforeAfter, gallery, files, updates, tasks, timezone } =
+    detail;
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center gap-3">
-        <h2 className="text-title font-semibold">{project.name}</h2>
-        <StageChip stage={project.stage as Stage} />
-      </div>
+      <ProjectHero name={project.name} status={status} hero={hero} />
+
+      {beforeAfter && before && after && <BeforeAfterStrip before={before} after={after} />}
 
       <Tabs
         tabs={[
@@ -49,51 +37,36 @@ export default async function PortalProjectPage({
                   <EmptyState glyph="📣" title="No updates shared yet." />
                 ) : (
                   updates.map((u) => (
-                    <UpdateCard
+                    <div
                       key={u.id}
-                      when={fmtDateTime(u.created_at, timezone)}
-                      body={u.body}
-                      portal
-                    />
+                      className="bg-surface border border-line rounded-card overflow-hidden shadow-card"
+                    >
+                      {u.photoHref && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={u.photoHref} alt="" className="w-full h-[160px] object-cover" />
+                      )}
+                      <div className="p-4 flex flex-col gap-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          {u.title && <span className="text-body font-semibold">{u.title}</span>}
+                          <span className="text-meta text-faint ml-auto">
+                            {fmtDateTime(u.created_at, timezone)}
+                          </span>
+                        </div>
+                        <p className="text-body text-[#344054]">{u.body}</p>
+                      </div>
+                    </div>
                   ))
                 )}
               </div>
             ),
           },
           {
-            label: "Photos & Files",
-            content:
-              attachments.length === 0 ? (
-                <EmptyState glyph="🗂" title="No files shared yet." />
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {groupAttachmentsByType(attachments, fileCategories).map((group) => (
-                    <div key={group.key} className="flex flex-col gap-2">
-                      <h4 className="text-meta font-semibold text-faint">
-                        {group.label} ({group.items.length})
-                      </h4>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                        {group.items.map((a) => {
-                          const style =
-                            a.kind === "link"
-                              ? { glyph: "🔗", bg: "#6a7c8a" }
-                              : FILE_STYLE[a.category] ?? FILE_FALLBACK;
-                          return (
-                            <FileTile
-                              key={a.id}
-                              name={a.filename ?? a.url ?? "Link"}
-                              glyph={style.glyph}
-                              bg={style.bg}
-                              readOnly
-                              href={a.href}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ),
+            label: "Photos",
+            content: <PhotoGallery groups={gallery} />,
+          },
+          {
+            label: "Files",
+            content: <FilesList files={files} />,
           },
           {
             label: "Tasks",

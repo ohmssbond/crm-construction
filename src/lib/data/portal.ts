@@ -114,7 +114,7 @@ export async function getPortalProject(id: string) {
     .maybeSingle();
   if (!project) return null;
 
-  const [updates, attachments, tasks, fileCategories, org] = await Promise.all([
+  const [updates, attachments, tasks, org] = await Promise.all([
     supabase
       .from("status_updates")
       .select("id, title, body, created_at, is_shared, photo_attachment_id")
@@ -136,11 +136,6 @@ export async function getPortalProject(id: string) {
       .eq("project_id", id)
       .order("done", { ascending: true })
       .order("due_date", { ascending: true, nullsFirst: false }),
-    // Category labels for grouping the files view; contact_read RLS permits this.
-    supabase
-      .from("file_categories")
-      .select("key, label")
-      .eq("organization_id", project.organization_id),
     // Org display timezone; contact_read RLS permits reading the org row.
     supabase
       .from("organizations")
@@ -182,9 +177,6 @@ export async function getPortalProject(id: string) {
     gallery,
     files,
     updates: shapedUpdates,
-    // Kept for the pre-redesign portal page (Task 8 removes these consumers):
-    attachments: signed,
-    fileCategories: fileCategories.data ?? [],
     tasks: tasks.data ?? [],
     timezone: org.data?.timezone ?? DEFAULT_TIMEZONE,
   };
