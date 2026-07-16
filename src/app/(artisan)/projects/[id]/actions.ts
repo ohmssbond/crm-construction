@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/data/org";
+import { validatePhotoAssignment } from "@/lib/data/portfolio";
 
 export type RecordResult = { error: string | null };
 
@@ -55,18 +56,121 @@ export async function recordAttachment(
 // All RLS-scoped (artisan_all → is_org_member). Updates by id rely on the policy
 // USING clause to confine the change to the signed-in org; inserts supply the org.
 
-/** Post a status update (optionally shared to the portal). */
-export async function postUpdate(projectId: string, body: string, isShared: boolean) {
+/**
+ * Tag (or clear) a photo's phase. Tagging a phase auto-shares the photo
+ * (is_shared = true) so the portal gallery can show it; clearing leaves sharing
+ * as-is (the contractor can still pull it back via the share toggle). Validates
+ * that the attachment is a same-project image before writing.
+ */
+export async function setPhotoPhase(
+  projectId: string,
+  attachmentId: string,
+  phase: "before" | "during" | "after" | null
+): Promise<RecordResult> {
+  const supabase = await createClient();
+
+  if (phase !== null) {
+    const { data: a } = await supabase
+      .from("attachments")
+      .select("project_id, kind, mime_type")
+      .eq("id", attachmentId)
+      .maybeSingle();
+    const err = validatePhotoAssignment(a, projectId);
+    if (err) return { error: err };
+    const { error } = await supabase
+      .from("attachments")
+      .update({ phase, is_shared: true })
+      .eq("id", attachmentId);
+    if (error) return { error: error.message };
+  } else {
+    const { error } = await supabase
+      .from("attachments")
+      .update({ phase: null })
+      .eq("id", attachmentId);
+    if (error) return { error: error.message };
+  }
+
+  revalidatePath(`/projects/${projectId}`);
+  return { error: null };
+}
+
+const SLOT_COLUMN = {
+  cover: "cover_attachment_id",
+  hero: "hero_attachment_id",
+  before: "before_attachment_id",
+  after: "after_attachment_id",
+} as const;
+
+/**
+ * Point one of the four headline slots at a photo (or clear it). Assigning a
+ * photo validates it (same-project image) and auto-shares it; clearing sets the
+ * slot column to null. RLS confines both writes to the signed-in org.
+ */
+export async function setProjectPhotoSlot(
+  projectId: string,
+  slot: "cover" | "hero" | "before" | "after",
+  attachmentId: string | null
+): Promise<RecordResult> {
+  const supabase = await createClient();
+  const column = SLOT_COLUMN[slot];
+
+  if (attachmentId) {
+    const { data: a } = await supabase
+      .from("attachments")
+      .select("project_id, kind, mime_type")
+      .eq("id", attachmentId)
+      .maybeSingle();
+    const err = validatePhotoAssignment(a, projectId);
+    if (err) return { error: err };
+    const { error: shareErr } = await supabase
+      .from("attachments")
+      .update({ is_shared: true })
+      .eq("id", attachmentId);
+    if (shareErr) return { error: shareErr.message };
+  }
+
+  const { error } = await supabase
+    .from("projects")
+    .update({ [column]: attachmentId })
+    .eq("id", projectId);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/projects/${projectId}`);
+  return { error: null };
+}
+
+/** Post a status update (optional title + lead photo; optionally shared). */
+export async function postUpdate(
+  projectId: string,
+  title: string,
+  body: string,
+  isShared: boolean,
+  photoAttachmentId: string | null
+) {
   const text = body.trim();
   if (!text) return;
   const ctx = await getOrgContext();
   if (!ctx) return;
   const supabase = await createClient();
+
+  // A photo on an update auto-shares it (mirrors slot/phase tagging).
+  if (photoAttachmentId) {
+    const { data: a } = await supabase
+      .from("attachments")
+      .select("project_id, kind, mime_type")
+      .eq("id", photoAttachmentId)
+      .maybeSingle();
+    if (validatePhotoAssignment(a, projectId)) return; // silently drop a bad photo ref
+    await supabase.from("attachments").update({ is_shared: true }).eq("id", photoAttachmentId);
+  }
+
   await supabase.from("status_updates").insert({
     organization_id: ctx.org.id,
     project_id: projectId,
+    title: title.trim() || null,
     body: text,
     is_shared: isShared,
+    photo_attachment_id: photoAttachmentId,
   });
   revalidatePath(`/projects/${projectId}`);
 }
