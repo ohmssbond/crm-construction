@@ -153,15 +153,21 @@ export async function postUpdate(
   if (!ctx) return;
   const supabase = await createClient();
 
-  // A photo on an update auto-shares it (mirrors slot/phase tagging).
-  if (photoAttachmentId) {
+  // A photo on an update auto-shares it (mirrors slot/phase tagging). If the
+  // referenced photo is invalid/stale, drop ONLY the photo ref and still post
+  // the update (never discard the contractor's title/body).
+  let photoId = photoAttachmentId;
+  if (photoId) {
     const { data: a } = await supabase
       .from("attachments")
       .select("project_id, kind, mime_type")
-      .eq("id", photoAttachmentId)
+      .eq("id", photoId)
       .maybeSingle();
-    if (validatePhotoAssignment(a, projectId)) return; // silently drop a bad photo ref
-    await supabase.from("attachments").update({ is_shared: true }).eq("id", photoAttachmentId);
+    if (validatePhotoAssignment(a, projectId)) {
+      photoId = null;
+    } else {
+      await supabase.from("attachments").update({ is_shared: true }).eq("id", photoId);
+    }
   }
 
   await supabase.from("status_updates").insert({
@@ -170,7 +176,7 @@ export async function postUpdate(
     title: title.trim() || null,
     body: text,
     is_shared: isShared,
-    photo_attachment_id: photoAttachmentId,
+    photo_attachment_id: photoId,
   });
   revalidatePath(`/projects/${projectId}`);
 }

@@ -14,6 +14,7 @@ import { Banner } from "@/components/ui/Banner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getProjectDetail } from "@/lib/data/projects";
 import { groupAttachmentsByType } from "@/lib/data/attachments";
+import { isImageAttachment } from "@/lib/data/portfolio";
 import { getOrgContext } from "@/lib/data/org";
 import { fmtDate, fmtDateTime, fmtZonedDate, contactName } from "@/lib/data/format";
 import { DEFAULT_TIMEZONE } from "@/lib/timezones";
@@ -69,7 +70,7 @@ export default async function ProjectDetailPage({
   const artisanLabel = `${ctx?.user.name ?? "Artisan"} (you)`;
   const timezone = ctx?.org.timezone ?? DEFAULT_TIMEZONE;
   const imagePhotos = attachments
-    .filter((a) => a.kind === "file" && a.mime_type?.startsWith("image/"))
+    .filter(isImageAttachment)
     .map((a) => ({ id: a.id, filename: a.filename, href: a.href }));
   const slotValues = {
     cover: project.cover_attachment_id ?? null,
@@ -149,7 +150,7 @@ export default async function ProjectDetailPage({
                         </h4>
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                           {group.items.map((a) => {
-                            const isImg = a.kind === "file" && a.mime_type?.startsWith("image/");
+                            const isImg = isImageAttachment(a);
                             const style =
                               a.kind === "link"
                                 ? { glyph: "🔗", bg: "#6a7c8a" }
