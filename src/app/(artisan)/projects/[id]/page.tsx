@@ -22,6 +22,7 @@ import { UploadForm } from "./UploadForm";
 import { LinkForm } from "./LinkForm";
 import { StageControl } from "./StageControl";
 import { ContactManager } from "./ContactManager";
+import { RepPanel } from "./RepPanel";
 import { TodoComposer } from "./TodoComposer";
 import { TaskRow } from "./TaskRow";
 import { PhaseControl } from "./PhaseControl";
@@ -38,6 +39,7 @@ import {
   addLink,
   attachContact,
   detachContact,
+  assignRep,
   setPhotoPhase,
   setProjectPhotoSlot,
 } from "./actions";
@@ -63,10 +65,10 @@ export default async function ProjectDetailPage({
   const [detail, ctx] = await Promise.all([getProjectDetail(id), getOrgContext()]);
   if (!detail) notFound();
 
-  const { project, updates, todos, contacts, availableContacts, attachments, fileCategories } =
+  const { project, updates, todos, contacts, reps, availableContacts, availableStaff, attachments, fileCategories } =
     detail;
   const clientNoun = ctx?.org.client_noun ?? "Customer";
-  const taskContacts = contacts.map((c) => ({ id: c.id, name: contactName(c) }));
+  const taskContacts = [...contacts, ...reps].map((c) => ({ id: c.id, name: contactName(c) }));
   const artisanLabel = `${ctx?.user.name ?? "Artisan"} (you)`;
   const timezone = ctx?.org.timezone ?? DEFAULT_TIMEZONE;
   const imagePhotos = attachments
@@ -225,12 +227,20 @@ export default async function ProjectDetailPage({
           {
             label: "Contacts",
             content: (
-              <ContactManager
-                attached={contacts}
-                available={availableContacts}
-                attachAction={attachContact.bind(null, project.id)}
-                detachAction={detachContact.bind(null, project.id)}
-              />
+              <div className="flex flex-col gap-5">
+                <ContactManager
+                  attached={contacts}
+                  available={availableContacts}
+                  attachAction={attachContact.bind(null, project.id)}
+                  detachAction={detachContact.bind(null, project.id)}
+                />
+                <RepPanel
+                  reps={reps}
+                  availableStaff={availableStaff}
+                  assignAction={assignRep.bind(null, project.id)}
+                  removeAction={detachContact.bind(null, project.id)}
+                />
+              </div>
             ),
           },
         ]}

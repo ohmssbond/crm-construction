@@ -1,6 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { one } from "./rel";
 import { withAttachmentUrls } from "./attachments";
+import { partitionContacts, availableStaff as computeAvailableStaff } from "./reps";
+
+// org_crm_staff()'s declared Returns shape (database.types.ts). The rpc() call
+// itself types as `any` here (createClient() doesn't pass the Database
+// generic), so this annotation replaces what would otherwise be lost type info.
+type StaffMember = { user_id: string; full_name: string; email: string };
 
 /** Projects list for the artisan, RLS-scoped, newest first (excludes archived). */
 export async function listProjects() {
@@ -64,7 +70,7 @@ export async function getProjectDetail(id: string) {
     .maybeSingle();
   if (!project) return null;
 
-  const [updates, todos, projectContacts, attachments, fileCategories, allContacts] =
+  const [updates, todos, projectContacts, attachments, fileCategories, allContacts, staff] =
     await Promise.all([
       supabase
         .from("status_updates")
@@ -96,24 +102,31 @@ export async function getProjectDetail(id: string) {
         .order("sort", { ascending: true }),
       supabase
         .from("contacts")
-        .select("id, first_name, last_name, email")
+        .select("id, first_name, last_name, email, type")
         .is("archived_at", null)
         .order("created_at", { ascending: false }),
+      supabase.rpc("org_crm_staff"),
     ]);
 
-  const contacts = (projectContacts.data ?? [])
+  const allAttached = (projectContacts.data ?? [])
     .map((pc) => one(pc.contact))
     .filter((c): c is NonNullable<typeof c> => c != null);
+  const { customers: contacts, reps } = partitionContacts(allAttached);
 
-  const attachedIds = new Set(contacts.map((c) => c.id));
-  const availableContacts = (allContacts.data ?? []).filter((c) => !attachedIds.has(c.id));
+  const attachedIds = new Set(allAttached.map((c) => c.id));
+  const availableContacts = (allContacts.data ?? []).filter(
+    (c) => c.type !== "rep" && !attachedIds.has(c.id)
+  );
+  const availableStaff = computeAvailableStaff((staff.data ?? []) as StaffMember[], reps);
 
   return {
     project: { ...project, customer: one(project.customer) },
     updates: updates.data ?? [],
     todos: todos.data ?? [],
     contacts,
+    reps,
     availableContacts,
+    availableStaff,
     attachments: await withAttachmentUrls(supabase, attachments.data ?? []),
     fileCategories: fileCategories.data ?? [],
   };

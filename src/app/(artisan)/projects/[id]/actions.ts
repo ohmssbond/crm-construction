@@ -253,6 +253,60 @@ export async function detachContact(projectId: string, contactId: string) {
   revalidatePath(`/projects/${projectId}`);
 }
 
+/**
+ * Assign a staff member to this project as a Company Rep. Lazily creates one
+ * bridge contact (type='rep') for the staff member — reused across projects —
+ * then links it via project_contacts. Removal reuses detachContact.
+ */
+export async function assignRep(projectId: string, userId: string) {
+  if (!userId) return;
+  const ctx = await getOrgContext();
+  if (!ctx) return;
+  const supabase = await createClient();
+
+  // The roster is the source of truth for who is staff in this org.
+  // NOTE: annotated (not the brief's bare inference) — this Supabase client's
+  // rpc() result types as `any` here because createClient() doesn't pass the
+  // Database generic, so an unannotated .find() callback fails noImplicitAny.
+  const { data: staff } = await supabase.rpc("org_crm_staff");
+  const member = (staff ?? []).find(
+    (s: { user_id: string; full_name: string; email: string }) => s.user_id === userId
+  );
+  if (!member) return;
+
+  // One bridge contact per staff member per org (contacts.user_id is UNIQUE).
+  const { data: existing } = await supabase
+    .from("contacts")
+    .select("id")
+    .eq("organization_id", ctx.org.id)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  let contactId = existing?.id ?? null;
+  if (!contactId) {
+    const { data: created } = await supabase
+      .from("contacts")
+      .insert({
+        organization_id: ctx.org.id,
+        user_id: userId,
+        type: "rep",
+        first_name: member.full_name,
+        email: member.email,
+      })
+      .select("id")
+      .single();
+    contactId = created?.id ?? null;
+  }
+  if (!contactId) return;
+
+  // Idempotent on unique(project_id, contact_id).
+  await supabase
+    .from("project_contacts")
+    .insert({ organization_id: ctx.org.id, project_id: projectId, contact_id: contactId });
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
 /** Add a task to the project, optionally assigned to a contact and/or shared. */
 export async function addTodo(
   projectId: string,
