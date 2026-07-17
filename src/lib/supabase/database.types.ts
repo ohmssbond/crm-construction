@@ -332,6 +332,69 @@ export type Database = {
           },
         ]
       }
+      job_attachments: {
+        Row: {
+          added_at: string
+          created_at: string
+          filename: string | null
+          id: string
+          job_id: string
+          label: string
+          mime_type: string | null
+          organization_id: string
+          size_bytes: number | null
+          status: string
+          storage_path: string
+          uploaded_at: string | null
+          worker_user_id: string
+        }
+        Insert: {
+          added_at?: string
+          created_at?: string
+          filename?: string | null
+          id?: string
+          job_id: string
+          label: string
+          mime_type?: string | null
+          organization_id: string
+          size_bytes?: number | null
+          status?: string
+          storage_path: string
+          uploaded_at?: string | null
+          worker_user_id: string
+        }
+        Update: {
+          added_at?: string
+          created_at?: string
+          filename?: string | null
+          id?: string
+          job_id?: string
+          label?: string
+          mime_type?: string | null
+          organization_id?: string
+          size_bytes?: number | null
+          status?: string
+          storage_path?: string
+          uploaded_at?: string | null
+          worker_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_attachments_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_attachments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_material_lines: {
         Row: {
           created_at: string
@@ -491,6 +554,51 @@ export type Database = {
           },
           {
             foreignKeyName: "job_time_segments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_work_notes: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          job_id: string
+          organization_id: string
+          updated_at: string
+          worker_user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          job_id: string
+          organization_id: string
+          updated_at?: string
+          worker_user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          job_id?: string
+          organization_id?: string
+          updated_at?: string
+          worker_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_work_notes_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_work_notes_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -844,10 +952,38 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "projects_after_attachment_id_fkey"
+            columns: ["after_attachment_id"]
+            isOneToOne: false
+            referencedRelation: "attachments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_before_attachment_id_fkey"
+            columns: ["before_attachment_id"]
+            isOneToOne: false
+            referencedRelation: "attachments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_cover_attachment_id_fkey"
+            columns: ["cover_attachment_id"]
+            isOneToOne: false
+            referencedRelation: "attachments"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "projects_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_hero_attachment_id_fkey"
+            columns: ["hero_attachment_id"]
+            isOneToOne: false
+            referencedRelation: "attachments"
             referencedColumns: ["id"]
           },
           {
@@ -902,10 +1038,49 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "status_updates_photo_attachment_id_fkey"
+            columns: ["photo_attachment_id"]
+            isOneToOne: false
+            referencedRelation: "attachments"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "status_updates_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tb_workers: {
+        Row: {
+          created_at: string
+          name: string
+          organization_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          name: string
+          organization_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tb_workers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
