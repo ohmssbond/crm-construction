@@ -14,6 +14,7 @@ import { Banner } from "@/components/ui/Banner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getProjectDetail } from "@/lib/data/projects";
 import { groupAttachmentsByType } from "@/lib/data/attachments";
+import { isImageAttachment } from "@/lib/data/portfolio";
 import { getOrgContext } from "@/lib/data/org";
 import { fmtDate, fmtDateTime, fmtZonedDate, contactName } from "@/lib/data/format";
 import { DEFAULT_TIMEZONE } from "@/lib/timezones";
@@ -23,6 +24,8 @@ import { StageControl } from "./StageControl";
 import { ContactManager } from "./ContactManager";
 import { TodoComposer } from "./TodoComposer";
 import { TaskRow } from "./TaskRow";
+import { PhaseControl } from "./PhaseControl";
+import { PortfolioSlots } from "./PortfolioSlots";
 import {
   postUpdate,
   setUpdateShared,
@@ -35,6 +38,8 @@ import {
   addLink,
   attachContact,
   detachContact,
+  setPhotoPhase,
+  setProjectPhotoSlot,
 } from "./actions";
 
 // Glyph + tile color per file category, with a sensible fallback.
@@ -64,6 +69,15 @@ export default async function ProjectDetailPage({
   const taskContacts = contacts.map((c) => ({ id: c.id, name: contactName(c) }));
   const artisanLabel = `${ctx?.user.name ?? "Artisan"} (you)`;
   const timezone = ctx?.org.timezone ?? DEFAULT_TIMEZONE;
+  const imagePhotos = attachments
+    .filter(isImageAttachment)
+    .map((a) => ({ id: a.id, filename: a.filename, href: a.href }));
+  const slotValues = {
+    cover: project.cover_attachment_id ?? null,
+    hero: project.hero_attachment_id ?? null,
+    before: project.before_attachment_id ?? null,
+    after: project.after_attachment_id ?? null,
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -89,7 +103,10 @@ export default async function ProjectDetailPage({
             label: "Updates",
             content: (
               <div className="flex flex-col gap-3">
-                <Composer action={postUpdate.bind(null, project.id)} />
+                <Composer
+                  action={postUpdate.bind(null, project.id)}
+                  photos={imagePhotos.map((p) => ({ id: p.id, filename: p.filename }))}
+                />
                 {updates.length === 0 ? (
                   <EmptyState glyph="📣" title="No updates yet." />
                 ) : (
@@ -117,6 +134,11 @@ export default async function ProjectDetailPage({
                   shareLabel={`Share with ${clientNoun.toLowerCase()}`}
                 />
                 <LinkForm action={addLink.bind(null, project.id)} categories={fileCategories} />
+                <PortfolioSlots
+                  photos={imagePhotos}
+                  values={slotValues}
+                  action={setProjectPhotoSlot.bind(null, project.id)}
+                />
                 {attachments.length === 0 ? (
                   <EmptyState glyph="🗂" title="No files yet." />
                 ) : (
@@ -128,20 +150,28 @@ export default async function ProjectDetailPage({
                         </h4>
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                           {group.items.map((a) => {
+                            const isImg = isImageAttachment(a);
                             const style =
                               a.kind === "link"
                                 ? { glyph: "🔗", bg: "#6a7c8a" }
                                 : FILE_STYLE[a.category] ?? FILE_FALLBACK;
                             return (
-                              <FileTile
-                                key={a.id}
-                                name={a.filename ?? a.url ?? "Link"}
-                                glyph={style.glyph}
-                                bg={style.bg}
-                                shared={a.is_shared}
-                                href={a.href}
-                                shareAction={setAttachmentShared.bind(null, project.id, a.id)}
-                              />
+                              <div key={a.id} className="flex flex-col gap-1">
+                                <FileTile
+                                  name={a.filename ?? a.url ?? "Link"}
+                                  glyph={style.glyph}
+                                  bg={style.bg}
+                                  shared={a.is_shared}
+                                  href={a.href}
+                                  shareAction={setAttachmentShared.bind(null, project.id, a.id)}
+                                />
+                                {isImg && (
+                                  <PhaseControl
+                                    current={(a.phase as "before" | "during" | "after" | null) ?? null}
+                                    action={setPhotoPhase.bind(null, project.id, a.id)}
+                                  />
+                                )}
+                              </div>
                             );
                           })}
                         </div>

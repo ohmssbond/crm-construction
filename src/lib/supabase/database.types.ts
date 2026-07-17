@@ -49,6 +49,7 @@ export type Database = {
           kind: string
           mime_type: string | null
           organization_id: string
+          phase: string | null
           project_id: string
           size_bytes: number | null
           storage_path: string | null
@@ -64,6 +65,7 @@ export type Database = {
           kind?: string
           mime_type?: string | null
           organization_id: string
+          phase?: string | null
           project_id: string
           size_bytes?: number | null
           storage_path?: string | null
@@ -79,6 +81,7 @@ export type Database = {
           kind?: string
           mime_type?: string | null
           organization_id?: string
+          phase?: string | null
           project_id?: string
           size_bytes?: number | null
           storage_path?: string | null
@@ -795,10 +798,14 @@ export type Database = {
       }
       projects: {
         Row: {
+          after_attachment_id: string | null
           archived_at: string | null
+          before_attachment_id: string | null
+          cover_attachment_id: string | null
           created_at: string
           customer_id: string
           end_date: string | null
+          hero_attachment_id: string | null
           id: string
           name: string
           organization_id: string
@@ -806,10 +813,14 @@ export type Database = {
           start_date: string | null
         }
         Insert: {
+          after_attachment_id?: string | null
           archived_at?: string | null
+          before_attachment_id?: string | null
+          cover_attachment_id?: string | null
           created_at?: string
           customer_id: string
           end_date?: string | null
+          hero_attachment_id?: string | null
           id?: string
           name: string
           organization_id: string
@@ -817,10 +828,14 @@ export type Database = {
           start_date?: string | null
         }
         Update: {
+          after_attachment_id?: string | null
           archived_at?: string | null
+          before_attachment_id?: string | null
+          cover_attachment_id?: string | null
           created_at?: string
           customer_id?: string
           end_date?: string | null
+          hero_attachment_id?: string | null
           id?: string
           name?: string
           organization_id?: string
@@ -852,7 +867,9 @@ export type Database = {
           id: string
           is_shared: boolean
           organization_id: string
+          photo_attachment_id: string | null
           project_id: string
+          title: string | null
         }
         Insert: {
           body: string
@@ -861,7 +878,9 @@ export type Database = {
           id?: string
           is_shared?: boolean
           organization_id: string
+          photo_attachment_id?: string | null
           project_id: string
+          title?: string | null
         }
         Update: {
           body?: string
@@ -870,7 +889,9 @@ export type Database = {
           id?: string
           is_shared?: boolean
           organization_id?: string
+          photo_attachment_id?: string | null
           project_id?: string
+          title?: string | null
         }
         Relationships: [
           {

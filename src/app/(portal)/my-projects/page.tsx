@@ -1,18 +1,10 @@
-import { FolderKanban } from "lucide-react";
-import { Card } from "@/components/ui/Card";
-import { ListRow } from "@/components/ui/ListRow";
-import { Thumb } from "@/components/ui/Thumb";
-import { StageChip, type Stage } from "@/components/ui/Chip";
 import { Banner } from "@/components/ui/Banner";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ProjectCard } from "@/components/portal/ProjectCard";
 import { getPortalContext, listPortalProjects } from "@/lib/data/portal";
-import { projectMeta } from "@/lib/data/format";
 
 export default async function MyProjectsPage() {
-  const [ctx, projects] = await Promise.all([
-    getPortalContext(),
-    listPortalProjects(),
-  ]);
+  const [ctx, projects] = await Promise.all([getPortalContext(), listPortalProjects()]);
   const orgName = ctx?.orgName ?? "your contractor";
 
   return (
@@ -21,30 +13,18 @@ export default async function MyProjectsPage() {
       {projects.length === 0 ? (
         <EmptyState glyph="📂" title="No projects shared with you yet." />
       ) : (
-        <Card>
-          {projects.map((p) => {
-            const meta = projectMeta(p);
-            return (
-              <ListRow
-                key={p.id}
-                href={`/my-projects/${p.id}`}
-                leading={
-                  <Thumb>
-                    <FolderKanban size={18} />
-                  </Thumb>
-                }
-                title={p.name}
-                sub={p.customerName}
-                meta={
-                  <>
-                    <StageChip stage={p.stage as Stage} />
-                    {meta && <div className="mt-[5px]">{meta}</div>}
-                  </>
-                }
-              />
-            );
-          })}
-        </Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {projects.map((p) => (
+            <ProjectCard
+              key={p.id}
+              id={p.id}
+              name={p.name}
+              customerName={p.customerName}
+              stage={p.stage}
+              coverHref={p.coverHref}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

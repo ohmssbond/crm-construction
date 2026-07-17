@@ -56,7 +56,9 @@ export async function getProjectDetail(id: string) {
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, name, stage, start_date, end_date, customer:customers(id, name)")
+    .select(
+      "id, name, stage, start_date, end_date, customer:customers(id, name), cover_attachment_id, hero_attachment_id, before_attachment_id, after_attachment_id"
+    )
     .eq("id", id)
     .is("archived_at", null)
     .maybeSingle();
@@ -83,7 +85,9 @@ export async function getProjectDetail(id: string) {
         .eq("project_id", id),
       supabase
         .from("attachments")
-        .select("id, filename, category, kind, url, is_shared, storage_path, created_at")
+        .select(
+          "id, filename, category, kind, url, is_shared, storage_path, created_at, mime_type, phase"
+        )
         .eq("project_id", id)
         .order("created_at", { ascending: false }),
       supabase
