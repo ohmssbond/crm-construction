@@ -12,6 +12,7 @@ export async function listContacts() {
     .from("contacts")
     .select("id, first_name, last_name, email, type, user_id")
     .is("archived_at", null)
+    .neq("type", "rep")
     .order("created_at", { ascending: false });
   return data ?? [];
 }

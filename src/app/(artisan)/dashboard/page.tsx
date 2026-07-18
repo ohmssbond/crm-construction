@@ -26,7 +26,7 @@ export default async function DashboardPage() {
     await Promise.all([
       supabase.from("projects").select("id", { count: "exact", head: true }),
       supabase.from("customers").select("id", { count: "exact", head: true }),
-      supabase.from("contacts").select("id", { count: "exact", head: true }),
+      supabase.from("contacts").select("id", { count: "exact", head: true }).neq("type", "rep"),
       supabase
         .from("projects")
         .select(

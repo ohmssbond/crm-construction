@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, test, expect } from "vitest";
 import { partitionContacts, availableStaff } from "./reps";
 
 describe("partitionContacts", () => {
-  it("splits reps from everyone else by type", () => {
+  test("splits reps from everyone else by type", () => {
     const input = [
       { id: "a", type: "customer" },
       { id: "b", type: "rep" },
@@ -14,7 +14,7 @@ describe("partitionContacts", () => {
     expect(reps.map((c) => c.id)).toEqual(["b", "d"]);
   });
 
-  it("handles an empty list", () => {
+  test("handles an empty list", () => {
     expect(partitionContacts([])).toEqual({ customers: [], reps: [] });
   });
 });
@@ -25,16 +25,16 @@ describe("availableStaff", () => {
     { user_id: "u2", full_name: "Jesse", email: "jesse@x.com" },
   ];
 
-  it("drops staff already assigned as a rep (matched by user_id)", () => {
+  test("drops staff already assigned as a rep (matched by user_id)", () => {
     const reps = [{ id: "c1", user_id: "u2" }];
     expect(availableStaff(staff, reps).map((s) => s.user_id)).toEqual(["u1"]);
   });
 
-  it("keeps all staff when none are reps yet", () => {
+  test("keeps all staff when none are reps yet", () => {
     expect(availableStaff(staff, []).map((s) => s.user_id)).toEqual(["u1", "u2"]);
   });
 
-  it("ignores rep rows with a null user_id", () => {
+  test("ignores rep rows with a null user_id", () => {
     const reps = [{ id: "c1", user_id: null }];
     expect(availableStaff(staff, reps)).toHaveLength(2);
   });

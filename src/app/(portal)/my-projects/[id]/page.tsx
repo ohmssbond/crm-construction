@@ -44,8 +44,8 @@ export default async function PortalProjectPage({
             <span className="text-meta font-semibold text-faint uppercase tracking-[0.05em]">
               Your point of contact
             </span>
-            {reps.map((r, i) => (
-              <div key={i} className="flex items-center gap-3">
+            {reps.map((r) => (
+              <div key={r.email ?? r.name} className="flex items-center gap-3">
                 <Avatar initials={monogram(r.name)} />
                 <div className="flex flex-col">
                   <span className="text-body font-semibold">{r.name}</span>

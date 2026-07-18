@@ -47,3 +47,26 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 grant execute on function public.portal_project_reps(uuid) to authenticated;
+
+-- 4. Harden project_contacts against cross-org linking. The insert's
+--    organization_id and project_id are client-supplied and independent; the
+--    existing with-check only validated organization_id membership, so a member
+--    of org A could link a contact (incl. a rep bridge) to a project in org B
+--    and gain contact_read access to it. Require the project to actually belong
+--    to the row's org. SECURITY DEFINER so the check sees the project regardless
+--    of the caller's RLS visibility.
+create or replace function public.project_in_org(p_project uuid, p_org uuid)
+returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from projects where id = p_project and organization_id = p_org
+  );
+$$;
+
+grant execute on function public.project_in_org(uuid, uuid) to authenticated;
+
+alter policy artisan_all on project_contacts
+  with check (
+    is_org_member(organization_id)
+    and public.project_in_org(project_id, organization_id)
+  );

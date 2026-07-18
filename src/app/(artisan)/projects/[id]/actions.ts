@@ -264,6 +264,16 @@ export async function assignRep(projectId: string, userId: string) {
   if (!ctx) return;
   const supabase = await createClient();
 
+  // Server actions accept any argument regardless of the UI binding, so never
+  // trust projectId. Confirm it belongs to the caller's org before linking
+  // (defense in depth alongside the project_contacts with-check).
+  const { data: proj } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", projectId)
+    .maybeSingle();
+  if (!proj) return;
+
   // The roster is the source of truth for who is staff in this org.
   // NOTE: annotated (not the brief's bare inference) — this Supabase client's
   // rpc() result types as `any` here because createClient() doesn't pass the
