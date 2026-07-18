@@ -15,10 +15,21 @@ export function StageChip({ stage }: { stage: Stage }) {
   return <span className={`${chipBase} ${cls}`}>{label}</span>;
 }
 
-export type ContactType = "partner" | "prospect" | "customer";
+export type ContactType = "partner" | "prospect" | "customer" | "rep";
+
+const TYPE_STYLE: Record<ContactType, string> = {
+  partner: "bg-proposal-soft text-proposal",
+  prospect: "bg-proposal-soft text-proposal",
+  customer: "bg-proposal-soft text-proposal",
+  rep: "bg-signed-soft text-signed",
+};
 
 export function TypeChip({ type }: { type: ContactType }) {
-  return <span className={`${chipBase} bg-proposal-soft text-proposal`}>{type}</span>;
+  return (
+    <span className={`${chipBase} ${TYPE_STYLE[type] ?? "bg-proposal-soft text-proposal"}`}>
+      {type}
+    </span>
+  );
 }
 
 const LOGIN = {

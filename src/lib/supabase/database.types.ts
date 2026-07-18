@@ -1200,6 +1200,25 @@ export type Database = {
       is_org_member_any: { Args: { org: string }; Returns: boolean }
       is_tb_admin: { Args: { org: string }; Returns: boolean }
       is_tb_member: { Args: { org: string }; Returns: boolean }
+      org_crm_staff: {
+        Args: never
+        Returns: {
+          email: string
+          full_name: string
+          user_id: string
+        }[]
+      }
+      portal_project_reps: {
+        Args: { p_project: string }
+        Returns: {
+          email: string
+          name: string
+        }[]
+      }
+      project_in_org: {
+        Args: { p_org: string; p_project: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

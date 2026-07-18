@@ -102,6 +102,12 @@ export async function listPortalProjects() {
  * updates, shared attachments, and the tasks visible to this contact (the ones
  * they own or that the team shared — RLS does the filtering). Null if not visible.
  */
+// portal_project_reps()'s declared Returns shape (database.types.ts). The
+// rpc() call itself types as `any` here (createClient() doesn't pass the
+// Database generic), so this annotation replaces what would otherwise be
+// lost type info.
+type PortalRep = { name: string; email: string | null };
+
 export async function getPortalProject(id: string) {
   const supabase = await createClient();
 
@@ -114,7 +120,7 @@ export async function getPortalProject(id: string) {
     .maybeSingle();
   if (!project) return null;
 
-  const [updates, attachments, tasks, org] = await Promise.all([
+  const [updates, attachments, tasks, org, repRows] = await Promise.all([
     supabase
       .from("status_updates")
       .select("id, title, body, created_at, is_shared, photo_attachment_id")
@@ -142,6 +148,7 @@ export async function getPortalProject(id: string) {
       .select("timezone")
       .eq("id", project.organization_id)
       .maybeSingle(),
+    supabase.rpc("portal_project_reps", { p_project: id }),
   ]);
 
   // Sign all shared attachments once, then split into images (gallery/slots) vs files.
@@ -179,5 +186,6 @@ export async function getPortalProject(id: string) {
     updates: shapedUpdates,
     tasks: tasks.data ?? [],
     timezone: org.data?.timezone ?? DEFAULT_TIMEZONE,
+    reps: (repRows.data ?? []) as PortalRep[],
   };
 }

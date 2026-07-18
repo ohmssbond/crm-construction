@@ -7,7 +7,8 @@ import { BeforeAfterStrip } from "@/components/portal/BeforeAfterStrip";
 import { PhotoGallery } from "@/components/portal/PhotoGallery";
 import { FilesList } from "@/components/portal/FilesList";
 import { getPortalProject } from "@/lib/data/portal";
-import { fmtDate, fmtDateTime, fmtZonedDate } from "@/lib/data/format";
+import { fmtDate, fmtDateTime, fmtZonedDate, monogram } from "@/lib/data/format";
+import { Avatar } from "@/components/ui/Avatar";
 
 export default async function PortalProjectPage({
   params,
@@ -18,12 +19,43 @@ export default async function PortalProjectPage({
   const detail = await getPortalProject(id);
   if (!detail) notFound();
 
-  const { project, status, hero, before, after, beforeAfter, gallery, files, updates, tasks, timezone } =
-    detail;
+  const {
+    project,
+    status,
+    hero,
+    before,
+    after,
+    beforeAfter,
+    gallery,
+    files,
+    updates,
+    tasks,
+    timezone,
+    reps,
+  } = detail;
 
   return (
     <div className="flex flex-col gap-5">
       <ProjectHero name={project.name} status={status} hero={hero} />
+
+      {reps.length > 0 && (
+        <Card>
+          <div className="p-4 flex flex-col gap-3">
+            <span className="text-meta font-semibold text-faint uppercase tracking-[0.05em]">
+              Your point of contact
+            </span>
+            {reps.map((r) => (
+              <div key={r.email ?? r.name} className="flex items-center gap-3">
+                <Avatar initials={monogram(r.name)} />
+                <div className="flex flex-col">
+                  <span className="text-body font-semibold">{r.name}</span>
+                  {r.email && <span className="text-meta text-faint">{r.email}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {beforeAfter && before && after && <BeforeAfterStrip before={before} after={after} />}
 
