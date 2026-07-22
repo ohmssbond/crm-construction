@@ -20,11 +20,15 @@ export function UploadForm({
   orgId,
   categories,
   shareLabel,
+  fixedCategory,
+  accept,
 }: {
   projectId: string;
   orgId: string;
-  categories: { key: string; label: string }[];
+  categories?: { key: string; label: string }[];
   shareLabel: string;
+  fixedCategory?: string;
+  accept?: string;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [category, setCategory] = useState("");
@@ -36,7 +40,8 @@ export function UploadForm({
     e.preventDefault();
     const file = fileRef.current?.files?.[0];
     if (!file) return setError("Choose a file to upload.");
-    if (!category) return setError("Pick a category.");
+    const cat = fixedCategory ?? category;
+    if (!cat) return setError("Pick a category.");
     setError(null);
 
     start(async () => {
@@ -57,7 +62,7 @@ export function UploadForm({
         filename: file.name,
         mime: file.type || null,
         size: file.size,
-        category,
+        category: cat,
         isShared: shared,
       });
       if (res.error) {
@@ -84,23 +89,26 @@ export function UploadForm({
           ref={fileRef}
           type="file"
           required
+          accept={accept}
           className="text-sub max-w-[230px] file:mr-3 file:rounded-control file:border-0 file:bg-accent-soft file:text-accent file:px-3 file:py-[6px] file:text-sub file:font-semibold"
         />
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          required
-          className={controlCls}
-        >
-          <option value="" disabled>
-            Category…
-          </option>
-          {categories.map((c) => (
-            <option key={c.key} value={c.key}>
-              {c.label}
+        {!fixedCategory && (
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            required
+            className={controlCls}
+          >
+            <option value="" disabled>
+              Category…
             </option>
-          ))}
-        </select>
+            {(categories ?? []).map((c) => (
+              <option key={c.key} value={c.key}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        )}
         <label className="flex items-center gap-2 text-sub text-muted">
           <input
             type="checkbox"
