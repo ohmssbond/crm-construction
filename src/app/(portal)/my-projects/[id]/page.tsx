@@ -60,7 +60,7 @@ export default async function PortalProjectPage({
                     >
                       {u.photoHref && (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={u.photoHref} alt="" className="w-full h-[160px] object-cover" />
+                        <img loading="lazy" src={u.photoHref} alt="" className="w-full h-[160px] object-cover" />
                       )}
                       <div className="p-4 flex flex-col gap-1">
                         <div className="flex items-baseline justify-between gap-2">

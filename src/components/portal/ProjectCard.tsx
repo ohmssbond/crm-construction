@@ -25,7 +25,7 @@ export function ProjectCard({
       <div className="h-[150px] w-full">
         {coverHref ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={coverHref} alt="" className="w-full h-full object-cover" />
+          <img loading="lazy" src={coverHref} alt="" className="w-full h-full object-cover" />
         ) : (
           <BrandedPlaceholder name={name} />
         )}

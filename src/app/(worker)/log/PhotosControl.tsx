@@ -122,7 +122,7 @@ function PhotoTile({ jobId, photo }: { jobId: string; photo: Photo }) {
       >
         {photo.isImage && photo.href ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo.href} alt={photo.label} className="w-full h-full object-cover" />
+          <img loading="lazy" src={photo.href} alt={photo.label} className="w-full h-full object-cover" />
         ) : (
           <div className="flex flex-col items-center gap-1 p-2 text-center">
             <span className="text-2xl">📄</span>

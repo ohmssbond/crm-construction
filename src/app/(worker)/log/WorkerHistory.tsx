@@ -84,7 +84,7 @@ export function WorkerHistory({ time, materials, photos, notes }: WorkerHistoryP
                 <div className="bg-line-2 aspect-square grid place-items-center">
                   {p.isImage && p.href ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.href} alt={p.label} className="w-full h-full object-cover" />
+                    <img loading="lazy" src={p.href} alt={p.label} className="w-full h-full object-cover" />
                   ) : (
                     <div className="flex flex-col items-center gap-1 p-2 text-center">
                       <span className="text-2xl">📄</span>
