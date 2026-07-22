@@ -31,11 +31,11 @@ describe("isImageAttachment", () => {
 
 describe("resolveSlot", () => {
   const map = new Map([
-    ["a", { href: "https://signed/a" }],
-    ["b", { href: null }],
+    ["a", { href: "https://signed/a", thumbHref: "https://signed/a-thumb" }],
+    ["b", { href: null, thumbHref: null }],
   ]);
   test("resolves a shared image with an href", () => {
-    expect(resolveSlot("a", map)).toEqual({ href: "https://signed/a" });
+    expect(resolveSlot("a", map)).toEqual({ href: "https://signed/a", thumbHref: "https://signed/a-thumb" });
   });
   test("returns null for missing id, null href, or null slot", () => {
     expect(resolveSlot(null, map)).toBeNull();
@@ -46,8 +46,8 @@ describe("resolveSlot", () => {
 
 describe("beforeAfterVisible", () => {
   test("true only when both resolve", () => {
-    expect(beforeAfterVisible({ href: "x" }, { href: "y" })).toBe(true);
-    expect(beforeAfterVisible({ href: "x" }, null)).toBe(false);
+    expect(beforeAfterVisible({ href: "x", thumbHref: null }, { href: "y", thumbHref: null })).toBe(true);
+    expect(beforeAfterVisible({ href: "x", thumbHref: null }, null)).toBe(false);
     expect(beforeAfterVisible(null, null)).toBe(false);
   });
 });
@@ -55,10 +55,10 @@ describe("beforeAfterVisible", () => {
 describe("groupPhotosByPhase", () => {
   test("buckets into before/during/after/general in fixed order, omitting empty groups", () => {
     const groups = groupPhotosByPhase([
-      { id: "1", href: "h1", phase: "after" },
-      { id: "2", href: "h2", phase: "before" },
-      { id: "3", href: "h3", phase: null },
-      { id: "4", href: "h4", phase: "before" },
+      { id: "1", href: "h1", thumbHref: null, phase: "after" },
+      { id: "2", href: "h2", thumbHref: null, phase: "before" },
+      { id: "3", href: "h3", thumbHref: null, phase: null },
+      { id: "4", href: "h4", thumbHref: null, phase: "before" },
     ]);
     expect(groups.map((g) => g.key)).toEqual(["before", "after", "general"]);
     expect(groups[0].items.map((i) => i.id)).toEqual(["2", "4"]);

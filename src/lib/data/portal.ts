@@ -2,7 +2,7 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { one } from "./rel";
 import { monogram } from "./format";
-import { withAttachmentUrls } from "./attachments";
+import { withAttachmentUrls, signImageVariant } from "./attachments";
 import {
   stageToStatus,
   isImageAttachment,
@@ -75,7 +75,7 @@ export async function listPortalProjects() {
   // Resolve cover photos in one batch: fetch the referenced attachments (RLS
   // returns only shared ones), keep images, sign their URLs.
   const coverIds = projects.map((p) => p.cover_attachment_id).filter(Boolean) as string[];
-  const coverById = new Map<string, { href: string | null }>();
+  const coverById = new Map<string, { href: string | null; thumbHref: string | null }>();
   if (coverIds.length) {
     const { data: covers } = await supabase
       .from("attachments")
@@ -84,7 +84,7 @@ export async function listPortalProjects() {
       .eq("is_shared", true);
     const images = (covers ?? []).filter(isImageAttachment);
     const signed = await withAttachmentUrls(supabase, images);
-    signed.forEach((a) => coverById.set(a.id, { href: a.href }));
+    signed.forEach((a) => coverById.set(a.id, { href: a.href, thumbHref: a.thumbHref }));
   }
 
   return projects.map((p) => ({
@@ -94,7 +94,10 @@ export async function listPortalProjects() {
     start_date: p.start_date,
     end_date: p.end_date,
     customerName: one(p.customer)?.name ?? "—",
-    coverHref: resolveSlot(p.cover_attachment_id, coverById)?.href ?? null,
+    coverHref: (() => {
+      const c = resolveSlot(p.cover_attachment_id, coverById);
+      return c ? (c.thumbHref ?? c.href) : null;
+    })(),
   }));
 }
 
@@ -150,21 +153,41 @@ export async function getPortalProject(id: string) {
   const signed = await withAttachmentUrls(supabase, attachments.data ?? []);
   const images = signed.filter(isImageAttachment);
   const files = signed.filter((a) => !isImageAttachment(a));
-  const sharedImagesById = new Map(images.map((a) => [a.id, { href: a.href }]));
+  const sharedImagesById = new Map(
+    images.map((a) => [a.id, { href: a.href, thumbHref: a.thumbHref }])
+  );
 
   const cover = resolveSlot(project.cover_attachment_id, sharedImagesById);
-  const hero = resolveSlot(project.hero_attachment_id, sharedImagesById);
-  const before = resolveSlot(project.before_attachment_id, sharedImagesById);
-  const after = resolveSlot(project.after_attachment_id, sharedImagesById);
+  const heroSlot = resolveSlot(project.hero_attachment_id, sharedImagesById);
+  const beforeSlot = resolveSlot(project.before_attachment_id, sharedImagesById);
+  const afterSlot = resolveSlot(project.after_attachment_id, sharedImagesById);
+
+  // Hero: a dedicated larger transform (it fills a wide banner). Falls back to the
+  // slot's full href if the variant sign fails. resolveSlot already enforced the
+  // shared/isolation guard, so the storage_path lookup is safe.
+  let hero = heroSlot;
+  if (heroSlot && project.hero_attachment_id) {
+    const heroImg = images.find((a) => a.id === project.hero_attachment_id);
+    if (heroImg?.storage_path) {
+      const big = await signImageVariant(supabase, heroImg.storage_path, { width: 1400, quality: 65 });
+      if (big) hero = { href: big, thumbHref: heroSlot.thumbHref };
+    }
+  }
+
+  // Before/After strip is display-only → hand it the 600px thumb.
+  const before = beforeSlot ? { href: beforeSlot.thumbHref ?? beforeSlot.href, thumbHref: beforeSlot.thumbHref } : null;
+  const after = afterSlot ? { href: afterSlot.thumbHref ?? afterSlot.href, thumbHref: afterSlot.thumbHref } : null;
 
   const gallery = groupPhotosByPhase(
-    images.map((a) => ({ id: a.id, href: a.href, phase: a.phase }))
+    images.map((a) => ({ id: a.id, href: a.href, thumbHref: a.thumbHref, phase: a.phase }))
   );
 
   const shapedUpdates = (updates.data ?? []).map((u) => ({
     ...u,
     photoHref: u.photo_attachment_id
-      ? (sharedImagesById.get(u.photo_attachment_id)?.href ?? null)
+      ? (sharedImagesById.get(u.photo_attachment_id)?.thumbHref ??
+         sharedImagesById.get(u.photo_attachment_id)?.href ??
+         null)
       : null,
   }));
 

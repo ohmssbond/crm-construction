@@ -4,7 +4,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 export function PhotoGallery({
   groups,
 }: {
-  groups: { key: string; label: string; items: { id: string; href: string | null }[] }[];
+  groups: { key: string; label: string; items: { id: string; href: string | null; thumbHref: string | null }[] }[];
 }) {
   if (groups.length === 0) {
     return <EmptyState glyph="🖼" title="No photos shared yet." />;
@@ -27,7 +27,7 @@ export function PhotoGallery({
                   className="block h-[110px] rounded-[8px] overflow-hidden border border-line"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img loading="lazy" src={img.href} alt="" className="w-full h-full object-cover" />
+                  <img loading="lazy" src={img.thumbHref ?? img.href} alt="" className="w-full h-full object-cover" />
                 </a>
               ) : null
             )}

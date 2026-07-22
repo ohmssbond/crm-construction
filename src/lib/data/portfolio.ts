@@ -26,7 +26,7 @@ export function isImageAttachment(a: { kind: string; mime_type: string | null })
   return a.kind === "file" && !!a.mime_type && a.mime_type.startsWith("image/");
 }
 
-export type Resolved = { href: string };
+export type Resolved = { href: string; thumbHref: string | null };
 
 /**
  * Resolve a headline slot to its photo — only if the referenced attachment is
@@ -35,12 +35,12 @@ export type Resolved = { href: string };
  */
 export function resolveSlot(
   attachmentId: string | null,
-  sharedImagesById: Map<string, { href: string | null }>
+  sharedImagesById: Map<string, { href: string | null; thumbHref: string | null }>
 ): Resolved | null {
   if (!attachmentId) return null;
   const a = sharedImagesById.get(attachmentId);
   if (!a || !a.href) return null;
-  return { href: a.href };
+  return { href: a.href, thumbHref: a.thumbHref };
 }
 
 /** The before→after strip shows only when both slots resolve to shared images. */
@@ -48,7 +48,7 @@ export function beforeAfterVisible(before: Resolved | null, after: Resolved | nu
   return before !== null && after !== null;
 }
 
-export type GalleryItem = { id: string; href: string | null; phase: string | null };
+export type GalleryItem = { id: string; href: string | null; thumbHref: string | null; phase: string | null };
 
 const GROUP_ORDER = [
   { key: "before", label: "Before" },
