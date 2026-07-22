@@ -1,45 +1,64 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isImageAttachment } from "./portfolio";
 
 type AttachmentRef = {
   kind: string;
   url: string | null;
   storage_path: string | null;
+  mime_type: string | null;
 };
 
 const BUCKET = "project-files";
 const SIGNED_URL_TTL = 60 * 60; // 1h
+const THUMB = { width: 600, quality: 60 };
+
+/** Sign a single transformed (resized) image variant — /render/image/ URL. */
+export async function signImageVariant(
+  supabase: SupabaseClient,
+  storagePath: string,
+  transform: { width: number; quality: number }
+): Promise<string | null> {
+  const { data } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(storagePath, SIGNED_URL_TTL, { transform });
+  return data?.signedUrl ?? null;
+}
 
 /**
- * Resolves a viewable `href` for each attachment: the raw URL for links, and a
- * short-lived signed URL for files in the private `project-files` bucket. File
- * URLs are signed in one batch call.
+ * Resolves a viewable `href` (raw URL for links, batched full-res signed URL for
+ * files) and, for image files, a small `thumbHref` (600px transformed URL) for
+ * grids/tiles. Full URLs are signed in one batch; thumbnails are signed per-image
+ * because the batch endpoint ignores the transform option.
  */
 export async function withAttachmentUrls<T extends AttachmentRef>(
   supabase: SupabaseClient,
   rows: T[]
-): Promise<(T & { href: string | null })[]> {
-  const filePaths = rows
-    .filter((r) => r.kind === "file" && r.storage_path)
-    .map((r) => r.storage_path as string);
+): Promise<(T & { href: string | null; thumbHref: string | null })[]> {
+  const files = rows.filter((r) => r.kind === "file" && r.storage_path);
+  const filePaths = files.map((r) => r.storage_path as string);
 
   const signed: Record<string, string> = {};
   if (filePaths.length) {
-    const { data } = await supabase.storage
-      .from(BUCKET)
-      .createSignedUrls(filePaths, SIGNED_URL_TTL);
+    const { data } = await supabase.storage.from(BUCKET).createSignedUrls(filePaths, SIGNED_URL_TTL);
     data?.forEach((s) => {
       if (s.path && s.signedUrl) signed[s.path] = s.signedUrl;
     });
   }
 
+  const thumbs: Record<string, string> = {};
+  await Promise.all(
+    files.filter(isImageAttachment).map(async (r) => {
+      const path = r.storage_path as string;
+      const url = await signImageVariant(supabase, path, THUMB);
+      if (url) thumbs[path] = url;
+    })
+  );
+
   return rows.map((r) => ({
     ...r,
-    href:
-      r.kind === "link"
-        ? r.url
-        : r.storage_path
-          ? (signed[r.storage_path] ?? null)
-          : null,
+    href: r.kind === "link" ? r.url : r.storage_path ? (signed[r.storage_path] ?? null) : null,
+    thumbHref:
+      r.kind === "file" && r.storage_path ? (thumbs[r.storage_path] ?? null) : null,
   }));
 }
 
