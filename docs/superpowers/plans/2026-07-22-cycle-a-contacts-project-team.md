@@ -11,9 +11,9 @@
 ## Global Constraints
 
 - **Not the Next.js you know** — read `node_modules/next/dist/docs/` before writing framework code; heed deprecation notices (per `AGENTS.md`).
-- **Migrations** live in `supabase/migrations/`, named `YYYYMMDD00000N_<slug>.sql`. Apply to remote with `supabase db push` — a deliberate, prompted action (remote == production). Regenerate types after every push.
-- **Type regeneration:** `npx supabase gen types typescript --linked > src/lib/supabase/database.types.ts` (matches commit `ecae128`).
-- **Gates before merge:** `npm test` (Vitest) and `npm run build` must pass.
+- **Migrations** live in `supabase/migrations/`, named `YYYYMMDD00000N_<slug>.sql`. During this build session, migration files are **authored and committed but NOT applied**. All production writes — `supabase db push`, canonical `gen types --linked`, deploy, live verify — are deferred to a single **cutover gate (Task 9)**, run deliberately with the maintainer (remote == production).
+- **Types during build:** `createClient()` (`src/lib/supabase/server.ts`) does NOT pass the `Database` generic, so `.from(...)`/`.rpc(...)` are loosely typed — the new `contacts.company` column and the `portal_project_team` RPC compile with **no edit** to `src/lib/supabase/database.types.ts`. Do NOT hand-edit that file; it is regenerated canonically at cutover (`npx supabase gen types typescript --linked > src/lib/supabase/database.types.ts`, matching commit `ecae128`).
+- **Gates before commit:** `npm test` (Vitest) and `npm run build` must pass. Neither needs the database, so every task is fully verifiable during the build session; runtime-against-DB correctness is verified at the Task 9 cutover.
 - **Contact types:** `contacts.type in ('partner','prospect','customer','rep')`. The `rep` type is a staff bridge (Company Reps); it is never selectable in `ContactForm`.
 - **Privacy posture:** the `contacts` table has no portal RLS policy. Portal users only ever see contact data through a `SECURITY DEFINER` RPC gated by `public.contact_can_see_project(p_project)`. Preserve this — never add a portal-readable path to `contacts`.
 - **Portal display:** name + email for every team member.
@@ -50,7 +50,7 @@
 - Modify: `src/lib/supabase/database.types.ts` (regenerated)
 
 **Interfaces:**
-- Produces: a nullable `company text` column on `public.contacts`.
+- Produces: a migration file adding a nullable `company text` column on `public.contacts`. (Applied at the Task 9 cutover, not here.)
 
 - [ ] **Step 1: Write the migration**
 
@@ -63,28 +63,16 @@ Create `supabase/migrations/20260722000001_contact_company.sql`:
 alter table contacts add column company text;
 ```
 
-- [ ] **Step 2: Apply to remote (deliberate — will prompt)**
-
-Run: `supabase db push`
-Expected: the new migration `20260722000001_contact_company` is listed as applied. Confirm with:
-Run: `supabase migration list`
-Expected: `20260722000001 | 20260722000001 | …` (Local and Remote both present).
-
-- [ ] **Step 3: Regenerate canonical types**
-
-Run: `npx supabase gen types typescript --linked > src/lib/supabase/database.types.ts`
-Expected: `git diff src/lib/supabase/database.types.ts` shows `company: string | null` added to the `contacts` Row/Insert/Update shapes.
-
-- [ ] **Step 4: Verify build still compiles**
+- [ ] **Step 2: Verify the tree still builds**
 
 Run: `npm run build`
-Expected: build succeeds (no type usages broken by the regenerated file).
+Expected: build succeeds (this task adds only a SQL file; no code changes). Do NOT run `supabase db push` or `gen types` — deferred to Task 9.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
-git add supabase/migrations/20260722000001_contact_company.sql src/lib/supabase/database.types.ts
-git commit -m "feat(contacts): add nullable company column
+git add supabase/migrations/20260722000001_contact_company.sql
+git commit -m "feat(contacts): add contacts.company migration (applied at cutover)
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
@@ -461,7 +449,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: `contacts.company` (Task 1); existing `public.contact_can_see_project(uuid)` guard.
-- Produces: `portal_project_team(p_project uuid)` returning `(name text, email text, type text, company text)`.
+- Produces: a migration file defining `portal_project_team(p_project uuid)` returning `(name text, email text, type text, company text)`. (Applied at the Task 9 cutover, not here.)
 
 - [ ] **Step 1: Write the migration**
 
@@ -499,27 +487,21 @@ $$;
 grant execute on function public.portal_project_team(uuid) to authenticated;
 ```
 
-- [ ] **Step 2: Apply to remote (deliberate — will prompt)**
+- [ ] **Step 2: Verify the tree still builds**
 
-Run: `supabase db push`
-Then: `supabase migration list`
-Expected: `20260722000002` shows as applied (Local and Remote).
+Run: `npm run build`
+Expected: build succeeds (SQL-only file; the loosely-typed client means the not-yet-applied RPC doesn't affect compilation). Do NOT run `supabase db push` or `gen types` — deferred to Task 9.
 
-- [ ] **Step 3: Regenerate types**
-
-Run: `npx supabase gen types typescript --linked > src/lib/supabase/database.types.ts`
-Expected: `git diff` shows `portal_project_team` added and `portal_project_reps` removed from the `Functions` block.
-
-- [ ] **Step 4: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
-git add supabase/migrations/20260722000002_portal_project_team.sql src/lib/supabase/database.types.ts
-git commit -m "feat(portal): add portal_project_team RPC, drop portal_project_reps
+git add supabase/migrations/20260722000002_portal_project_team.sql
+git commit -m "feat(portal): add portal_project_team RPC migration (applied at cutover)
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
 
-> Note: after this task the app will not build until Task 8 rewires `getPortalProject` (which still calls `portal_project_reps`). Tasks 6→7→8 are a unit; run them together before the next build gate.
+> Note: the code that calls this RPC is wired in Task 8. The migration file alone doesn't change the build. `database.types.ts` is NOT touched here — it's regenerated canonically at the Task 9 cutover.
 
 ---
 
@@ -755,47 +737,62 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-### Task 9: Live verification (Chrome MCP)
+### Task 9: Cutover gate (deliberate — maintainer-run, NOT a subagent task)
 
-**Files:** none (verification only).
+This is the single production-write gate, run by the maintainer after the final
+whole-branch review, alongside `superpowers:finishing-a-development-branch`. It
+applies both deferred migrations, regenerates canonical types, deploys, and
+adversarially verifies live — mirroring the Company Reps cutover.
 
-**Interfaces:**
-- Consumes: the deployed dev server + the seeded tenants (see `memory/tenants.md`: J Huber `04654563` has crm+portal; Gargoyle `1111`).
+**Files:** Modify `src/lib/supabase/database.types.ts` (regenerated).
 
-Prerequisite test data: on one project, attach at least one rep, two partners sharing a company + one partner with a different company + one with no company, and a customer contact with a portal login. Use the artisan **Contacts** tab to attach, and the contact **edit** form to set partner companies.
+- [ ] **Step 1: Apply both migrations to remote (deliberate — will prompt)**
 
-- [ ] **Step 1: Connect the browser**
+Run: `supabase db push`
+Then: `supabase migration list`
+Expected: `20260722000001` and `20260722000002` both show as applied (Local and Remote).
 
-Connect Chrome MCP via `/chrome` (per `CLAUDE.md`). Start the dev server (`npm run dev`) if not already running.
+- [ ] **Step 2: Regenerate canonical types + commit**
 
-- [ ] **Step 2: Verify the artisan side**
+Run: `npx supabase gen types typescript --linked > src/lib/supabase/database.types.ts`
+Expected: `git diff` shows `company: string | null` added to `contacts` Row/Insert/Update, and `portal_project_team` added / `portal_project_reps` removed in the `Functions` block.
 
-As a CRM staff user, create/edit a partner contact. Confirm:
-- The **Company** field appears only when Type = Partner (switch the Type select back and forth).
-- Saving persists the company; the contact **detail** page shows a Company row for partners and hides it for non-partners.
+```bash
+git add src/lib/supabase/database.types.ts
+git commit -m "chore(cycle-a): regenerate canonical database types after db push
 
-- [ ] **Step 3: Verify the portal roster**
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
+```
 
-Sign in to the portal as the customer contact for that project. On the project page confirm:
-- The card reads **"Your Project Team"**.
-- Three sections in order: the tenant org name, **Partners** (partners nested under their company sub-headers, alpha-sorted; the no-company partner listed without a sub-header), then the customer/`client_noun` section.
-- Every person shows name + email.
+- [ ] **Step 3: Final gates**
 
-- [ ] **Step 4: Verify isolation (adversarial, mirrors Company Reps)**
-
-- Confirm a portal contact **cannot** read the `contacts` table directly (only the RPC exposes names/emails) — e.g. via the network tab / a direct PostgREST call to `/rest/v1/contacts` returns no rows.
-- Confirm **cross-org**: a contact in org A sees no team members from a project in org B (attempt to load a foreign project id → not found / empty).
-
-- [ ] **Step 5: Final gates**
-
-Run: `npm test` → PASS
+Run: `npm test` → PASS (incl. `projectTeam.test.ts`)
 Run: `npm run build` → succeeds
-Report results. Do not claim success without the command output.
+
+- [ ] **Step 4: Deploy**
+
+Merge the branch to `main` (PR per `finishing-a-development-branch`) so Vercel deploys, or `vercel --prod --yes`. Confirm the deploy reaches READY.
+
+- [ ] **Step 5: Verify live (Chrome MCP)**
+
+Prerequisite test data on one project (via the artisan **Contacts** tab + contact **edit** form): at least one rep, two partners sharing a company, one partner with a different company, one partner with no company, and a customer contact with a portal login.
+
+Connect Chrome MCP via `/chrome`, then confirm:
+- **Artisan:** the **Company** field appears only when Type = Partner (toggle the Type select); saving persists it; the contact detail page shows a Company row for partners only.
+- **Portal roster:** the card reads **"Your Project Team"**; three sections in order — tenant org name, **Partners** (nested under company sub-headers, alpha-sorted; the no-company partner listed without a sub-header), then the `client_noun` customer section; every person shows name + email.
+
+- [ ] **Step 6: Verify isolation (adversarial, mirrors Company Reps)**
+
+- Confirm a portal contact **cannot** read the `contacts` table directly — a direct PostgREST call to `/rest/v1/contacts` returns no rows (only the RPC exposes names/emails).
+- Confirm **cross-org**: a contact in org A sees no team members from a project in org B (load a foreign project id → not found / empty).
+
+Report all results with command/observation output. Do not claim success without evidence.
 
 ---
 
 ## Notes for the executor
 
-- **Migrations touch production** (remote == prod). `supabase db push` in Tasks 1 and 6 is a deliberate, prompted action — pause for confirmation, don't auto-approve.
-- Tasks 6→7→8 leave the build red in between (the RPC rename). Treat them as one landing sequence; the build gate is at the end of Task 8.
+- **No production writes during the build session.** Tasks 1–8 only author/commit code and migration files; they are fully verifiable with `npm test` + `npm run build` (neither needs the DB). All `supabase db push` / `gen types` / deploy / live-verify happen once, at the Task 9 cutover, run deliberately with the maintainer.
+- **Do NOT hand-edit `src/lib/supabase/database.types.ts`.** The client is not `Database`-generic-typed, so new columns/RPCs compile without it; it's regenerated canonically at cutover (Task 9, Step 2).
+- Task 8 is the only task where the build is momentarily red mid-edit (the `reps`→`team` swap); it must be green at the task's end.
 - The spec refines the customer-label plumbing: rather than adding `clientNoun` to `PortalContext`, `getPortalProject` already reads the org row, so we extend that existing select (Task 8, Step 2) — one read, no context change.
