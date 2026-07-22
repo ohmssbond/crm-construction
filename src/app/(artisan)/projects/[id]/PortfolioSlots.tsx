@@ -88,7 +88,7 @@ function SlotPicker({
       <div className="aspect-[4/3] rounded-[8px] border border-line overflow-hidden bg-line-2 grid place-items-center">
         {current?.href ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={current.href} alt="" className="w-full h-full object-cover" />
+          <img loading="lazy" src={current.href} alt="" className="w-full h-full object-cover" />
         ) : (
           <span className="text-meta text-faint">Empty</span>
         )}

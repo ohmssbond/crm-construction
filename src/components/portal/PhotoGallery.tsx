@@ -27,7 +27,7 @@ export function PhotoGallery({
                   className="block h-[110px] rounded-[8px] overflow-hidden border border-line"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img.href} alt="" className="w-full h-full object-cover" />
+                  <img loading="lazy" src={img.href} alt="" className="w-full h-full object-cover" />
                 </a>
               ) : null
             )}
