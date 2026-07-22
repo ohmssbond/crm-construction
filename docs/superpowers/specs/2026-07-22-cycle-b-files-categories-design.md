@@ -2,6 +2,19 @@
 
 _Date: 2026-07-22_
 
+> **⚠️ SCHEMA CORRECTION (post-review).** This doc originally stated that
+> `attachments.category` is governed by a table-wide `CHECK` constraint. **It is
+> not.** `20260603000002` dropped `attachments_category_check` and replaced it with
+> a **per-org foreign key** `attachments_category_fk (organization_id, category) ->
+> file_categories (organization_id, key)`. Wherever this doc says "CHECK constraint
+> / allowed values", read it as "the per-org `file_categories` rows (FK targets)".
+> Consequences: a category value is usable by an org only if that org has the
+> `file_categories` row; `photo` must be inserted as a row for **every** org (not
+> just construction); and `before_photo`/`after_photo` are **retired via
+> `archived_at`**, not hard-deleted (legacy attachments reference them via the FK).
+> The "product_documentation constraint drift" non-goal is moot (there is no CHECK).
+> The implemented migration follows this corrected model.
+
 Two backlog items in the artisan (tenant/admin) project view, built in dependency
 order:
 

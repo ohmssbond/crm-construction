@@ -8,6 +8,18 @@
 
 **Tech Stack:** Next.js 16 (App Router, "use client" where noted), Supabase (Postgres + per-org `file_categories` + table-wide CHECK constraint), Vitest, Chrome MCP for live verification.
 
+> **⚠️ SCHEMA CORRECTION (post-review).** Task 1's original SQL manipulated a
+> table-wide `attachments_category_check` that **no longer exists** —
+> `20260603000002` replaced it with a per-org FK `attachments_category_fk
+> (organization_id, category) -> file_categories (organization_id, key)`. The
+> migration was reworked (commit after Task 4): NO CHECK ops; insert a `photo`
+> `file_categories` row for **every** org (archived, so hidden from the dropdown but
+> a valid FK target); construction orgs get surveys/designs + contract relabel +
+> before/after **retired via `archived_at`** (not hard-deleted — they're FK-parents
+> of legacy attachments); and the dropdown query gains `.is("archived_at", null)`.
+> Task 1/Task 2 SQL snippets below are the superseded originals — see the fix commit
+> for the authoritative migration.
+
 ## Global Constraints
 
 - **Not the Next.js you know** — read `node_modules/next/dist/docs/` before writing framework code; heed deprecation notices (per `AGENTS.md`).
