@@ -44,4 +44,19 @@ describe("groupProjectTeam", () => {
   test("returns empty groups for empty input", () => {
     expect(groupProjectTeam([])).toEqual({ tenant: [], partners: [], customer: [] });
   });
+
+  test("drops prospect-type rows entirely", () => {
+    const prospect: TeamRow = { name: "Prue", email: "prue@x.co", type: "prospect", company: null };
+    const withProspect = groupProjectTeam([rep("Rae"), cust("Cam"), partner("Pat", "ABC"), prospect]);
+    const withoutProspect = groupProjectTeam([rep("Rae"), cust("Cam"), partner("Pat", "ABC")]);
+    expect(withProspect).toEqual(withoutProspect);
+    expect(withProspect.tenant.map((p) => p.name)).toEqual(["Rae"]);
+    expect(withProspect.customer.map((p) => p.name)).toEqual(["Cam"]);
+    expect(withProspect.partners.map((g) => g.company)).toEqual(["ABC"]);
+  });
+
+  test("sorts customer group by name", () => {
+    const team = groupProjectTeam([cust("Zed"), cust("Ana")]);
+    expect(team.customer.map((p) => p.name)).toEqual(["Ana", "Zed"]);
+  });
 });

@@ -33,6 +33,7 @@ export function ContactForm({
 }) {
   const [state, formAction, pending] = useActionState(action, initial);
   const [type, setType] = useState(defaults?.type ?? "customer");
+  const [company, setCompany] = useState(defaults?.company ?? "");
 
   return (
     <form action={formAction} className="flex flex-col gap-4 max-w-[560px]">
@@ -51,7 +52,7 @@ export function ContactForm({
         </Field>
         {type === "partner" && (
           <Field label="Company">
-            <input name="company" defaultValue={defaults?.company ?? ""} className={fieldInput} />
+            <input name="company" value={company} onChange={(e) => setCompany(e.target.value)} className={fieldInput} />
           </Field>
         )}
         <Field label="Type" required>

@@ -58,7 +58,7 @@ export function ProjectTeamCard({
             {team.partners.map((g) => (
               <div key={g.company ?? "__none__"} className="flex flex-col gap-2">
                 {g.company && (
-                  <span className="text-meta font-semibold text-[#344054]">{g.company}</span>
+                  <span className="text-meta font-semibold text-faint">{g.company}</span>
                 )}
                 {g.people.map((p) => (
                   <PersonRow key={p.email ?? p.name} person={p} />
