@@ -42,39 +42,41 @@ export function ProjectTeamCard({
 
   return (
     <Card>
-      <div className="p-4 flex flex-col gap-5">
+      <div className="p-4 flex flex-col gap-4">
         <span className="text-body font-semibold">Your Project Team</span>
 
-        {team.tenant.length > 0 && (
-          <Section title={orgName}>
-            {team.tenant.map((p) => (
-              <PersonRow key={p.email ?? p.name} person={p} />
-            ))}
-          </Section>
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-5 items-start">
+          {team.tenant.length > 0 && (
+            <Section title={orgName}>
+              {team.tenant.map((p) => (
+                <PersonRow key={p.email ?? p.name} person={p} />
+              ))}
+            </Section>
+          )}
 
-        {hasPartners && (
-          <Section title="Partners">
-            {team.partners.map((g) => (
-              <div key={g.company ?? "__none__"} className="flex flex-col gap-2">
-                {g.company && (
-                  <span className="text-meta font-semibold text-faint">{g.company}</span>
-                )}
-                {g.people.map((p) => (
-                  <PersonRow key={p.email ?? p.name} person={p} />
-                ))}
-              </div>
-            ))}
-          </Section>
-        )}
+          {hasPartners && (
+            <Section title="Partners">
+              {team.partners.map((g) => (
+                <div key={g.company ?? "__none__"} className="flex flex-col gap-2">
+                  {g.company && (
+                    <span className="text-meta font-semibold text-faint">{g.company}</span>
+                  )}
+                  {g.people.map((p) => (
+                    <PersonRow key={p.email ?? p.name} person={p} />
+                  ))}
+                </div>
+              ))}
+            </Section>
+          )}
 
-        {team.customer.length > 0 && (
-          <Section title={clientNoun}>
-            {team.customer.map((p) => (
-              <PersonRow key={p.email ?? p.name} person={p} />
-            ))}
-          </Section>
-        )}
+          {team.customer.length > 0 && (
+            <Section title={clientNoun}>
+              {team.customer.map((p) => (
+                <PersonRow key={p.email ?? p.name} person={p} />
+              ))}
+            </Section>
+          )}
+        </div>
       </div>
     </Card>
   );
