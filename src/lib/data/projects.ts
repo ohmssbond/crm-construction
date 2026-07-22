@@ -99,7 +99,8 @@ export async function getProjectDetail(id: string) {
       supabase
         .from("file_categories")
         .select("key, label, sort")
-        .order("sort", { ascending: true }),
+        .is("archived_at", null)
+        .order("label", { ascending: true }),
       supabase
         .from("contacts")
         .select("id, first_name, last_name, email, type")
