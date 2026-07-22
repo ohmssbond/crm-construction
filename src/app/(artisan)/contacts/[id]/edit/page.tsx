@@ -33,6 +33,7 @@ export default async function EditContactPage({
           last_name: contact.last_name,
           email: contact.email,
           phone: contact.phone,
+          company: contact.company,
           type: contact.type,
           customer_id: contact.customer?.id ?? "",
         }}

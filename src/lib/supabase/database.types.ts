@@ -115,6 +115,7 @@ export type Database = {
       contacts: {
         Row: {
           archived_at: string | null
+          company: string | null
           created_at: string
           customer_id: string | null
           email: string | null
@@ -128,6 +129,7 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
+          company?: string | null
           created_at?: string
           customer_id?: string | null
           email?: string | null
@@ -141,6 +143,7 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
+          company?: string | null
           created_at?: string
           customer_id?: string | null
           email?: string | null
@@ -1208,11 +1211,13 @@ export type Database = {
           user_id: string
         }[]
       }
-      portal_project_reps: {
+      portal_project_team: {
         Args: { p_project: string }
         Returns: {
+          company: string
           email: string
           name: string
+          type: string
         }[]
       }
       project_in_org: {

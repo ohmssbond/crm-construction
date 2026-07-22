@@ -35,7 +35,7 @@ export async function getContactDetail(id: string) {
   const { data: contact } = await supabase
     .from("contacts")
     .select(
-      "id, first_name, last_name, email, phone, type, user_id, customer:customers(id, name)"
+      "id, first_name, last_name, email, phone, company, type, user_id, customer:customers(id, name)"
     )
     .eq("id", id)
     .is("archived_at", null)

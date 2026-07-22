@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Field, fieldInput, FormError } from "@/components/ui/Field";
@@ -13,6 +13,7 @@ type Defaults = {
   last_name?: string | null;
   email?: string | null;
   phone?: string | null;
+  company?: string | null;
   type?: string;
   customer_id?: string | null;
 };
@@ -31,6 +32,8 @@ export function ContactForm({
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState(action, initial);
+  const [type, setType] = useState(defaults?.type ?? "customer");
+  const [company, setCompany] = useState(defaults?.company ?? "");
 
   return (
     <form action={formAction} className="flex flex-col gap-4 max-w-[560px]">
@@ -47,8 +50,18 @@ export function ContactForm({
         <Field label="Phone">
           <input name="phone" defaultValue={defaults?.phone ?? ""} className={fieldInput} />
         </Field>
+        {type === "partner" && (
+          <Field label="Company">
+            <input name="company" value={company} onChange={(e) => setCompany(e.target.value)} className={fieldInput} />
+          </Field>
+        )}
         <Field label="Type" required>
-          <select name="type" defaultValue={defaults?.type ?? "customer"} className={fieldInput}>
+          <select
+            name="type"
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            className={fieldInput}
+          >
             <option value="customer">Customer</option>
             <option value="partner">Partner</option>
             <option value="prospect">Prospect</option>

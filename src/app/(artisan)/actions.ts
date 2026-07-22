@@ -99,6 +99,7 @@ export async function updateContact(
       last_name: orNull(last),
       email: orNull(str(fd, "email")),
       phone: orNull(str(fd, "phone")),
+      company: type === "partner" ? orNull(str(fd, "company")) : null,
       type,
       customer_id: orNull(str(fd, "customer_id")),
     })
@@ -131,6 +132,7 @@ export async function createContact(
       last_name: orNull(last),
       email: orNull(str(fd, "email")),
       phone: orNull(str(fd, "phone")),
+      company: type === "partner" ? orNull(str(fd, "company")) : null,
       type,
       customer_id: orNull(str(fd, "customer_id")),
     })

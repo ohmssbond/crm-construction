@@ -13,8 +13,10 @@ blocker before investing time — most past stalls were environmental, not logic
   `vercel` (linked: `.vercel/` present). Install/auth only what the task needs.
 - **Chrome MCP** — only required for live-UI verification (`/verify`, `/run`); connect
   via `/chrome` if a task needs it. Not needed for code/test/build work.
-- **macOS** — the project lives under `~/Documents`; the terminal/Claude needs Full
-  Disk Access or sandboxed file reads/writes (e.g. `.env.local`) hit EPERM.
+- **macOS** — the project lives under `~/repos/crm-construction`, outside the
+  TCC-protected areas (Documents/Desktop/Downloads), so file reads/writes no longer
+  require Full Disk Access. (Moved off `~/Documents` on 2026-07-22 to escape the
+  recurring `Operation not permitted` / EPERM stalls.)
 
 # Working conventions
 

@@ -57,6 +57,9 @@ export default async function ContactDetailPage({
       <Card className="px-4 py-1">
         <KeyValue label="Email" value={contact.email ?? "—"} />
         <KeyValue label="Phone" value={contact.phone ?? "—"} />
+        {contact.type === "partner" && (
+          <KeyValue label="Company" value={contact.company ?? "—"} />
+        )}
         <KeyValue label={clientNoun} value={contact.customer?.name ?? "—"} />
       </Card>
 
