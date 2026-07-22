@@ -45,6 +45,11 @@ export async function withAttachmentUrls<T extends AttachmentRef>(
     });
   }
 
+  // Thumbnails are signed one-per-image (the batch endpoint ignores transforms),
+  // so this fans out N Storage round-trips per render — fine for today's modest
+  // galleries (a handful to a few dozen), all in parallel (~one RTT wall-clock).
+  // Concurrency is unbounded: if galleries ever grow large (100s), cap it (chunk
+  // or p-limit) before Storage rate limits / tail latency bite.
   const thumbs: Record<string, string> = {};
   await Promise.all(
     files.filter(isImageAttachment).map(async (r) => {
