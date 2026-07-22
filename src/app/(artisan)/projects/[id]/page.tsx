@@ -78,7 +78,7 @@ export default async function ProjectDetailPage({
   const imagePhotos = imageAttachments.map((a) => ({
     id: a.id,
     filename: a.filename,
-    href: a.href,
+    href: a.thumbHref ?? a.href,
   }));
   const slotValues = {
     cover: project.cover_attachment_id ?? null,

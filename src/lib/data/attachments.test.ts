@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { groupAttachmentsByType } from "./attachments";
+import { groupAttachmentsByType, withAttachmentUrls } from "./attachments";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type Att = { id: string; category: string; kind: string };
 
@@ -52,5 +53,56 @@ describe("groupAttachmentsByType", () => {
     const [group] = groupAttachmentsByType(items, cats);
     expect(group.label).toBe("Proposal");
     expect(group.items.map((i) => i.id)).toEqual(["doc", "gdoc"]);
+  });
+});
+
+// Minimal storage stub: batch returns signed[path]; single (transform) returns thumbs[path].
+function fakeSupabase(signed: Record<string, string>, thumbs: Record<string, string>) {
+  return {
+    storage: {
+      from: () => ({
+        createSignedUrls: async (paths: string[]) => ({
+          data: paths.map((p) => ({ path: p, signedUrl: signed[p] ?? null })),
+        }),
+        createSignedUrl: async (path: string) => ({
+          data: { signedUrl: thumbs[path] ?? null },
+        }),
+      }),
+    },
+  } as unknown as SupabaseClient;
+}
+
+describe("withAttachmentUrls", () => {
+  const rows = [
+    { id: "img", kind: "file", url: null, storage_path: "p/img.jpg", mime_type: "image/jpeg" },
+    { id: "doc", kind: "file", url: null, storage_path: "p/doc.pdf", mime_type: "application/pdf" },
+    { id: "lnk", kind: "link", url: "https://x.test/d", storage_path: null, mime_type: null },
+  ];
+
+  test("image files get both a full href and a thumbHref", async () => {
+    const supa = fakeSupabase(
+      { "p/img.jpg": "FULL_IMG", "p/doc.pdf": "FULL_DOC" },
+      { "p/img.jpg": "THUMB_IMG" }
+    );
+    const out = await withAttachmentUrls(supa, rows);
+    const img = out.find((r) => r.id === "img")!;
+    expect(img.href).toBe("FULL_IMG");
+    expect(img.thumbHref).toBe("THUMB_IMG");
+  });
+
+  test("non-image files get a full href but no thumbHref", async () => {
+    const supa = fakeSupabase({ "p/img.jpg": "FULL_IMG", "p/doc.pdf": "FULL_DOC" }, { "p/img.jpg": "THUMB_IMG" });
+    const out = await withAttachmentUrls(supa, rows);
+    const doc = out.find((r) => r.id === "doc")!;
+    expect(doc.href).toBe("FULL_DOC");
+    expect(doc.thumbHref).toBeNull();
+  });
+
+  test("links keep their url as href and have no thumbHref", async () => {
+    const supa = fakeSupabase({}, {});
+    const out = await withAttachmentUrls(supa, rows);
+    const lnk = out.find((r) => r.id === "lnk")!;
+    expect(lnk.href).toBe("https://x.test/d");
+    expect(lnk.thumbHref).toBeNull();
   });
 });
