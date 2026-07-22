@@ -1,17 +1,28 @@
--- #3: revise file categories. The table-wide CHECK gains the new document
--- categories plus the 'photo' placeholder for uncategorized photo uploads
--- (Cycle B #2). Per-org dropdown changes are scoped to CONSTRUCTION-vertical orgs
--- (identified by having a 'plans' category); the software vertical keeps its own
--- set. Legacy attachments retain any before_photo/after_photo category value
--- (still constraint-valid) — no data migration.
+-- Cycle B #3 — revise file categories.
+--
+-- Category validity is a PER-ORG FOREIGN KEY, not a table-wide CHECK:
+-- 20260603000002 dropped attachments_category_check and added
+-- attachments_category_fk: attachments(organization_id, category) ->
+-- file_categories(organization_id, key). So category changes are file_categories
+-- ROW operations; a category value is usable by an org only if that org has the row.
 
--- 1. Widen the attachments.category CHECK, preserving all existing values.
-alter table attachments drop constraint attachments_category_check;
-alter table attachments add constraint attachments_category_check
-  check (category in ('before_photo', 'after_photo', 'plans', 'permits', 'proposal',
-                      'contract', 'invoice', 'other', 'surveys', 'designs', 'photo'));
+-- 1. Give EVERY org a 'photo' category so category-less photo uploads (recorded as
+--    category='photo') satisfy the FK. Inserted archived so it never appears in the
+--    Files dropdown (the dropdown query filters archived rows); the FK is satisfied
+--    regardless of archived_at. Photo upload is a global feature, not construction-only.
+insert into file_categories (organization_id, key, label, sort, archived_at)
+select o.id,
+       'photo',
+       'Photo',
+       coalesce((select max(fc.sort) from file_categories fc where fc.organization_id = o.id), 0) + 1,
+       now()
+from organizations o
+on conflict (organization_id, key) do nothing;
 
--- 2. Revise the dropdown categories for construction orgs only.
+-- 2. Construction orgs only (identified by having a 'plans' category): add
+--    Surveys/Designs, relabel Contract -> Contracts, and retire Before/After photo
+--    from the dropdown. Retire = soft-delete via archived_at: legacy attachments
+--    still reference those rows through the FK, so they cannot be hard-deleted.
 do $$
 declare
   c_org uuid;
@@ -31,7 +42,7 @@ begin
     update file_categories set label = 'Contracts'
       where organization_id = c_org and key = 'contract';
 
-    delete from file_categories
+    update file_categories set archived_at = now()
       where organization_id = c_org and key in ('before_photo', 'after_photo');
   end loop;
 end $$;
