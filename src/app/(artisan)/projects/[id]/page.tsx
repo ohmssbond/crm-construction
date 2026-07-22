@@ -53,6 +53,8 @@ const FILE_STYLE: Record<string, { glyph: string; bg: string }> = {
   proposal: { glyph: "📝", bg: "#8a7a9e" },
   contract: { glyph: "✍️", bg: "#7a9e8a" },
   invoice: { glyph: "🧾", bg: "#9e9a7a" },
+  surveys: { glyph: "🗺", bg: "#7a9e9e" },
+  designs: { glyph: "🎨", bg: "#9e7a9e" },
 };
 const FILE_FALLBACK = { glyph: "📄", bg: "#8a93a0" };
 
