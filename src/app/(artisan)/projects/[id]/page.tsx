@@ -73,9 +73,13 @@ export default async function ProjectDetailPage({
   const taskContacts = [...contacts, ...reps].map((c) => ({ id: c.id, name: contactName(c) }));
   const artisanLabel = `${ctx?.user.name ?? "Artisan"} (you)`;
   const timezone = ctx?.org.timezone ?? DEFAULT_TIMEZONE;
-  const imagePhotos = attachments
-    .filter(isImageAttachment)
-    .map((a) => ({ id: a.id, filename: a.filename, href: a.href }));
+  const imageAttachments = attachments.filter(isImageAttachment);
+  const fileAttachments = attachments.filter((a) => !isImageAttachment(a));
+  const imagePhotos = imageAttachments.map((a) => ({
+    id: a.id,
+    filename: a.filename,
+    href: a.href,
+  }));
   const slotValues = {
     cover: project.cover_attachment_id ?? null,
     hero: project.hero_attachment_id ?? null,
@@ -128,7 +132,48 @@ export default async function ProjectDetailPage({
             ),
           },
           {
-            label: "Photos & Files",
+            label: "Photos",
+            content: (
+              <div className="flex flex-col gap-3">
+                <UploadForm
+                  projectId={project.id}
+                  orgId={ctx?.org.id ?? ""}
+                  fixedCategory="photo"
+                  accept="image/*"
+                  shareLabel={`Share with ${clientNoun.toLowerCase()}`}
+                />
+                <PortfolioSlots
+                  photos={imagePhotos}
+                  values={slotValues}
+                  action={setProjectPhotoSlot.bind(null, project.id)}
+                />
+                {imageAttachments.length === 0 ? (
+                  <EmptyState glyph="🖼" title="No photos yet." />
+                ) : (
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    {imageAttachments.map((a) => (
+                      <div key={a.id} className="flex flex-col gap-1">
+                        <FileTile
+                          name={a.filename ?? a.url ?? "Photo"}
+                          glyph="🖼"
+                          bg="#7a9e93"
+                          shared={a.is_shared}
+                          href={a.href}
+                          shareAction={setAttachmentShared.bind(null, project.id, a.id)}
+                        />
+                        <PhaseControl
+                          current={(a.phase as "before" | "during" | "after" | null) ?? null}
+                          action={setPhotoPhase.bind(null, project.id, a.id)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ),
+          },
+          {
+            label: "Files",
             content: (
               <div className="flex flex-col gap-3">
                 <UploadForm
@@ -138,44 +183,31 @@ export default async function ProjectDetailPage({
                   shareLabel={`Share with ${clientNoun.toLowerCase()}`}
                 />
                 <LinkForm action={addLink.bind(null, project.id)} categories={fileCategories} />
-                <PortfolioSlots
-                  photos={imagePhotos}
-                  values={slotValues}
-                  action={setProjectPhotoSlot.bind(null, project.id)}
-                />
-                {attachments.length === 0 ? (
+                {fileAttachments.length === 0 ? (
                   <EmptyState glyph="🗂" title="No files yet." />
                 ) : (
                   <div className="flex flex-col gap-4">
-                    {groupAttachmentsByType(attachments, fileCategories).map((group) => (
+                    {groupAttachmentsByType(fileAttachments, fileCategories).map((group) => (
                       <div key={group.key} className="flex flex-col gap-2">
                         <h4 className="text-meta font-semibold text-faint">
                           {group.label} ({group.items.length})
                         </h4>
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                           {group.items.map((a) => {
-                            const isImg = isImageAttachment(a);
                             const style =
                               a.kind === "link"
                                 ? { glyph: "🔗", bg: "#6a7c8a" }
                                 : FILE_STYLE[a.category] ?? FILE_FALLBACK;
                             return (
-                              <div key={a.id} className="flex flex-col gap-1">
-                                <FileTile
-                                  name={a.filename ?? a.url ?? "Link"}
-                                  glyph={style.glyph}
-                                  bg={style.bg}
-                                  shared={a.is_shared}
-                                  href={a.href}
-                                  shareAction={setAttachmentShared.bind(null, project.id, a.id)}
-                                />
-                                {isImg && (
-                                  <PhaseControl
-                                    current={(a.phase as "before" | "during" | "after" | null) ?? null}
-                                    action={setPhotoPhase.bind(null, project.id, a.id)}
-                                  />
-                                )}
-                              </div>
+                              <FileTile
+                                key={a.id}
+                                name={a.filename ?? a.url ?? "Link"}
+                                glyph={style.glyph}
+                                bg={style.bg}
+                                shared={a.is_shared}
+                                href={a.href}
+                                shareAction={setAttachmentShared.bind(null, project.id, a.id)}
+                              />
                             );
                           })}
                         </div>
