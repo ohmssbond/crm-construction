@@ -16,7 +16,7 @@ const ENFORCE_AUTH = true;
 
 // Route ownership per world — used for the artisan↔contact separation.
 const PORTAL_PREFIXES = ["/my-projects", "/account"];
-const ARTISAN_PREFIXES = ["/dashboard", "/projects", "/customers", "/contacts", "/settings"];
+const ARTISAN_PREFIXES = ["/dashboard", "/projects", "/customers", "/contacts", "/settings", "/preview"];
 const WORKER_PREFIXES = ["/log"];
 const TB_ADMIN_PREFIXES = ["/tb"];
 

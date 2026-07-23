@@ -102,6 +102,14 @@ export async function listPortalProjects() {
 }
 
 /**
+ * The shaped portal project view — the shared contract rendered by
+ * `PortalProjectView`. Both the real portal page (`getPortalProject`) and the
+ * tenant preview (`getProjectPreview`) produce this exact shape, so the two
+ * render identically.
+ */
+export type PortalProjectDetail = NonNullable<Awaited<ReturnType<typeof getPortalProject>>>;
+
+/**
  * Read-only project detail for the portal: the project plus ONLY its shared
  * updates, shared attachments, and the tasks visible to this contact (the ones
  * they own or that the team shared — RLS does the filtering). Null if not visible.
