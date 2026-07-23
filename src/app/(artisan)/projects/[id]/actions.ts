@@ -230,6 +230,23 @@ export async function setTodoShared(projectId: string, todoId: string, shared: b
   revalidatePath(`/projects/${projectId}`);
 }
 
+/** Edit a task's body + due date. RLS (is_org_member) gates this to org staff. */
+export async function updateTodo(
+  projectId: string,
+  todoId: string,
+  body: string,
+  dueDate: string | null
+) {
+  const trimmed = body.trim();
+  if (!trimmed) return; // body is required; an empty save is a no-op
+  const supabase = await createClient();
+  await supabase
+    .from("todos")
+    .update({ body: trimmed, due_date: dueDate || null })
+    .eq("id", todoId);
+  revalidatePath(`/projects/${projectId}`);
+}
+
 /** Attach a contact to the project — this is what grants portal access. */
 export async function attachContact(projectId: string, contactId: string) {
   if (!contactId) return;

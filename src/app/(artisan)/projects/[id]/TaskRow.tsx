@@ -7,6 +7,7 @@ import { ShareToggle } from "@/components/ui/ShareToggle";
 export function TaskRow({
   text,
   due,
+  dueDate: dueDateDefault,
   done: doneDefault,
   completed,
   owner: ownerDefault,
@@ -16,9 +17,11 @@ export function TaskRow({
   toggleAction,
   ownerAction,
   shareAction,
+  editAction,
 }: {
   text: string;
   due?: string;
+  dueDate: string | null;
   done: boolean;
   completed?: string;
   owner: string | null;
@@ -28,9 +31,13 @@ export function TaskRow({
   toggleAction: (done: boolean) => Promise<void>;
   ownerAction: (owner: string | null) => Promise<void>;
   shareAction: (shared: boolean) => Promise<void>;
+  editAction: (body: string, dueDate: string | null) => Promise<void>;
 }) {
   const [done, setDone] = useState(doneDefault);
   const [owner, setOwner] = useState(ownerDefault ?? "");
+  const [editing, setEditing] = useState(false);
+  const [body, setBody] = useState(text);
+  const [dueDate, setDueDate] = useState(dueDateDefault ?? "");
   const [pending, start] = useTransition();
 
   const toggle = () => {
@@ -42,6 +49,56 @@ export function TaskRow({
     setOwner(v);
     start(() => ownerAction(v || null));
   };
+  const startEdit = () => {
+    setBody(text);
+    setDueDate(dueDateDefault ?? "");
+    setEditing(true);
+  };
+  const save = () => {
+    if (!body.trim()) return;
+    start(async () => {
+      await editAction(body, dueDate || null);
+      setEditing(false);
+    });
+  };
+
+  if (editing) {
+    return (
+      <div className="flex flex-wrap items-center gap-2 px-[15px] py-[11px] border-b border-line-2 last:border-b-0">
+        <input
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          disabled={pending}
+          aria-label="Task"
+          className={`${fieldInput} flex-1 min-w-[160px]`}
+        />
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          disabled={pending}
+          aria-label="Due date"
+          className={`${fieldInput} text-meta py-[5px]`}
+        />
+        <button
+          type="button"
+          onClick={save}
+          disabled={pending || !body.trim()}
+          className="text-meta font-semibold text-accent disabled:opacity-50"
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          onClick={() => setEditing(false)}
+          disabled={pending}
+          className="text-meta text-faint hover:text-body"
+        >
+          Cancel
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-3 px-[15px] py-[11px] border-b border-line-2 last:border-b-0">
@@ -78,6 +135,15 @@ export function TaskRow({
       <span className="text-meta text-faint w-[96px] text-right">
         {done ? (completed ? `done ${completed}` : "done") : due ? `due ${due}` : ""}
       </span>
+      <button
+        type="button"
+        onClick={startEdit}
+        disabled={pending}
+        aria-label="Edit task"
+        className="text-meta text-faint hover:text-accent disabled:opacity-60"
+      >
+        Edit
+      </button>
     </div>
   );
 }
