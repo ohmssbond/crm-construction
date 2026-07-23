@@ -98,6 +98,15 @@ export default async function ProjectDetailPage({
         <h2 className="text-title font-semibold">{project.name}</h2>
         <StageChip stage={project.stage as Stage} />
         <div className="lg:ml-auto flex flex-wrap items-center gap-2">
+          <a
+            href={`/preview/${project.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${buttonClasses("ghost", "sm")} inline-flex items-center gap-1.5`}
+          >
+            <Eye size={14} />
+            Preview
+          </a>
           <Link href={`/projects/${project.id}/edit`} className={`${buttonClasses("ghost", "sm")} hidden lg:inline-flex`}>
             Edit
           </Link>
