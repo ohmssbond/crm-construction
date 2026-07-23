@@ -49,39 +49,42 @@ exact location and change so it can be picked up cold.
   worker/T&B.
 - **Scope:** one helper; no behavior change beyond throttling.
 
-### 4. Self-service name + email editing under "Your Account"
-- **Request:** users should be able to change their own **name** and **email** on
-  the "Your Account" page. Example: an account name shows as lowercase "doug" (in the
-  J Huber Restorations org) with no way to capitalize it; and a user may want to
-  switch the email they log in with.
-- **Where "Your Account" lives:** portal `src/app/(portal)/account/page.tsx` and
-  artisan `src/app/(artisan)/settings/page.tsx` (both reached from the Account nav —
-  `src/components/shell/nav.ts` / `Sidebar.tsx`). No self-edit today.
-- **Name** = `auth.users.user_metadata.full_name` (read in `portal.ts:50`,
-  `org.ts:61/99`; set once at invite time in
-  `src/app/(auth)/invite/[token]/actions.ts:49`). Change it with a self-update action
-  calling `supabase.auth.updateUser({ data: { full_name } })` — the same `updateUser`
-  pattern already used for password (`src/app/(auth)/reset-password/actions.ts:23`).
-  Updating `user_metadata.full_name` propagates to all staff/portal displays
-  (incl. the `org_crm_staff()` RPC, which reads `raw_user_meta_data->>'full_name'`).
-- **Email** = `auth.users.email`. `supabase.auth.updateUser({ email })` starts
-  Supabase's **email-change confirmation flow** (a confirmation link is emailed) — a
-  sensitive, identity-changing action. **Verify the email-change email template** the
-  same way the password-recovery one had to be fixed (see
-  `password-reset-template-gotcha`: default `{{ .ConfirmationURL }}` vs. the custom
-  `/auth/callback?token_hash=` link) — same template family, a likely trap.
-- **Nuance — two name sources for customer contacts:** a portal customer's name also
-  lives in `contacts.first_name/last_name`, which is what the portal **"Your Project
-  Team"** roster shows (via `portal_project_team`). Editing `user_metadata.full_name`
-  would NOT sync that. Decide whether the account-name edit also updates the
-  `contacts` row, or whether the two stay separate (staff can already edit a
-  contact's name via the artisan contact form).
-- **Open questions:** require re-auth / current-password confirmation for email
-  change? Edit a single "full name" or first/last? For contacts, sync to the
-  `contacts` row or not?
-- **Scope:** both account pages + a profile-update action; email change also needs
-  the confirmation-email template verified. Sensitive (identity) — handle email
-  change carefully.
+### 4. Rep task-owner / roster names are frozen snapshots
+- **Symptom:** renaming a staff member via their account page
+  (`user_metadata.full_name`) does NOT update the name shown for the tasks they own,
+  nor their entry in the portal "Your Project Team" roster — existing tasks keep the
+  old name. (Observed 2026-07-23 on J Huber.)
+- **Cause:** when a staff member is assigned as a project rep, `assignRep`
+  (`src/app/(artisan)/projects/[id]/actions.ts:319-320`) creates a hidden `contacts`
+  row (`type='rep'`) and **snapshots** `first_name: member.full_name` at that moment.
+  Task ownership + the roster read that stored `contacts.first_name` (artisan
+  `taskContacts` via `contactName`; portal `portal_project_team` returns
+  `c.first_name/last_name`) — a frozen copy that never tracks later renames.
+  Meanwhile the rep-assignment dropdown DOES show live names via `org_crm_staff()`,
+  so it's internally inconsistent.
+- **Fix direction:** resolve `type='rep'` names from the staff's **live** `full_name`
+  instead of the snapshot — join to `auth.users` by `contacts.user_id` via a
+  security-definer path (like `org_crm_staff()`) in both `portal_project_team` and the
+  artisan `taskContacts` source. (Alternative: re-sync the rep bridge's `first_name`
+  whenever the staff renames — but live-derive is more robust and self-healing.)
+- **Scope:** rep name resolution in the portal RPC + artisan data layer; DB + data.
+  Touches the Company Reps snapshot model.
+
+### 5. Customer account ↔ contact record sync (deferred decision)
+- **Context:** self-service account editing (shipped) changes only the user's **login
+  identity** — `user_metadata.full_name` and `auth.users.email`. It deliberately does
+  NOT touch the customer's **contact record** (`contacts.first_name/last_name/email`),
+  which is what the tenant sees and what the portal roster + task-owner names display
+  (via `portal_project_team`). So a customer who edits their account name/email won't
+  see it reflected in the roster; the tenant's CRM record stays as the tenant set it.
+- **Decision (2026-07-23):** keep them **separate for now** — the contractor owns
+  their record of the customer; a customer shouldn't silently rewrite the tenant's
+  CRM data.
+- **If revisited:** syncing would have a customer's account edit also update their
+  `contacts` row — needs a **security-definer write** (the portal can't write
+  `contacts` directly), splitting a single full name into first/last, and accepting
+  that a customer overwrites the tenant's label. Recorded so the detail isn't lost.
+- **Scope:** portal write action + RLS/function; product decision first.
 
 ## Done
 
@@ -107,3 +110,14 @@ exact location and change so it can be picked up cold.
 - **Sort task lists by due date** — was **already implemented** across all three task
   lists (`done` asc → `due_date` asc, nulls last = incomplete soonest-first,
   completed at bottom). No change needed; confirmed 2026-07-23.
+- **Show task owner on the portal Tasks tab** — added the contact `id` to
+  `portal_project_team` so `getPortalProject` maps `owner_contact_id` → owner name
+  (null owner → contractor org name). Shipped PR #9 (merge `01b4845`, migration
+  `20260723000001`).
+- **Self-service name + email editing** — Name (`user_metadata.full_name`,
+  live-verified) + Email (`updateUser` → confirmation flow) on both account pages via
+  a shared `ProfileForm`. Shipped PR #10 (merge `5de5a9d`). Email required turning OFF
+  Supabase "Secure email change" (dual-confirmation blocked users without old-email
+  access) and pointing the email-change template at
+  `/auth/callback?...&type=email_change`. NOTE: edits the login identity only — see
+  Open #5 (does not sync the customer's contact record).

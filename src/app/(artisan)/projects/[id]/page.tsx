@@ -71,7 +71,10 @@ export default async function ProjectDetailPage({
   const { project, updates, todos, contacts, reps, availableContacts, availableStaff, attachments, fileCategories } =
     detail;
   const clientNoun = ctx?.org.client_noun ?? "Customer";
-  const taskContacts = [...contacts, ...reps].map((c) => ({ id: c.id, name: contactName(c) }));
+  const taskContacts = [
+    ...contacts.map((c) => ({ id: c.id, name: contactName(c) })),
+    ...reps.map((r) => ({ id: r.id, name: r.name })),
+  ];
   const artisanLabel = `${ctx?.user.name ?? "Artisan"} (you)`;
   const timezone = ctx?.org.timezone ?? DEFAULT_TIMEZONE;
   const imageAttachments = attachments.filter(isImageAttachment);

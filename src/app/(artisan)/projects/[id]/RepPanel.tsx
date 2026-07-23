@@ -8,12 +8,11 @@ import { Note } from "@/components/ui/Note";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { fieldInput } from "@/components/ui/Field";
-import { contactName, contactInitials } from "@/lib/data/format";
+import { contactInitials } from "@/lib/data/format";
 
 type Rep = {
   id: string;
-  first_name: string | null;
-  last_name: string | null;
+  name: string;
   email: string | null;
 };
 type Staff = { user_id: string; full_name: string; email: string };
@@ -52,7 +51,7 @@ export function RepPanel({
       ) : (
         <Card>
           {reps.map((r) => {
-            const name = contactName(r);
+            const name = r.name;
             return (
               <ListRow
                 key={r.id}
