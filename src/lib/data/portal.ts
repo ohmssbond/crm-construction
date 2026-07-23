@@ -136,7 +136,7 @@ export async function getPortalProject(id: string) {
     // No is_shared filter — RLS returns only tasks this contact owns or that are shared.
     supabase
       .from("todos")
-      .select("id, body, due_date, done, completed_at")
+      .select("id, body, due_date, done, completed_at, owner_contact_id")
       .eq("project_id", id)
       .order("done", { ascending: true })
       .order("due_date", { ascending: true, nullsFirst: false }),
@@ -191,6 +191,19 @@ export async function getPortalProject(id: string) {
       : null,
   }));
 
+  // Resolve each task's owner to a display name via the team (contacts stay
+  // unreadable to the portal — the team RPC is the only exposure). A null owner
+  // means the task sits with the contractor, so it shows the tenant org name.
+  const orgName = org.data?.name ?? "";
+  const teamList = (teamRows.data ?? []) as TeamRow[];
+  const ownerNameById = new Map(teamList.map((r) => [r.id, r.name]));
+  const shapedTasks = (tasks.data ?? []).map((t) => ({
+    ...t,
+    ownerName: t.owner_contact_id
+      ? (ownerNameById.get(t.owner_contact_id) ?? orgName)
+      : orgName,
+  }));
+
   return {
     project: { ...project, customer: one(project.customer) },
     status: stageToStatus(project.stage),
@@ -202,10 +215,10 @@ export async function getPortalProject(id: string) {
     gallery,
     files,
     updates: shapedUpdates,
-    tasks: tasks.data ?? [],
+    tasks: shapedTasks,
     timezone: org.data?.timezone ?? DEFAULT_TIMEZONE,
-    team: groupProjectTeam((teamRows.data ?? []) as TeamRow[]),
-    orgName: org.data?.name ?? "",
+    team: groupProjectTeam(teamList),
+    orgName,
     clientNoun: org.data?.client_noun ?? "Customer",
   };
 }

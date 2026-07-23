@@ -107,6 +107,11 @@ export default async function PortalProjectPage({
                       <span className={`text-body flex-1 ${t.done ? "text-faint line-through" : ""}`}>
                         {t.body}
                       </span>
+                      {t.ownerName && (
+                        <span className="text-meta text-faint whitespace-nowrap max-w-[130px] truncate">
+                          {t.ownerName}
+                        </span>
+                      )}
                       <span className="text-meta text-faint">
                         {t.done
                           ? t.completed_at

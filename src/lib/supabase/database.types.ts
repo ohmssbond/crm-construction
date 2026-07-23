@@ -1216,6 +1216,7 @@ export type Database = {
         Returns: {
           company: string
           email: string
+          id: string
           name: string
           type: string
         }[]
