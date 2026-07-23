@@ -802,6 +802,24 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          project_updates: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          project_updates?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          project_updates?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       organization_products: {
         Row: {
           created_at: string
@@ -1224,6 +1242,13 @@ export type Database = {
       project_in_org: {
         Args: { p_org: string; p_project: string }
         Returns: boolean
+      }
+      project_notification_recipients: {
+        Args: { p_exclude_user: string; p_project: string }
+        Returns: {
+          email: string
+          type: string
+        }[]
       }
     }
     Enums: {

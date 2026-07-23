@@ -82,3 +82,33 @@ export function inviteEmailHtml({ link, orgName }: { link: string; orgName: stri
     </p>
   </div>`;
 }
+
+/** HTML for a "new project update" notification email. */
+export function projectUpdateEmailHtml({
+  projectName,
+  title,
+  body,
+  link,
+}: {
+  projectName: string;
+  title: string | null;
+  body: string;
+  link: string;
+}): string {
+  // projectName/title/body are tenant-controlled → escape. `link` is system-built
+  // (appUrl + a project id), safe as-is.
+  const p = escapeHtml(projectName);
+  const t = title ? escapeHtml(title) : null;
+  const snippet = escapeHtml(body.length > 240 ? `${body.slice(0, 240)}…` : body);
+  return `
+  <div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;color:#1d2939">
+    <h2 style="font-size:18px">New update on ${p}</h2>
+    ${t ? `<p style="font-weight:600;font-size:15px;margin:0 0 8px">${t}</p>` : ""}
+    <p style="color:#475467;font-size:14px;line-height:1.5;white-space:pre-wrap">${snippet}</p>
+    <p style="margin:24px 0">
+      <a href="${link}" style="background:#2f6f5e;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:600;font-size:14px">
+        View the update
+      </a>
+    </p>
+  </div>`;
+}
