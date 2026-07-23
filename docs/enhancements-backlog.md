@@ -49,28 +49,7 @@ exact location and change so it can be picked up cold.
   worker/T&B.
 - **Scope:** one helper; no behavior change beyond throttling.
 
-### 4. Rep task-owner / roster names are frozen snapshots
-- **Symptom:** renaming a staff member via their account page
-  (`user_metadata.full_name`) does NOT update the name shown for the tasks they own,
-  nor their entry in the portal "Your Project Team" roster — existing tasks keep the
-  old name. (Observed 2026-07-23 on J Huber.)
-- **Cause:** when a staff member is assigned as a project rep, `assignRep`
-  (`src/app/(artisan)/projects/[id]/actions.ts:319-320`) creates a hidden `contacts`
-  row (`type='rep'`) and **snapshots** `first_name: member.full_name` at that moment.
-  Task ownership + the roster read that stored `contacts.first_name` (artisan
-  `taskContacts` via `contactName`; portal `portal_project_team` returns
-  `c.first_name/last_name`) — a frozen copy that never tracks later renames.
-  Meanwhile the rep-assignment dropdown DOES show live names via `org_crm_staff()`,
-  so it's internally inconsistent.
-- **Fix direction:** resolve `type='rep'` names from the staff's **live** `full_name`
-  instead of the snapshot — join to `auth.users` by `contacts.user_id` via a
-  security-definer path (like `org_crm_staff()`) in both `portal_project_team` and the
-  artisan `taskContacts` source. (Alternative: re-sync the rep bridge's `first_name`
-  whenever the staff renames — but live-derive is more robust and self-healing.)
-- **Scope:** rep name resolution in the portal RPC + artisan data layer; DB + data.
-  Touches the Company Reps snapshot model.
-
-### 5. Customer account ↔ contact record sync (deferred decision)
+### 4. Customer account ↔ contact record sync (deferred decision)
 - **Context:** self-service account editing (shipped) changes only the user's **login
   identity** — `user_metadata.full_name` and `auth.users.email`. It deliberately does
   NOT touch the customer's **contact record** (`contacts.first_name/last_name/email`),
@@ -88,6 +67,13 @@ exact location and change so it can be picked up cold.
 
 ## Done
 
+- **Live-derive rep names (fix frozen snapshot)** — renaming a staff member now
+  updates their name on the tasks they own and in the portal roster. Rep names
+  resolve from the staff's current `auth.users` `full_name` instead of the
+  assignment-time snapshot: `portal_project_team` left-joins `auth.users` (migration
+  `20260723000002`); `getProjectDetail` maps rep `user_id` → `org_crm_staff`
+  full_name for `taskContacts` + `RepPanel`. Self-healing (no backfill). Shipped PR
+  #11 (merge `3e23dc4`).
 - **Portal "Your Project Team" grouped roster** — replaced the rep-only
   point-of-contact card with a Tenant / Partners / Customer roster via a new
   `portal_project_team` RPC. Shipped **Cycle A**, PR #2 (merge `10732cb`). Later laid
