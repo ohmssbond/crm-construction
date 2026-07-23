@@ -10,13 +10,18 @@ type AttachmentRef = {
 
 const BUCKET = "project-files";
 const SIGNED_URL_TTL = 60 * 60; // 1h
-const THUMB = { width: 600, quality: 60 };
+// resize:"contain" scales proportionally to fit the width, preserving aspect
+// ratio. Without it Supabase defaults to "cover", which — given only a width —
+// pins the width but keeps the original height, squishing the image (e.g. a
+// 4080x3072 photo becomes 600x3072). CSS object-cover then crops from a correctly
+// proportioned image.
+const THUMB = { width: 600, quality: 60, resize: "contain" as const };
 
 /** Sign a single transformed (resized) image variant — /render/image/ URL. */
 export async function signImageVariant(
   supabase: SupabaseClient,
   storagePath: string,
-  transform: { width: number; quality: number }
+  transform: { width: number; quality: number; resize?: "cover" | "contain" | "fill" }
 ): Promise<string | null> {
   const { data } = await supabase.storage
     .from(BUCKET)
