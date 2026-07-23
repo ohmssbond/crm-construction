@@ -35,6 +35,7 @@ import {
   toggleTodo,
   setTodoOwner,
   setTodoShared,
+  updateTodo,
   addTodo,
   addLink,
   attachContact,
@@ -240,6 +241,7 @@ export default async function ProjectDetailPage({
                         key={t.id}
                         text={t.body}
                         due={fmtDate(t.due_date) ?? undefined}
+                        dueDate={t.due_date}
                         done={t.done}
                         completed={
                           t.completed_at ? fmtZonedDate(String(t.completed_at), timezone) : undefined
@@ -251,6 +253,7 @@ export default async function ProjectDetailPage({
                         toggleAction={toggleTodo.bind(null, project.id, t.id)}
                         ownerAction={setTodoOwner.bind(null, project.id, t.id)}
                         shareAction={setTodoShared.bind(null, project.id, t.id)}
+                        editAction={updateTodo.bind(null, project.id, t.id)}
                       />
                     ))}
                   </Card>
