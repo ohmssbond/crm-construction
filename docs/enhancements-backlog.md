@@ -49,55 +49,7 @@ exact location and change so it can be picked up cold.
   worker/T&B.
 - **Scope:** one helper; no behavior change beyond throttling.
 
-### 4. Editable tasks (owner + admin)
-- **Request:** tasks should be editable. When the person who **owns** a task (the
-  contact `todos.owner_contact_id` points to) is looking at it, they get an **Edit**
-  ability; **admins** (tenant staff) can always edit.
-- **Today:** `todos` (`body`, `due_date`, `done`, `owner_contact_id`, `is_shared`)
-  can be toggled done / reassigned / shared via actions in
-  `src/app/(artisan)/projects/[id]/actions.ts` (`toggleTodo:206`, `setTodoOwner:216`,
-  `setTodoShared:227`), but **`body` and `due_date` are not editable after
-  creation** — there is no `updateTodo` action. Tasks render via `TaskRow`
-  (`src/app/(artisan)/projects/[id]/TaskRow.tsx`) on the artisan Tasks tab, and
-  **read-only** on the portal Tasks tab (`src/app/(portal)/my-projects/[id]/page.tsx`
-  — no write path; the portal todos select at `portal.ts:139` doesn't even fetch
-  `owner_contact_id`).
-- **Needs:**
-  - A new `updateTodo(projectId, todoId, { body, due_date })` server action
-    (artisan side; RLS `is_org_member` covers admins).
-  - An **Edit** affordance in `TaskRow` (inline edit / small form for body + due).
-  - **Portal owner edit** (net-new): the portal Tasks tab is read-only. For a
-    customer contact to edit a task they own, add a portal-scoped write action + an
-    RLS **UPDATE** policy allowing a contact to update todos where
-    `owner_contact_id` = their contact id (mirrors the existing owner/shared read
-    gating), and add `owner_contact_id` to the portal todos select.
-- **Open questions (settle at pickup):**
-  - Which fields are editable — just `body` + `due_date`, or also owner/shared
-    (already separately settable on the artisan side)?
-  - "Owner viewing the task" spans both surfaces (an artisan rep owner AND a portal
-    customer owner) — confirm edit is wanted on both, and scope the portal RLS to
-    match.
-  - Can a portal owner change `due_date`, or only `body` / mark done?
-- **Scope:** new action + `TaskRow` edit UI (artisan); + portal write action & RLS
-  policy if portal-owner editing is in scope. Multi-surface.
-
-### 5. Sort task lists by due date (sooner → later)
-- **Request:** when tasks are listed, sort by date, sooner to later.
-- **Today:** both project task lists order by `done` **asc** then `due_date` **asc**
-  (nulls last):
-  - Artisan: `src/lib/data/projects.ts:84-85`.
-  - Portal: `src/lib/data/portal.ts:141-142`.
-  So within each done-group it's already sooner→later, but the `done` key separates
-  completed tasks, and tasks with **no `due_date`** sort last.
-- **Change:** make `due_date` ascending drive the order so the list reads
-  sooner→later.
-- **Open questions:** keep completed tasks pushed to the bottom (retain `done` as a
-  sort key) or sort purely by date? Where should **no-due-date** tasks go (today:
-  last)?
-- **Scope:** the `.order(...)` on both `todos` queries; tiny, but confirm the
-  done/null behavior first.
-
-### 6. Self-service name + email editing under "Your Account"
+### 4. Self-service name + email editing under "Your Account"
 - **Request:** users should be able to change their own **name** and **email** on
   the "Your Account" page. Example: an account name shows as lowercase "doug" (in the
   J Huber Restorations org) with no way to capitalize it; and a user may want to
@@ -149,3 +101,9 @@ exact location and change so it can be picked up cold.
 - **Faster photo loading** — lazy-loading (PR #5) + Supabase-transform thumbnails
   (600px grids / 1400px hero, `resize:contain`) for portal + artisan. Shipped
   **Cycle C**, PRs #5/#6/#7.
+- **Editable task body + due date** — inline Edit in the admin Tasks tab
+  (`updateTodo` action, RLS `is_org_member`; body + due date). Admin-only; portal
+  read-only deferred. Shipped PR #8 (merge `7feb8fe`).
+- **Sort task lists by due date** — was **already implemented** across all three task
+  lists (`done` asc → `due_date` asc, nulls last = incomplete soonest-first,
+  completed at bottom). No change needed; confirmed 2026-07-23.
