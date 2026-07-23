@@ -169,7 +169,7 @@ export async function getPortalProject(id: string) {
   if (heroSlot && project.hero_attachment_id) {
     const heroImg = images.find((a) => a.id === project.hero_attachment_id);
     if (heroImg?.storage_path) {
-      const big = await signImageVariant(supabase, heroImg.storage_path, { width: 1400, quality: 65 });
+      const big = await signImageVariant(supabase, heroImg.storage_path, { width: 1400, quality: 65, resize: "contain" });
       if (big) hero = { href: big, thumbHref: heroSlot.thumbHref };
     }
   }
