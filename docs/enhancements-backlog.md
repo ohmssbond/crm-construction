@@ -97,6 +97,40 @@ exact location and change so it can be picked up cold.
 - **Scope:** the `.order(...)` on both `todos` queries; tiny, but confirm the
   done/null behavior first.
 
+### 6. Self-service name + email editing under "Your Account"
+- **Request:** users should be able to change their own **name** and **email** on
+  the "Your Account" page. Example: an account name shows as lowercase "doug" (in the
+  J Huber Restorations org) with no way to capitalize it; and a user may want to
+  switch the email they log in with.
+- **Where "Your Account" lives:** portal `src/app/(portal)/account/page.tsx` and
+  artisan `src/app/(artisan)/settings/page.tsx` (both reached from the Account nav —
+  `src/components/shell/nav.ts` / `Sidebar.tsx`). No self-edit today.
+- **Name** = `auth.users.user_metadata.full_name` (read in `portal.ts:50`,
+  `org.ts:61/99`; set once at invite time in
+  `src/app/(auth)/invite/[token]/actions.ts:49`). Change it with a self-update action
+  calling `supabase.auth.updateUser({ data: { full_name } })` — the same `updateUser`
+  pattern already used for password (`src/app/(auth)/reset-password/actions.ts:23`).
+  Updating `user_metadata.full_name` propagates to all staff/portal displays
+  (incl. the `org_crm_staff()` RPC, which reads `raw_user_meta_data->>'full_name'`).
+- **Email** = `auth.users.email`. `supabase.auth.updateUser({ email })` starts
+  Supabase's **email-change confirmation flow** (a confirmation link is emailed) — a
+  sensitive, identity-changing action. **Verify the email-change email template** the
+  same way the password-recovery one had to be fixed (see
+  `password-reset-template-gotcha`: default `{{ .ConfirmationURL }}` vs. the custom
+  `/auth/callback?token_hash=` link) — same template family, a likely trap.
+- **Nuance — two name sources for customer contacts:** a portal customer's name also
+  lives in `contacts.first_name/last_name`, which is what the portal **"Your Project
+  Team"** roster shows (via `portal_project_team`). Editing `user_metadata.full_name`
+  would NOT sync that. Decide whether the account-name edit also updates the
+  `contacts` row, or whether the two stay separate (staff can already edit a
+  contact's name via the artisan contact form).
+- **Open questions:** require re-auth / current-password confirmation for email
+  change? Edit a single "full name" or first/last? For contacts, sync to the
+  `contacts` row or not?
+- **Scope:** both account pages + a profile-update action; email change also needs
+  the confirmation-email template verified. Sensitive (identity) — handle email
+  change carefully.
+
 ## Done
 
 - **Portal "Your Project Team" grouped roster** — replaced the rep-only
