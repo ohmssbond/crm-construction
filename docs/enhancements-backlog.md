@@ -65,6 +65,36 @@ exact location and change so it can be picked up cold.
   that a customer overwrites the tenant's label. Recorded so the detail isn't lost.
 - **Scope:** portal write action + RLS/function; product decision first.
 
+### 5. Email notifications for project updates (with per-user opt-out)
+- **Request:** email the project team when an update is posted to their project.
+  Each user's account has a notifications flag; default **on** for project updates.
+- **Trigger:** `postUpdate` (`src/app/(artisan)/projects/[id]/actions.ts:143`) inserts
+  a `status_updates` row. Notify on a **shared** update (`is_shared` — don't notify on
+  tenant-private updates); also consider firing when an existing update is toggled
+  shared (`setUpdateShared`, same file `:187`).
+- **Email infra ALREADY EXISTS (reuse it):** `src/lib/email.ts` — transactional email
+  via **Resend**, gated by `RESEND_API_KEY` (`emailEnabled()`), already used for
+  invites (`src/app/(artisan)/actions.ts:184`). Use `sendEmail({ to, subject, html })`
+  + `appUrl` for the portal link. Best-effort / no-op when the key is unset, like
+  invites. **Confirm `RESEND_API_KEY` is set in prod** (`vercel env`) or notifications
+  silently do nothing.
+- **Recipients:** the project's team with portal access + an email — the
+  `project_contacts` customers/partners (decide whether reps/staff get them too).
+  Query their `contacts.email` for the project; skip the update's author; filter by
+  the notification flag below.
+- **Per-user notification flag (net-new — no preferences model today):** a per-user
+  preference defaulting **true**. Options: a `contacts.notify_project_updates boolean
+  default true` column (simplest — recipients are contacts), a dedicated
+  `notification_preferences` table keyed by `user_id`, or `user_metadata`. Edited on
+  the **"Your Account"** page (portal `account/page.tsx` / artisan `settings/page.tsx`,
+  beside the new `ProfileForm`) via a self-update action like `updateAccountName`.
+  Needs a migration for the storage.
+- **Open questions:** notify reps/staff too, or only customers/partners? One
+  "project updates" flag or per-notification-type? Per-update vs a digest? Future
+  notification types (task assigned/shared)?
+- **Scope:** migration (preference storage) + notification send in `postUpdate` +
+  account-page toggle. Reuses the Resend infra; larger than the other open items.
+
 ## Done
 
 - **Live-derive rep names (fix frozen snapshot)** — renaming a staff member now
