@@ -1,12 +1,15 @@
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { Button } from "@/components/ui/Button";
 import { ProfileForm } from "@/components/account/ProfileForm";
+import { NotificationToggle } from "@/components/account/NotificationToggle";
 import { getOrgContext } from "@/lib/data/org";
+import { getProjectUpdateNotifications } from "@/lib/data/notifications";
 import { signOut } from "@/lib/auth-actions";
 import { BrandingForm } from "./BrandingForm";
 
 export default async function SettingsPage() {
   const ctx = await getOrgContext();
+  const notifyUpdates = await getProjectUpdateNotifications();
 
   return (
     <div className="flex flex-col gap-6">
@@ -31,6 +34,7 @@ export default async function SettingsPage() {
       <section className="flex flex-col gap-2">
         <SectionLabel>Account</SectionLabel>
         {ctx && <ProfileForm defaults={{ name: ctx.user.name, email: ctx.user.email }} />}
+        <NotificationToggle defaultOn={notifyUpdates} />
         <form action={signOut}>
           <Button type="submit" variant="ghost">
             Sign out

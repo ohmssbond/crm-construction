@@ -42,3 +42,18 @@ export async function updateAccountEmail(
   if (error) return { error: error.message };
   return { error: null, message: "Check your inbox to confirm the new email address." };
 }
+
+/** Set the signed-in user's "email me on project updates" preference (upsert). */
+export async function setProjectUpdateNotifications(
+  enabled: boolean
+): Promise<{ error: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+  const { error } = await supabase
+    .from("notification_preferences")
+    .upsert({ user_id: user.id, project_updates: enabled, updated_at: new Date().toISOString() });
+  return { error: error?.message ?? null };
+}

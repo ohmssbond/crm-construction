@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/data/org";
 import { validatePhotoAssignment } from "@/lib/data/portfolio";
+import { sendEmail, appUrl, projectUpdateEmailHtml } from "@/lib/email";
 
 export type RecordResult = { error: string | null };
 
@@ -179,6 +180,38 @@ export async function postUpdate(
     photo_attachment_id: photoId,
   });
   revalidatePath(`/projects/${projectId}`);
+
+  // Best-effort: email the project team (minus author + opted-out) a link to a
+  // SHARED update. Runs after the insert so a send failure never loses the post;
+  // no-op without RESEND_API_KEY.
+  if (!isShared) return;
+  const [{ data: authData }, { data: proj }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from("projects").select("name").eq("id", projectId).maybeSingle(),
+  ]);
+  const projectName = proj?.name ?? "your project";
+  const { data: recipients } = await supabase.rpc("project_notification_recipients", {
+    p_project: projectId,
+    p_exclude_user: authData?.user?.id ?? null,
+  });
+  const base = appUrl();
+  await Promise.allSettled(
+    ((recipients ?? []) as { email: string; type: string }[]).map((r) =>
+      sendEmail({
+        to: r.email,
+        subject: `New update on ${projectName}`,
+        html: projectUpdateEmailHtml({
+          projectName,
+          title: title.trim() || null,
+          body: text,
+          link:
+            r.type === "rep"
+              ? `${base}/projects/${projectId}`
+              : `${base}/my-projects/${projectId}`,
+        }),
+      })
+    )
+  );
 }
 
 /** Toggle a status update's portal visibility. */
