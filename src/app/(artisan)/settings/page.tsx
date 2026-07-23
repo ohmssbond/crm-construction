@@ -1,7 +1,6 @@
-import { Card } from "@/components/ui/Card";
-import { KeyValue } from "@/components/ui/KeyValue";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { Button } from "@/components/ui/Button";
+import { ProfileForm } from "@/components/account/ProfileForm";
 import { getOrgContext } from "@/lib/data/org";
 import { signOut } from "@/lib/auth-actions";
 import { BrandingForm } from "./BrandingForm";
@@ -31,12 +30,7 @@ export default async function SettingsPage() {
 
       <section className="flex flex-col gap-2">
         <SectionLabel>Account</SectionLabel>
-        {ctx && (
-          <Card className="px-4 py-1">
-            <KeyValue label="Signed in as" value={ctx.user.name} />
-            <KeyValue label="Email" value={ctx.user.email} />
-          </Card>
-        )}
+        {ctx && <ProfileForm defaults={{ name: ctx.user.name, email: ctx.user.email }} />}
         <form action={signOut}>
           <Button type="submit" variant="ghost">
             Sign out
