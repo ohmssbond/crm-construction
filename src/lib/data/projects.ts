@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { one } from "./rel";
+import { contactName } from "./format";
 import { withAttachmentUrls } from "./attachments";
 import { partitionContacts, availableStaff as computeAvailableStaff } from "./reps";
 
@@ -112,13 +113,23 @@ export async function getProjectDetail(id: string) {
   const allAttached = (projectContacts.data ?? [])
     .map((pc) => one(pc.contact))
     .filter((c): c is NonNullable<typeof c> => c != null);
-  const { customers: contacts, reps } = partitionContacts(allAttached);
+  const { customers: contacts, reps: repRows } = partitionContacts(allAttached);
+
+  // Rep display names live-derive from the staff member's CURRENT full_name
+  // (org_crm_staff), not the snapshot stored on the rep bridge contact at
+  // assignment time — so a later account rename is reflected everywhere.
+  const staffList = (staff.data ?? []) as StaffMember[];
+  const staffNameById = new Map(staffList.map((s) => [s.user_id, s.full_name]));
+  const reps = repRows.map((r) => ({
+    ...r,
+    name: (r.user_id ? staffNameById.get(r.user_id) : null) ?? contactName(r),
+  }));
 
   const attachedIds = new Set(allAttached.map((c) => c.id));
   const availableContacts = (allContacts.data ?? []).filter(
     (c) => c.type !== "rep" && !attachedIds.has(c.id)
   );
-  const availableStaff = computeAvailableStaff((staff.data ?? []) as StaffMember[], reps);
+  const availableStaff = computeAvailableStaff(staffList, reps);
 
   return {
     project: { ...project, customer: one(project.customer) },
