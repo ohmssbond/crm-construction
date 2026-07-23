@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vitest";
 import { groupProjectTeam, type TeamRow } from "./projectTeam";
 
-const rep = (name: string): TeamRow => ({ name, email: `${name}@t.co`, type: "rep", company: null });
-const cust = (name: string): TeamRow => ({ name, email: `${name}@c.co`, type: "customer", company: null });
+const rep = (name: string): TeamRow => ({ id: name, name, email: `${name}@t.co`, type: "rep", company: null });
+const cust = (name: string): TeamRow => ({ id: name, name, email: `${name}@c.co`, type: "customer", company: null });
 const partner = (name: string, company: string | null): TeamRow => ({
-  name, email: `${name}@p.co`, type: "partner", company,
+  id: name, name, email: `${name}@p.co`, type: "partner", company,
 });
 
 describe("groupProjectTeam", () => {
@@ -46,7 +46,7 @@ describe("groupProjectTeam", () => {
   });
 
   test("drops prospect-type rows entirely", () => {
-    const prospect: TeamRow = { name: "Prue", email: "prue@x.co", type: "prospect", company: null };
+    const prospect: TeamRow = { id: "Prue", name: "Prue", email: "prue@x.co", type: "prospect", company: null };
     const withProspect = groupProjectTeam([rep("Rae"), cust("Cam"), partner("Pat", "ABC"), prospect]);
     const withoutProspect = groupProjectTeam([rep("Rae"), cust("Cam"), partner("Pat", "ABC")]);
     expect(withProspect).toEqual(withoutProspect);

@@ -8,6 +8,7 @@ export type ProjectTeam = {
 
 /** Raw row shape returned by the `portal_project_team` RPC. */
 export type TeamRow = {
+  id: string;
   name: string;
   email: string | null;
   type: string;
