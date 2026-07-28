@@ -30,6 +30,7 @@ import { PortfolioSlots } from "./PortfolioSlots";
 import {
   postUpdate,
   setUpdateShared,
+  updateStatusUpdate,
   setProjectStage,
   setAttachmentShared,
   toggleTodo,
@@ -135,9 +136,13 @@ export default async function ProjectDetailPage({
                     <UpdateCard
                       key={u.id}
                       when={fmtDateTime(u.created_at, timezone)}
+                      title={u.title}
                       body={u.body}
+                      photoId={u.photo_attachment_id}
                       shared={u.is_shared}
+                      photos={imagePhotos.map((p) => ({ id: p.id, filename: p.filename }))}
                       shareAction={setUpdateShared.bind(null, project.id, u.id)}
+                      editAction={updateStatusUpdate.bind(null, project.id, u.id)}
                     />
                   ))
                 )}
