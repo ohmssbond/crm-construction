@@ -65,36 +65,18 @@ exact location and change so it can be picked up cold.
   that a customer overwrites the tenant's label. Recorded so the detail isn't lost.
 - **Scope:** portal write action + RLS/function; product decision first.
 
-### 5. Edit a project update
-- **Request:** let a tenant edit an existing status update (fix a typo / reword),
-  the way tasks are already editable.
-- **Pattern — YES, reuse the task-edit pattern** (`TaskRow.tsx` + `updateTodo`):
-  inline **edit-in-place** — an "Edit" button flips the card into inputs, **Save**
-  calls a scoped server action + `revalidatePath`, **Cancel** reverts; client state
-  via `useState`/`useTransition` in a `"use client"` component; auth = RLS
-  (`is_org_member`), matching `updateTodo` (no explicit check needed).
-- **Where:**
-  - `src/components/ui/UpdateCard.tsx` — currently a server-rendered card (body +
-    `ShareToggle` + timestamp). Add an inline edit mode (mirror `TaskRow`'s
-    editing/body/save/cancel state). It becomes a client component (like `TaskRow`).
-  - `src/app/(artisan)/projects/[id]/actions.ts` — add `updateStatusUpdate(projectId,
-    updateId, title, body)`, a direct mirror of `updateTodo` (trim-guard empty body →
-    no-op; scoped `.update({ title, body })` on `status_updates`; `revalidatePath`).
-  - `src/app/(artisan)/projects/[id]/page.tsx` — bind the new action per update
-    (`updateStatusUpdate.bind(null, project.id, u.id)`), like `setUpdateShared`.
-- **Two differences from tasks + two small gaps to close:**
-  - Body is **multi-line → use a `<textarea>`**, not a single-line input.
-  - **Scope = title + body.** Defer editing the update's **photo** (photos auto-share;
-    swapping is more involved) — out of scope for v1.
-  - `UpdateCard` **doesn't render the `title` today** — add it (the portal already
-    shows `u.title` via `PortalProjectView`).
-  - `getProjectDetail`'s updates select is only `id, body, created_at, is_shared` —
-    **add `title`** so the edit form can prefill it.
-- **Scope:** one action + `UpdateCard` inline-edit + a `title` added to one select and
-  the card. Artisan-only; no migration (columns already exist). Small — mirrors the
-  shipped task-edit work (PR #8).
-
 ## Done
+
+- **Edit a project update** — inline edit-in-place on the artisan Updates tab (reuses
+  the task-edit pattern `TaskRow`+`updateTodo`): `UpdateCard` became a client component
+  with Edit → title input + body `<textarea>` + photo `<select>` + Save/Cancel; new
+  `updateStatusUpdate(projectId, updateId, title, body, photoAttachmentId)` mirrors
+  `postUpdate`'s photo validate+auto-share but writes only title/body/photo —
+  **no `is_shared` change, no notification email** on edit (scope grew to include the
+  photo during brainstorming). `getProjectDetail` updates select gained
+  `title, photo_attachment_id`. No migration (columns existed). Subagent-driven (2
+  tasks, task-reviewed clean; final opus review = Ready to merge). Shipped PR #14
+  (merge `3732732`). Live-verified in prod by Doug.
 
 - **Tenant preview of the customer/partner portal view** — a 👁 Preview link on the
   artisan project header opens `/preview/[id]` in a new tab: a read-only, portal-styled
