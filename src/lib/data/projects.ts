@@ -75,7 +75,7 @@ export async function getProjectDetail(id: string) {
     await Promise.all([
       supabase
         .from("status_updates")
-        .select("id, body, created_at, is_shared")
+        .select("id, title, body, created_at, is_shared, photo_attachment_id")
         .eq("project_id", id)
         .order("created_at", { ascending: false }),
       supabase

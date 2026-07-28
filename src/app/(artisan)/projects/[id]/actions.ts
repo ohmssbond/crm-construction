@@ -280,6 +280,48 @@ export async function updateTodo(
   revalidatePath(`/projects/${projectId}`);
 }
 
+/**
+ * Edit an existing status update's title, body, and photo. Mirrors postUpdate's
+ * photo handling (validate + auto-share) but never re-notifies the team and never
+ * changes is_shared (that stays on the separate ShareToggle). RLS scopes the write
+ * to the tenant's org.
+ */
+export async function updateStatusUpdate(
+  projectId: string,
+  updateId: string,
+  title: string,
+  body: string,
+  photoAttachmentId: string | null
+) {
+  const text = body.trim();
+  if (!text) return; // body required; an empty save is a no-op
+
+  const supabase = await createClient();
+
+  // A photo on an update auto-shares it (mirrors postUpdate). If the referenced
+  // photo is invalid/stale, drop ONLY the photo ref — never fail the save over it.
+  // validatePhotoAssignment returns an error string when invalid, null when valid.
+  let photoId = photoAttachmentId;
+  if (photoId) {
+    const { data: a } = await supabase
+      .from("attachments")
+      .select("project_id, kind, mime_type")
+      .eq("id", photoId)
+      .maybeSingle();
+    if (validatePhotoAssignment(a, projectId)) {
+      photoId = null;
+    } else {
+      await supabase.from("attachments").update({ is_shared: true }).eq("id", photoId);
+    }
+  }
+
+  await supabase
+    .from("status_updates")
+    .update({ title: title.trim() || null, body: text, photo_attachment_id: photoId })
+    .eq("id", updateId);
+  revalidatePath(`/projects/${projectId}`);
+}
+
 /** Attach a contact to the project — this is what grants portal access. */
 export async function attachContact(projectId: string, contactId: string) {
   if (!contactId) return;
