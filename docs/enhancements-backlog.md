@@ -65,35 +65,18 @@ exact location and change so it can be picked up cold.
   that a customer overwrites the tenant's label. Recorded so the detail isn't lost.
 - **Scope:** portal write action + RLS/function; product decision first.
 
-### 5. Tenant preview of the customer/partner portal view of a project
-- **Request:** let a tenant "see" what their partners and customers see for a project.
-- **Recommended path — read-only render (NOT impersonation):** the tenant already
-  reads all of a project's data (`getProjectDetail`, RLS `is_org_member`); a portal
-  viewer just sees that data **filtered to what's shared** (shared updates + shared
-  attachments, the team roster, shared tasks). So a preview is derivable **entirely
-  from data the tenant can already read** — no auth/session changes, no new RLS, no
-  new RPC.
-- **Reuse the existing portal components** (`src/components/portal/`: `ProjectHero`,
-  `PhotoGallery`, `FilesList`, `ProjectTeamCard`, `BeforeAfterStrip`) — the same ones
-  the real portal page (`src/app/(portal)/my-projects/[id]/page.tsx`) assembles.
-- **Sketch:** a "Preview as customer" button on the artisan project page →
-  `/projects/{id}/preview` that renders the portal layout from a new
-  `getProjectPreview(projectId)` (mirrors `getPortalProject`'s filters — `is_shared`
-  updates/attachments, `groupPhotosByPhase`, the roster, shared tasks — but runs with
-  the tenant's own access). Add a "Preview — this is what your customer sees" banner.
-- **Why not impersonation:** assuming the customer's session (token minting /
-  service-role admin session + session juggling) is a heavy, security-sensitive auth
-  feature (audit, accidental writes as the customer, session management, review). Its
-  only gain over the render is **per-person fidelity** (one specific customer's exact
-  visibility, incl. their private tasks) — rarely the need here.
-- **Open questions:** a generic "shared view", or a person/role selector (customer vs
-  partner — they differ mainly in which tasks are *theirs*)? Live-updating or a static
-  snapshot? Any tenant-only chrome to hide in the preview?
-- **Scope:** artisan preview route + `getProjectPreview` (filter to shared) + reuse
-  portal components. No auth changes. Moderate.
-
 ## Done
 
+- **Tenant preview of the customer/partner portal view** — a 👁 Preview link on the
+  artisan project header opens `/preview/[id]` in a new tab: a read-only, portal-styled
+  render of the project as a customer/partner sees it (shared updates/attachments,
+  roster, shared tasks), with a Customer/Partner role switcher. NOT impersonation —
+  `getProjectPreview(id, role)` shapes the shared view from the tenant's own staff
+  access (RLS `is_org_member`), mirroring `getPortalProject`; both render the extracted
+  `PortalProjectView` so they can't drift. Staff-gated (proxy CRM-prefix + `getOrgContext`).
+  `role` is a live seam in the task filter for future customer/partner divergence. No DB.
+  Shipped PR #13 (merge `2e97cae`). Verified live (role switcher + leak test: only
+  shared tasks surface, all private tasks absent).
 - **Email notifications for project updates (per-user opt-out)** — a shared status
   update emails the project team (customers, partners, reps) minus the author +
   opted-out, via the existing Resend infra, with role-appropriate links. New
