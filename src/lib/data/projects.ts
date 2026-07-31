@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { one } from "./rel";
 import { contactName } from "./format";
-import { withAttachmentUrls } from "./attachments";
+import { withAttachmentUrls, resolveCoverHrefs, signImageVariant } from "./attachments";
+import { resolveSlot, isImageAttachment } from "./portfolio";
 import { partitionContacts, availableStaff as computeAvailableStaff } from "./reps";
 import { getProjectSchedule } from "./schedule";
 
@@ -16,12 +17,16 @@ export async function listProjects() {
   const { data } = await supabase
     .from("projects")
     .select(
-      "id, name, stage, start_date, end_date, customer:customers(name), project_contacts(count)"
+      "id, name, stage, start_date, end_date, cover_attachment_id, customer:customers(name), project_contacts(count)"
     )
     .is("archived_at", null)
     .order("created_at", { ascending: false });
 
-  return (data ?? []).map((p) => ({
+  const projects = data ?? [];
+  const coverIds = projects.map((p) => p.cover_attachment_id).filter(Boolean) as string[];
+  const coverById = await resolveCoverHrefs(supabase, coverIds, { sharedOnly: false });
+
+  return projects.map((p) => ({
     id: p.id,
     name: p.name,
     stage: p.stage,
@@ -29,6 +34,10 @@ export async function listProjects() {
     end_date: p.end_date,
     customerName: one(p.customer)?.name ?? "—",
     contactCount: p.project_contacts?.[0]?.count ?? 0,
+    coverHref: (() => {
+      const c = resolveSlot(p.cover_attachment_id, coverById);
+      return c ? (c.thumbHref ?? c.href) : null;
+    })(),
   }));
 }
 
@@ -132,6 +141,31 @@ export async function getProjectDetail(id: string) {
   );
   const availableStaff = computeAvailableStaff(staffList, reps);
 
+  const signedAttachments = await withAttachmentUrls(supabase, attachments.data ?? []);
+
+  // The artisan header shows exactly what the customer sees, so the hero resolves
+  // from SHARED images only — mirroring getPortalProject. Slot-tagging auto-shares,
+  // so this is populated in practice; when it isn't, ProjectHero draws the same
+  // BrandedPlaceholder the customer gets.
+  const sharedImagesById = new Map(
+    signedAttachments
+      .filter((a) => a.is_shared && isImageAttachment(a))
+      .map((a) => [a.id, { href: a.href, thumbHref: a.thumbHref }])
+  );
+  const heroSlot = resolveSlot(project.hero_attachment_id, sharedImagesById);
+  let hero: { href: string } | null = heroSlot?.href ? { href: heroSlot.href } : null;
+  if (heroSlot && project.hero_attachment_id) {
+    const heroImg = signedAttachments.find((a) => a.id === project.hero_attachment_id);
+    if (heroImg?.storage_path) {
+      const big = await signImageVariant(supabase, heroImg.storage_path, {
+        width: 1400,
+        quality: 65,
+        resize: "contain",
+      });
+      if (big) hero = { href: big };
+    }
+  }
+
   return {
     project: { ...project, customer: one(project.customer) },
     updates: updates.data ?? [],
@@ -140,7 +174,8 @@ export async function getProjectDetail(id: string) {
     reps,
     availableContacts,
     availableStaff,
-    attachments: await withAttachmentUrls(supabase, attachments.data ?? []),
+    attachments: signedAttachments,
+    hero,
     schedule: await getProjectSchedule(supabase, id),
     fileCategories: fileCategories.data ?? [],
   };

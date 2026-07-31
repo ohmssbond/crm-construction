@@ -16,6 +16,9 @@ const SIGNED_URL_TTL = 60 * 60; // 1h
 // 4080x3072 photo becomes 600x3072). CSS object-cover then crops from a correctly
 // proportioned image.
 const THUMB = { width: 600, quality: 60, resize: "contain" as const };
+// Cap on simultaneous per-image thumbnail-signing requests within one call to
+// withAttachmentUrls — see the comment at its call site below.
+const THUMB_BATCH_SIZE = 10;
 
 /** Sign a single transformed (resized) image variant — /render/image/ URL. */
 export async function signImageVariant(
@@ -51,18 +54,23 @@ export async function withAttachmentUrls<T extends AttachmentRef>(
   }
 
   // Thumbnails are signed one-per-image (the batch endpoint ignores transforms),
-  // so this fans out N Storage round-trips per render — fine for today's modest
-  // galleries (a handful to a few dozen), all in parallel (~one RTT wall-clock).
-  // Concurrency is unbounded: if galleries ever grow large (100s), cap it (chunk
-  // or p-limit) before Storage rate limits / tail latency bite.
+  // so this fans out N Storage round-trips per render. Concurrency is bounded to
+  // batches of THUMB_BATCH_SIZE, awaited sequentially, so a large gallery (100s of
+  // images, e.g. a staff project list with many covers) can't fire hundreds of
+  // simultaneous Storage requests — trading some wall-clock time for staying well
+  // under Storage rate limits / tail latency.
+  const images = files.filter(isImageAttachment);
   const thumbs: Record<string, string> = {};
-  await Promise.all(
-    files.filter(isImageAttachment).map(async (r) => {
-      const path = r.storage_path as string;
-      const url = await signImageVariant(supabase, path, THUMB);
-      if (url) thumbs[path] = url;
-    })
-  );
+  for (let i = 0; i < images.length; i += THUMB_BATCH_SIZE) {
+    const batch = images.slice(i, i + THUMB_BATCH_SIZE);
+    await Promise.all(
+      batch.map(async (r) => {
+        const path = r.storage_path as string;
+        const url = await signImageVariant(supabase, path, THUMB);
+        if (url) thumbs[path] = url;
+      })
+    );
+  }
 
   return rows.map((r) => ({
     ...r,
@@ -110,4 +118,34 @@ export function groupAttachmentsByType<T extends Categorized>(
     .sort((x, y) =>
       x.label.localeCompare(y.label, undefined, { sensitivity: "base" })
     );
+}
+
+/**
+ * Resolve project cover photos in one batch: fetch the referenced attachments,
+ * keep the images, sign them, and return them by id (for `resolveSlot`).
+ *
+ * `sharedOnly` is REQUIRED and differs per surface: the portal passes true (a
+ * contact must never resolve an unshared cover), the artisan passes false (staff
+ * see their own org's attachments — RLS `artisan_all` is the boundary). It is not
+ * defaulted so neither caller can omit it by accident.
+ */
+export async function resolveCoverHrefs(
+  supabase: SupabaseClient,
+  coverIds: string[],
+  opts: { sharedOnly: boolean }
+): Promise<Map<string, { href: string | null; thumbHref: string | null }>> {
+  const byId = new Map<string, { href: string | null; thumbHref: string | null }>();
+  if (!coverIds.length) return byId;
+
+  let query = supabase
+    .from("attachments")
+    .select("id, kind, mime_type, url, storage_path")
+    .in("id", coverIds);
+  if (opts.sharedOnly) query = query.eq("is_shared", true);
+
+  const { data } = await query;
+  const images = (data ?? []).filter(isImageAttachment);
+  const signed = await withAttachmentUrls(supabase, images);
+  signed.forEach((a) => byId.set(a.id, { href: a.href, thumbHref: a.thumbHref }));
+  return byId;
 }

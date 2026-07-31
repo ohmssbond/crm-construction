@@ -2,7 +2,7 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { one } from "./rel";
 import { monogram } from "./format";
-import { withAttachmentUrls, signImageVariant } from "./attachments";
+import { withAttachmentUrls, signImageVariant, resolveCoverHrefs } from "./attachments";
 import {
   stageToStatus,
   isImageAttachment,
@@ -73,20 +73,8 @@ export async function listPortalProjects() {
 
   const projects = data ?? [];
 
-  // Resolve cover photos in one batch: fetch the referenced attachments (RLS
-  // returns only shared ones), keep images, sign their URLs.
   const coverIds = projects.map((p) => p.cover_attachment_id).filter(Boolean) as string[];
-  const coverById = new Map<string, { href: string | null; thumbHref: string | null }>();
-  if (coverIds.length) {
-    const { data: covers } = await supabase
-      .from("attachments")
-      .select("id, kind, mime_type, url, storage_path")
-      .in("id", coverIds)
-      .eq("is_shared", true);
-    const images = (covers ?? []).filter(isImageAttachment);
-    const signed = await withAttachmentUrls(supabase, images);
-    signed.forEach((a) => coverById.set(a.id, { href: a.href, thumbHref: a.thumbHref }));
-  }
+  const coverById = await resolveCoverHrefs(supabase, coverIds, { sharedOnly: true });
 
   return projects.map((p) => ({
     id: p.id,
