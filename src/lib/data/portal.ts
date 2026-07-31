@@ -13,6 +13,7 @@ import {
 import { DEFAULT_TIMEZONE } from "@/lib/timezones";
 import { productLabel } from "@/components/shell/nav";
 import { groupProjectTeam, type TeamRow } from "./projectTeam";
+import { getProjectSchedule } from "./schedule";
 
 export type PortalContext = {
   accent: string;
@@ -224,6 +225,7 @@ export async function getPortalProject(id: string) {
     files,
     updates: shapedUpdates,
     tasks: shapedTasks,
+    schedule: await getProjectSchedule(supabase, id),
     timezone: org.data?.timezone ?? DEFAULT_TIMEZONE,
     team: groupProjectTeam(teamList),
     orgName,

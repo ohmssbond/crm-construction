@@ -11,6 +11,7 @@ import {
 } from "./portfolio";
 import { DEFAULT_TIMEZONE } from "@/lib/timezones";
 import { groupProjectTeam, type TeamRow } from "./projectTeam";
+import { getProjectSchedule } from "./schedule";
 import type { PortalProjectDetail } from "./portal";
 
 /** Which portal audience the tenant is previewing. */
@@ -164,6 +165,7 @@ export async function getProjectPreview(
     files,
     updates: shapedUpdates,
     tasks: shapedTasks,
+    schedule: await getProjectSchedule(supabase, id),
     timezone: org.data?.timezone ?? DEFAULT_TIMEZONE,
     team: groupProjectTeam(teamList),
     orgName,

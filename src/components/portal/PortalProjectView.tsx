@@ -6,6 +6,7 @@ import { BeforeAfterStrip } from "@/components/portal/BeforeAfterStrip";
 import { PhotoGallery } from "@/components/portal/PhotoGallery";
 import { FilesList } from "@/components/portal/FilesList";
 import { ProjectTeamCard } from "@/components/portal/ProjectTeamCard";
+import { ScheduleTable } from "@/components/schedule/ScheduleTable";
 import { fmtDate, fmtDateTime, fmtZonedDate } from "@/lib/data/format";
 import type { PortalProjectDetail } from "@/lib/data/portal";
 
@@ -27,6 +28,7 @@ export function PortalProjectView({ detail }: { detail: PortalProjectDetail }) {
     files,
     updates,
     tasks,
+    schedule,
     timezone,
     team,
     orgName,
@@ -81,6 +83,10 @@ export function PortalProjectView({ detail }: { detail: PortalProjectDetail }) {
           {
             label: "Files",
             content: <FilesList files={files} />,
+          },
+          {
+            label: "Schedule",
+            content: <ScheduleTable phases={schedule} />,
           },
           {
             label: "Tasks",
