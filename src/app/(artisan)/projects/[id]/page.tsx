@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Eye } from "lucide-react";
-import { StageChip, type Stage } from "@/components/ui/Chip";
 import { buttonClasses } from "@/components/ui/Button";
 import { Tabs } from "@/components/ui/Tabs";
 import { ArchiveButton } from "../../ArchiveButton";
@@ -14,7 +13,8 @@ import { Banner } from "@/components/ui/Banner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getProjectDetail } from "@/lib/data/projects";
 import { groupAttachmentsByType } from "@/lib/data/attachments";
-import { isImageAttachment } from "@/lib/data/portfolio";
+import { isImageAttachment, stageToStatus } from "@/lib/data/portfolio";
+import { ProjectHero } from "@/components/portal/ProjectHero";
 import { getOrgContext } from "@/lib/data/org";
 import { fmtDate, fmtDateTime, fmtZonedDate, contactName } from "@/lib/data/format";
 import { DEFAULT_TIMEZONE } from "@/lib/timezones";
@@ -80,7 +80,7 @@ export default async function ProjectDetailPage({
   const [detail, ctx] = await Promise.all([getProjectDetail(id), getOrgContext()]);
   if (!detail) notFound();
 
-  const { project, updates, todos, contacts, reps, availableContacts, availableStaff, attachments, schedule, fileCategories } =
+  const { project, updates, todos, contacts, reps, availableContacts, availableStaff, attachments, hero, schedule, fileCategories } =
     detail;
   const clientNoun = ctx?.org.client_noun ?? "Customer";
   const taskContacts = [
@@ -106,9 +106,13 @@ export default async function ProjectDetailPage({
   return (
     <div className="flex flex-col gap-5">
       {/* Header */}
+      <ProjectHero
+        name={project.name}
+        status={stageToStatus(project.stage)}
+        hero={hero}
+        size="compact"
+      />
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-title font-semibold">{project.name}</h2>
-        <StageChip stage={project.stage as Stage} />
         <div className="lg:ml-auto flex flex-wrap items-center gap-2">
           <a
             href={`/preview/${project.id}`}

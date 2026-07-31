@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { one } from "./rel";
 import { contactName } from "./format";
-import { withAttachmentUrls, resolveCoverHrefs } from "./attachments";
-import { resolveSlot } from "./portfolio";
+import { withAttachmentUrls, resolveCoverHrefs, signImageVariant } from "./attachments";
+import { resolveSlot, isImageAttachment } from "./portfolio";
 import { partitionContacts, availableStaff as computeAvailableStaff } from "./reps";
 import { getProjectSchedule } from "./schedule";
 
@@ -141,6 +141,31 @@ export async function getProjectDetail(id: string) {
   );
   const availableStaff = computeAvailableStaff(staffList, reps);
 
+  const signedAttachments = await withAttachmentUrls(supabase, attachments.data ?? []);
+
+  // The artisan header shows exactly what the customer sees, so the hero resolves
+  // from SHARED images only — mirroring getPortalProject. Slot-tagging auto-shares,
+  // so this is populated in practice; when it isn't, ProjectHero draws the same
+  // BrandedPlaceholder the customer gets.
+  const sharedImagesById = new Map(
+    signedAttachments
+      .filter((a) => a.is_shared && isImageAttachment(a))
+      .map((a) => [a.id, { href: a.href, thumbHref: a.thumbHref }])
+  );
+  const heroSlot = resolveSlot(project.hero_attachment_id, sharedImagesById);
+  let hero: { href: string } | null = heroSlot?.href ? { href: heroSlot.href } : null;
+  if (heroSlot && project.hero_attachment_id) {
+    const heroImg = signedAttachments.find((a) => a.id === project.hero_attachment_id);
+    if (heroImg?.storage_path) {
+      const big = await signImageVariant(supabase, heroImg.storage_path, {
+        width: 1400,
+        quality: 65,
+        resize: "contain",
+      });
+      if (big) hero = { href: big };
+    }
+  }
+
   return {
     project: { ...project, customer: one(project.customer) },
     updates: updates.data ?? [],
@@ -149,7 +174,8 @@ export async function getProjectDetail(id: string) {
     reps,
     availableContacts,
     availableStaff,
-    attachments: await withAttachmentUrls(supabase, attachments.data ?? []),
+    attachments: signedAttachments,
+    hero,
     schedule: await getProjectSchedule(supabase, id),
     fileCategories: fileCategories.data ?? [],
   };
