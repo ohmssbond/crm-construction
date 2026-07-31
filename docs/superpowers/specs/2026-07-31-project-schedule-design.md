@@ -159,7 +159,7 @@ Eight actions, each scoped to a project and each ending in `revalidatePath`:
 | `addTask(projectId, phaseId, name)` | appends within the phase |
 | `updateTask(projectId, taskId, fields)` | same field set |
 | `deleteTask(projectId, taskId)` | |
-| `moveTask(projectId, taskId, dir)` | swaps within its phase only |
+| `moveTask(projectId, phaseId, taskId, dir)` | swaps within its phase only — hence `phaseId` |
 
 Deleting a phase destroys its tasks, so both delete controls use the **inline confirm**
 pattern already shipped in `ArchiveButton` (click Delete → Confirm / Cancel, no native
@@ -172,29 +172,36 @@ blank.
 
 ### 4. UI — `src/components/schedule/`
 
-One component family, used by all three surfaces via an `editable` flag — the same
-anti-drift move `PortalProjectView` made for the preview feature.
+One component family, used by all three surfaces — the same anti-drift move
+`PortalProjectView` made for the preview feature.
 
 ```
 ScheduleTable   (server)  → phases in position order, or an EmptyState
-  PhaseRow      (client)  → name + 3 dates; Edit → inputs → Save/Cancel
-    TaskRow     (client)  → indented; same fields
+  ScheduleRow   (client)  → one phase OR one task (variant="phase"|"task");
+                            name + 3 dates; Edit → inputs → Save/Cancel
+  AddRow        (client)  → the inline "+ Phase" / "+ Task" name input
 ```
 
-With `editable={false}` the rows render static markup, take no bound actions, and show
-no Edit / delete / move / `+ Task` controls.
+Phases and tasks carry an identical field set, so **one** row component renders both;
+`variant` controls weight and indent.
+
+Read-only is expressed by **omitting the actions prop** rather than by a separate
+`editable` boolean — `ScheduleTable({ phases, actions? })`. With no `actions` the rows
+receive no bound actions and render no Edit / Delete / move / `+ Task` controls, so the
+flag and the behavior cannot disagree.
 
 Layout: the row's **name** sits on the left; the three dates render as labeled chips
 (Projected / Start / Complete) that wrap on narrow screens — not a four-column table,
 which would overflow on a phone. A completed row (has `complete_date`) is visually
 distinguished. The projected note renders beside its date: `Nov 15, 2026 · pending survey`.
 
-Naming note: this new `TaskRow` lives in `src/components/schedule/` and is a different
-component from the existing to-do `TaskRow` in `src/app/(artisan)/projects/[id]/`.
+Naming note: the schedule's row component is `ScheduleRow`, deliberately *not* a second
+`TaskRow` — the existing to-do `TaskRow` in `src/app/(artisan)/projects/[id]/` keeps that
+name to itself.
 
 Wiring:
 
-- `src/app/(artisan)/projects/[id]/page.tsx` — a **Schedule** tab with `editable`
+- `src/app/(artisan)/projects/[id]/page.tsx` — a **Schedule** tab with the bound actions
 - `src/components/portal/PortalProjectView.tsx` — a **Schedule** tab, read-only
   (this covers both the portal and `/preview/[id]`)
 
@@ -242,6 +249,6 @@ Gates: `tsc`, `npm test`, `npm run build` — all green before commit or merge.
 - **Two things named "phase".** Schedule phases vs. the before/during/after photo tag.
   Mitigated by the `schedule_` prefix in the schema and the `src/components/schedule/`
   namespace.
-- **Two things named `TaskRow`.** The schedule's and the to-do's. Mitigated by
-  directory separation and by the "To-Dos" rename making the distinction visible in
-  the product.
+- **Two things called a "task".** The schedule's tasks and the to-do list's rows. In
+  code the collision is avoided outright (`ScheduleRow` vs. `TaskRow`); in the product
+  it is mitigated by the "To-Dos" rename, which makes the distinction visible to users.
