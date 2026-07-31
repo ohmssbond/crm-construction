@@ -6,12 +6,13 @@ import { BeforeAfterStrip } from "@/components/portal/BeforeAfterStrip";
 import { PhotoGallery } from "@/components/portal/PhotoGallery";
 import { FilesList } from "@/components/portal/FilesList";
 import { ProjectTeamCard } from "@/components/portal/ProjectTeamCard";
+import { ScheduleTable } from "@/components/schedule/ScheduleTable";
 import { fmtDate, fmtDateTime, fmtZonedDate } from "@/lib/data/format";
 import type { PortalProjectDetail } from "@/lib/data/portal";
 
 /**
  * The customer/partner portal view of a project — hero, team roster,
- * before/after, and the Updates / Photos / Files / Tasks tabs. Rendered by both
+ * before/after, and the Updates / Photos / Files / Schedule / To-Dos tabs. Rendered by both
  * the real portal page and the tenant preview so the two look identical. Pure
  * presentation of a shaped `PortalProjectDetail`.
  */
@@ -27,6 +28,7 @@ export function PortalProjectView({ detail }: { detail: PortalProjectDetail }) {
     files,
     updates,
     tasks,
+    schedule,
     timezone,
     team,
     orgName,
@@ -83,10 +85,14 @@ export function PortalProjectView({ detail }: { detail: PortalProjectDetail }) {
             content: <FilesList files={files} />,
           },
           {
-            label: "Tasks",
+            label: "Schedule",
+            content: <ScheduleTable phases={schedule} />,
+          },
+          {
+            label: "To-Dos",
             content:
               tasks.length === 0 ? (
-                <EmptyState glyph="✅" title="No tasks yet." />
+                <EmptyState glyph="✅" title="No to-dos yet." />
               ) : (
                 <Card>
                   {tasks.map((t) => (

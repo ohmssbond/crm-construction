@@ -3,6 +3,7 @@ import { one } from "./rel";
 import { contactName } from "./format";
 import { withAttachmentUrls } from "./attachments";
 import { partitionContacts, availableStaff as computeAvailableStaff } from "./reps";
+import { getProjectSchedule } from "./schedule";
 
 // org_crm_staff()'s declared Returns shape (database.types.ts). The rpc() call
 // itself types as `any` here (createClient() doesn't pass the Database
@@ -140,6 +141,7 @@ export async function getProjectDetail(id: string) {
     availableContacts,
     availableStaff,
     attachments: await withAttachmentUrls(supabase, attachments.data ?? []),
+    schedule: await getProjectSchedule(supabase, id),
     fileCategories: fileCategories.data ?? [],
   };
 }

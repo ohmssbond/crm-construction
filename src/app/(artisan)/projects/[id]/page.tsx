@@ -27,6 +27,17 @@ import { TodoComposer } from "./TodoComposer";
 import { TaskRow } from "./TaskRow";
 import { PhaseControl } from "./PhaseControl";
 import { PortfolioSlots } from "./PortfolioSlots";
+import { ScheduleTable } from "@/components/schedule/ScheduleTable";
+import {
+  addPhase,
+  updatePhase,
+  deletePhase,
+  movePhase,
+  addTask,
+  updateTask,
+  deleteTask,
+  moveTask,
+} from "./schedule-actions";
 import {
   postUpdate,
   setUpdateShared,
@@ -69,7 +80,7 @@ export default async function ProjectDetailPage({
   const [detail, ctx] = await Promise.all([getProjectDetail(id), getOrgContext()]);
   if (!detail) notFound();
 
-  const { project, updates, todos, contacts, reps, availableContacts, availableStaff, attachments, fileCategories } =
+  const { project, updates, todos, contacts, reps, availableContacts, availableStaff, attachments, schedule, fileCategories } =
     detail;
   const clientNoun = ctx?.org.client_noun ?? "Customer";
   const taskContacts = [
@@ -237,11 +248,29 @@ export default async function ProjectDetailPage({
             ),
           },
           {
-            label: "Tasks",
+            label: "Schedule",
+            content: (
+              <ScheduleTable
+                phases={schedule}
+                actions={{
+                  addPhase: addPhase.bind(null, project.id),
+                  updatePhase: updatePhase.bind(null, project.id),
+                  deletePhase: deletePhase.bind(null, project.id),
+                  movePhase: movePhase.bind(null, project.id),
+                  addTask: addTask.bind(null, project.id),
+                  updateTask: updateTask.bind(null, project.id),
+                  deleteTask: deleteTask.bind(null, project.id),
+                  moveTask: moveTask.bind(null, project.id),
+                }}
+              />
+            ),
+          },
+          {
+            label: "To-Dos",
             content: (
               <div className="flex flex-col gap-3">
                 <Banner icon={<Eye size={15} />}>
-                  Tasks are <strong>private</strong> by default. Assign one to a{" "}
+                  To-dos are <strong>private</strong> by default. Assign one to a{" "}
                   {clientNoun.toLowerCase()} or mark it shared to show it in their portal.
                 </Banner>
                 <TodoComposer
@@ -250,7 +279,7 @@ export default async function ProjectDetailPage({
                   artisanLabel={artisanLabel}
                 />
                 {todos.length === 0 ? (
-                  <EmptyState glyph="✅" title="No tasks yet." />
+                  <EmptyState glyph="✅" title="No to-dos yet." />
                 ) : (
                   <Card>
                     {todos.map((t) => (

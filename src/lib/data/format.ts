@@ -114,3 +114,30 @@ export function fmtJobLocation(j: {
     country: j.job_country,
   });
 }
+
+/**
+ * ISO date → "Nov 15, 2026". Unlike fmtDate this KEEPS the year: a construction
+ * schedule spans years, so "Nov 15" would be ambiguous. Parsed as UTC so the day
+ * never shifts.
+ */
+export function fmtScheduleDate(iso: string | null): string | null {
+  if (!iso) return null;
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+/**
+ * The schedule's projected-completion cell: a date, a note, or both. The note absorbs
+ * the fuzziness a date column can't hold ("pending survey", "TBD"). Null when empty.
+ */
+export function fmtProjected(iso: string | null, note: string | null): string | null {
+  const date = fmtScheduleDate(iso);
+  const trimmed = note?.trim() || null;
+  if (date && trimmed) return `${date} · ${trimmed}`;
+  return date ?? trimmed;
+}

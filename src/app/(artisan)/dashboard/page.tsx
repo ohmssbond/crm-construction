@@ -90,9 +90,9 @@ export default async function DashboardPage() {
       </section>
 
       <section className="flex flex-col gap-2">
-        <SectionLabel>Tasks across projects</SectionLabel>
+        <SectionLabel>To-Dos across projects</SectionLabel>
         <Banner icon={<Eye size={15} />}>
-          Tasks are <strong>private</strong> by default — they appear in the{" "}
+          To-dos are <strong>private</strong> by default — they appear in the{" "}
           {clientNoun.toLowerCase()} portal only when assigned to a contact or marked shared.
         </Banner>
         {todoList.length === 0 ? (
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
               <thead>
                 <tr className="text-meta text-muted uppercase tracking-[0.4px] border-b border-line-2">
                   <th className="font-semibold w-9 px-4 py-[10px]"></th>
-                  <th className="font-semibold px-2 py-[10px]">Task</th>
+                  <th className="font-semibold px-2 py-[10px]">To-Do</th>
                   <th className="font-semibold px-2 py-[10px]">Project</th>
                   <th className="font-semibold px-4 py-[10px] text-right">Due</th>
                 </tr>

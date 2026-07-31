@@ -69,7 +69,7 @@ export function TaskRow({
           value={body}
           onChange={(e) => setBody(e.target.value)}
           disabled={pending}
-          aria-label="Task"
+          aria-label="To-do"
           className={`${fieldInput} flex-1 min-w-[160px]`}
         />
         <input
@@ -139,7 +139,7 @@ export function TaskRow({
         type="button"
         onClick={startEdit}
         disabled={pending}
-        aria-label="Edit task"
+        aria-label="Edit to-do"
         className="text-meta text-faint hover:text-accent disabled:opacity-60"
       >
         Edit
