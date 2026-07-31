@@ -250,19 +250,25 @@ export default async function ProjectDetailPage({
           {
             label: "Schedule",
             content: (
-              <ScheduleTable
-                phases={schedule}
-                actions={{
-                  addPhase: addPhase.bind(null, project.id),
-                  updatePhase: updatePhase.bind(null, project.id),
-                  deletePhase: deletePhase.bind(null, project.id),
-                  movePhase: movePhase.bind(null, project.id),
-                  addTask: addTask.bind(null, project.id),
-                  updateTask: updateTask.bind(null, project.id),
-                  deleteTask: deleteTask.bind(null, project.id),
-                  moveTask: moveTask.bind(null, project.id),
-                }}
-              />
+              <div className="flex flex-col gap-3">
+                <Banner icon={<Eye size={15} />}>
+                  The Schedule is always visible to the {clientNoun.toLowerCase()} and
+                  partners in their portal. There is no private/shared switch.
+                </Banner>
+                <ScheduleTable
+                  phases={schedule}
+                  actions={{
+                    addPhase: addPhase.bind(null, project.id),
+                    updatePhase: updatePhase.bind(null, project.id),
+                    deletePhase: deletePhase.bind(null, project.id),
+                    movePhase: movePhase.bind(null, project.id),
+                    addTask: addTask.bind(null, project.id),
+                    updateTask: updateTask.bind(null, project.id),
+                    deleteTask: deleteTask.bind(null, project.id),
+                    moveTask: moveTask.bind(null, project.id),
+                  }}
+                />
+              </div>
             ),
           },
           {

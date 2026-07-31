@@ -43,7 +43,7 @@ export function RepPanel({
     <div className="flex flex-col gap-3">
       <Note>
         Company Reps are your <strong>staff</strong> assigned to this project. They can be
-        given tasks and are shown to the customer as their point of contact.
+        given to-dos and are shown to the customer as their point of contact.
       </Note>
 
       {reps.length === 0 ? (

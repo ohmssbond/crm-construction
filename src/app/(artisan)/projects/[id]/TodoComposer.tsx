@@ -48,7 +48,7 @@ export function TodoComposer({
             submit();
           }
         }}
-        placeholder="Add a task…"
+        placeholder="Add a to-do…"
         className={`${fieldInput} min-w-[180px] flex-1`}
       />
       <input
