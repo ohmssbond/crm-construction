@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { one } from "./rel";
 import { contactName } from "./format";
-import { withAttachmentUrls } from "./attachments";
+import { withAttachmentUrls, resolveCoverHrefs } from "./attachments";
+import { resolveSlot } from "./portfolio";
 import { partitionContacts, availableStaff as computeAvailableStaff } from "./reps";
 import { getProjectSchedule } from "./schedule";
 
@@ -16,12 +17,16 @@ export async function listProjects() {
   const { data } = await supabase
     .from("projects")
     .select(
-      "id, name, stage, start_date, end_date, customer:customers(name), project_contacts(count)"
+      "id, name, stage, start_date, end_date, cover_attachment_id, customer:customers(name), project_contacts(count)"
     )
     .is("archived_at", null)
     .order("created_at", { ascending: false });
 
-  return (data ?? []).map((p) => ({
+  const projects = data ?? [];
+  const coverIds = projects.map((p) => p.cover_attachment_id).filter(Boolean) as string[];
+  const coverById = await resolveCoverHrefs(supabase, coverIds, { sharedOnly: false });
+
+  return projects.map((p) => ({
     id: p.id,
     name: p.name,
     stage: p.stage,
@@ -29,6 +34,10 @@ export async function listProjects() {
     end_date: p.end_date,
     customerName: one(p.customer)?.name ?? "—",
     contactCount: p.project_contacts?.[0]?.count ?? 0,
+    coverHref: (() => {
+      const c = resolveSlot(p.cover_attachment_id, coverById);
+      return c ? (c.thumbHref ?? c.href) : null;
+    })(),
   }));
 }
 

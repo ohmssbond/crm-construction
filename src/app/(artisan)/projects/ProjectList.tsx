@@ -22,6 +22,7 @@ type Project = {
   end_date: string | null;
   customerName: string;
   contactCount: number;
+  coverHref: string | null;
 };
 
 const STAGE_FILTERS: Record<string, string | null> = {
@@ -79,9 +80,21 @@ export function ProjectList({
                 key={p.id}
                 href={`/projects/${p.id}`}
                 leading={
-                  <Thumb>
-                    <FolderKanban size={18} />
-                  </Thumb>
+                  p.coverHref ? (
+                    <Thumb className="overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={p.coverHref}
+                        alt=""
+                        loading="lazy"
+                        className="size-full object-cover"
+                      />
+                    </Thumb>
+                  ) : (
+                    <Thumb>
+                      <FolderKanban size={18} />
+                    </Thumb>
+                  )
                 }
                 title={p.name}
                 sub={`${p.customerName} · ${p.contactCount} contact${p.contactCount === 1 ? "" : "s"}`}
