@@ -227,15 +227,28 @@ describe("resolveHeaderImages", () => {
     expect(out.images.map((i) => i.href)).toEqual(["HERO_FULL"]);
   });
 
-  test("drops a slot whose id is not in the shared map", async () => {
-    const supa = fakeSupabase({}, { "p/hero.jpg": "HERO_BIG" });
+  test("drops a slot whose id is not in the shared map, and never signs its storage_path", async () => {
+    const createSignedUrl = vi.fn(async (path: string) => ({
+      data: { signedUrl: path === "p/hero.jpg" ? "HERO_BIG" : null },
+    }));
+    const supa = {
+      storage: { from: () => ({ createSignedUrl }) },
+    } as unknown as SupabaseClient;
+    const rowsWithSecret = [...rows, { id: "not-shared", storage_path: "p/secret.jpg" }];
+
     const out = await resolveHeaderImages(
       supa,
       { cover: "not-shared", hero: "hero-id", before: null, after: null },
       shared,
-      rows
+      rowsWithSecret
     );
+
     expect(out.images.map((i) => i.slot)).toEqual(["hero"]);
+    expect(createSignedUrl).not.toHaveBeenCalledWith(
+      "p/secret.jpg",
+      expect.anything(),
+      expect.anything()
+    );
   });
 
   test("returns an empty list when no slot is set", async () => {

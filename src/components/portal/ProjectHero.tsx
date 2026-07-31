@@ -48,7 +48,8 @@ export function ProjectHero({
 }) {
   const s = SIZES[size];
   const [index, setIndex] = useState(startIndex);
-  const active = images[index] ?? images[0] ?? null;
+  const safe = index < images.length ? index : 0;
+  const active = images[safe] ?? null;
   const canCycle = images.length > 1;
 
   return (
@@ -59,9 +60,10 @@ export function ProjectHero({
           <img
             key={img.slot}
             src={img.href}
-            alt=""
+            alt={i === safe ? img.label : ""}
+            fetchPriority={i === safe ? "high" : "low"}
             className={`absolute inset-0 w-full h-full object-cover ${
-              i === index ? "opacity-100" : "opacity-0"
+              i === safe ? "opacity-100" : "opacity-0"
             }`}
           />
         ))

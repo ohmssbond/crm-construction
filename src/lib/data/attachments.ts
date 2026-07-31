@@ -173,23 +173,20 @@ export async function resolveHeaderImages(
   const slots: HeaderSlot[] = ["cover", "hero", "before", "after"];
 
   const signedHrefs = await Promise.all(
-    slots.map(async (slot) => {
+    slots.map(async (slot): Promise<[HeaderSlot, string | null]> => {
       const id = slotIds[slot];
       const resolved = resolveSlot(id, sharedImagesById);
-      if (!resolved) return null;
+      if (!resolved) return [slot, null];
       const row = signedAttachments.find((a) => a.id === id);
       if (row?.storage_path) {
         const big = await signImageVariant(supabase, row.storage_path, HEADER);
-        if (big) return big;
+        if (big) return [slot, big];
       }
-      return resolved.href;
+      return [slot, resolved.href];
     })
   );
 
-  return buildHeaderImages({
-    cover: signedHrefs[0],
-    hero: signedHrefs[1],
-    before: signedHrefs[2],
-    after: signedHrefs[3],
-  });
+  return buildHeaderImages(
+    Object.fromEntries(signedHrefs) as Record<HeaderSlot, string | null>
+  );
 }
