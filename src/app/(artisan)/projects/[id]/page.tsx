@@ -165,43 +165,68 @@ export default async function ProjectDetailPage({
             ),
           },
           {
-            label: "Photos",
+            label: "To-Dos",
             content: (
               <div className="flex flex-col gap-3">
-                <UploadForm
-                  projectId={project.id}
-                  orgId={ctx?.org.id ?? ""}
-                  fixedCategory="photo"
-                  accept="image/*"
-                  shareLabel={`Share with ${clientNoun.toLowerCase()}`}
+                <Banner icon={<Eye size={15} />}>
+                  To-dos are <strong>private</strong> by default. Assign one to a{" "}
+                  {clientNoun.toLowerCase()} or mark it shared to show it in their portal.
+                </Banner>
+                <TodoComposer
+                  action={addTodo.bind(null, project.id)}
+                  contacts={taskContacts}
+                  artisanLabel={artisanLabel}
                 />
-                <PortfolioSlots
-                  photos={imagePhotos}
-                  values={slotValues}
-                  action={setProjectPhotoSlot.bind(null, project.id)}
-                />
-                {imageAttachments.length === 0 ? (
-                  <EmptyState glyph="🖼" title="No photos yet." />
+                {todos.length === 0 ? (
+                  <EmptyState glyph="✅" title="No to-dos yet." />
                 ) : (
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    {imageAttachments.map((a) => (
-                      <div key={a.id} className="flex flex-col gap-1">
-                        <FileTile
-                          name={a.filename ?? a.url ?? "Photo"}
-                          glyph="🖼"
-                          bg="#7a9e93"
-                          shared={a.is_shared}
-                          href={a.href}
-                          shareAction={setAttachmentShared.bind(null, project.id, a.id)}
-                        />
-                        <PhaseControl
-                          current={(a.phase as "before" | "during" | "after" | null) ?? null}
-                          action={setPhotoPhase.bind(null, project.id, a.id)}
-                        />
-                      </div>
+                  <Card>
+                    {todos.map((t) => (
+                      <TaskRow
+                        key={t.id}
+                        text={t.body}
+                        due={fmtDate(t.due_date) ?? undefined}
+                        dueDate={t.due_date}
+                        done={t.done}
+                        completed={
+                          t.completed_at ? fmtZonedDate(String(t.completed_at), timezone) : undefined
+                        }
+                        owner={t.owner_contact_id}
+                        shared={t.is_shared}
+                        contacts={taskContacts}
+                        artisanLabel={artisanLabel}
+                        toggleAction={toggleTodo.bind(null, project.id, t.id)}
+                        ownerAction={setTodoOwner.bind(null, project.id, t.id)}
+                        shareAction={setTodoShared.bind(null, project.id, t.id)}
+                        editAction={updateTodo.bind(null, project.id, t.id)}
+                      />
                     ))}
-                  </div>
+                  </Card>
                 )}
+              </div>
+            ),
+          },
+          {
+            label: "Schedule",
+            content: (
+              <div className="flex flex-col gap-3">
+                <Banner icon={<Eye size={15} />}>
+                  The Schedule is always visible to the {clientNoun.toLowerCase()} and
+                  partners in their portal. There is no private/shared switch.
+                </Banner>
+                <ScheduleTable
+                  phases={schedule}
+                  actions={{
+                    addPhase: addPhase.bind(null, project.id),
+                    updatePhase: updatePhase.bind(null, project.id),
+                    deletePhase: deletePhase.bind(null, project.id),
+                    movePhase: movePhase.bind(null, project.id),
+                    addTask: addTask.bind(null, project.id),
+                    updateTask: updateTask.bind(null, project.id),
+                    deleteTask: deleteTask.bind(null, project.id),
+                    moveTask: moveTask.bind(null, project.id),
+                  }}
+                />
               </div>
             ),
           },
@@ -252,67 +277,42 @@ export default async function ProjectDetailPage({
             ),
           },
           {
-            label: "Schedule",
+            label: "Photos",
             content: (
               <div className="flex flex-col gap-3">
-                <Banner icon={<Eye size={15} />}>
-                  The Schedule is always visible to the {clientNoun.toLowerCase()} and
-                  partners in their portal. There is no private/shared switch.
-                </Banner>
-                <ScheduleTable
-                  phases={schedule}
-                  actions={{
-                    addPhase: addPhase.bind(null, project.id),
-                    updatePhase: updatePhase.bind(null, project.id),
-                    deletePhase: deletePhase.bind(null, project.id),
-                    movePhase: movePhase.bind(null, project.id),
-                    addTask: addTask.bind(null, project.id),
-                    updateTask: updateTask.bind(null, project.id),
-                    deleteTask: deleteTask.bind(null, project.id),
-                    moveTask: moveTask.bind(null, project.id),
-                  }}
+                <UploadForm
+                  projectId={project.id}
+                  orgId={ctx?.org.id ?? ""}
+                  fixedCategory="photo"
+                  accept="image/*"
+                  shareLabel={`Share with ${clientNoun.toLowerCase()}`}
                 />
-              </div>
-            ),
-          },
-          {
-            label: "To-Dos",
-            content: (
-              <div className="flex flex-col gap-3">
-                <Banner icon={<Eye size={15} />}>
-                  To-dos are <strong>private</strong> by default. Assign one to a{" "}
-                  {clientNoun.toLowerCase()} or mark it shared to show it in their portal.
-                </Banner>
-                <TodoComposer
-                  action={addTodo.bind(null, project.id)}
-                  contacts={taskContacts}
-                  artisanLabel={artisanLabel}
+                <PortfolioSlots
+                  photos={imagePhotos}
+                  values={slotValues}
+                  action={setProjectPhotoSlot.bind(null, project.id)}
                 />
-                {todos.length === 0 ? (
-                  <EmptyState glyph="✅" title="No to-dos yet." />
+                {imageAttachments.length === 0 ? (
+                  <EmptyState glyph="🖼" title="No photos yet." />
                 ) : (
-                  <Card>
-                    {todos.map((t) => (
-                      <TaskRow
-                        key={t.id}
-                        text={t.body}
-                        due={fmtDate(t.due_date) ?? undefined}
-                        dueDate={t.due_date}
-                        done={t.done}
-                        completed={
-                          t.completed_at ? fmtZonedDate(String(t.completed_at), timezone) : undefined
-                        }
-                        owner={t.owner_contact_id}
-                        shared={t.is_shared}
-                        contacts={taskContacts}
-                        artisanLabel={artisanLabel}
-                        toggleAction={toggleTodo.bind(null, project.id, t.id)}
-                        ownerAction={setTodoOwner.bind(null, project.id, t.id)}
-                        shareAction={setTodoShared.bind(null, project.id, t.id)}
-                        editAction={updateTodo.bind(null, project.id, t.id)}
-                      />
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    {imageAttachments.map((a) => (
+                      <div key={a.id} className="flex flex-col gap-1">
+                        <FileTile
+                          name={a.filename ?? a.url ?? "Photo"}
+                          glyph="🖼"
+                          bg="#7a9e93"
+                          shared={a.is_shared}
+                          href={a.href}
+                          shareAction={setAttachmentShared.bind(null, project.id, a.id)}
+                        />
+                        <PhaseControl
+                          current={(a.phase as "before" | "during" | "after" | null) ?? null}
+                          action={setPhotoPhase.bind(null, project.id, a.id)}
+                        />
+                      </div>
                     ))}
-                  </Card>
+                  </div>
                 )}
               </div>
             ),

@@ -77,18 +77,6 @@ export function PortalProjectView({ detail }: { detail: PortalProjectDetail }) {
             ),
           },
           {
-            label: "Photos",
-            content: <PhotoGallery groups={gallery} />,
-          },
-          {
-            label: "Files",
-            content: <FilesList files={files} />,
-          },
-          {
-            label: "Schedule",
-            content: <ScheduleTable phases={schedule} />,
-          },
-          {
             label: "To-Dos",
             content:
               tasks.length === 0 ? (
@@ -128,6 +116,18 @@ export function PortalProjectView({ detail }: { detail: PortalProjectDetail }) {
                   ))}
                 </Card>
               ),
+          },
+          {
+            label: "Schedule",
+            content: <ScheduleTable phases={schedule} />,
+          },
+          {
+            label: "Files",
+            content: <FilesList files={files} />,
+          },
+          {
+            label: "Photos",
+            content: <PhotoGallery groups={gallery} />,
           },
         ]}
       />
