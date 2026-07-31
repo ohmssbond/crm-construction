@@ -111,3 +111,33 @@ export function groupAttachmentsByType<T extends Categorized>(
       x.label.localeCompare(y.label, undefined, { sensitivity: "base" })
     );
 }
+
+/**
+ * Resolve project cover photos in one batch: fetch the referenced attachments,
+ * keep the images, sign them, and return them by id (for `resolveSlot`).
+ *
+ * `sharedOnly` is REQUIRED and differs per surface: the portal passes true (a
+ * contact must never resolve an unshared cover), the artisan passes false (staff
+ * see their own org's attachments — RLS `artisan_all` is the boundary). It is not
+ * defaulted so neither caller can omit it by accident.
+ */
+export async function resolveCoverHrefs(
+  supabase: SupabaseClient,
+  coverIds: string[],
+  opts: { sharedOnly: boolean }
+): Promise<Map<string, { href: string | null; thumbHref: string | null }>> {
+  const byId = new Map<string, { href: string | null; thumbHref: string | null }>();
+  if (!coverIds.length) return byId;
+
+  let query = supabase
+    .from("attachments")
+    .select("id, kind, mime_type, url, storage_path")
+    .in("id", coverIds);
+  if (opts.sharedOnly) query = query.eq("is_shared", true);
+
+  const { data } = await query;
+  const images = (data ?? []).filter(isImageAttachment);
+  const signed = await withAttachmentUrls(supabase, images);
+  signed.forEach((a) => byId.set(a.id, { href: a.href, thumbHref: a.thumbHref }));
+  return byId;
+}
