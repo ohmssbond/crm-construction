@@ -6,6 +6,7 @@ import {
   beforeAfterVisible,
   groupPhotosByPhase,
   validatePhotoAssignment,
+  buildHeaderImages,
 } from "./portfolio";
 
 describe("stageToStatus", () => {
@@ -82,5 +83,74 @@ describe("validatePhotoAssignment", () => {
     expect(validatePhotoAssignment({ ...img, mime_type: "application/pdf" }, "p1")).toBe(
       "Only photos can be tagged."
     );
+  });
+});
+
+describe("buildHeaderImages", () => {
+  const all = { cover: "C", hero: "H", before: "B", after: "A" };
+
+  test("orders all four slots and starts on the hero", () => {
+    const { images, startIndex } = buildHeaderImages(all);
+    expect(images.map((i) => i.slot)).toEqual(["cover", "hero", "before", "after"]);
+    expect(images.map((i) => i.href)).toEqual(["C", "H", "B", "A"]);
+    expect(startIndex).toBe(1);
+  });
+
+  test("labels each slot", () => {
+    expect(buildHeaderImages(all).images.map((i) => i.label)).toEqual([
+      "Cover",
+      "Current progress",
+      "Before",
+      "After",
+    ]);
+  });
+
+  test("skips unresolved slots and keeps the hero's index correct", () => {
+    const { images, startIndex } = buildHeaderImages({
+      cover: null,
+      hero: "H",
+      before: null,
+      after: "A",
+    });
+    expect(images.map((i) => i.slot)).toEqual(["hero", "after"]);
+    expect(startIndex).toBe(0);
+  });
+
+  test("falls back to the first available slot when there is no hero", () => {
+    const { images, startIndex } = buildHeaderImages({
+      cover: "C",
+      hero: null,
+      before: "B",
+      after: null,
+    });
+    expect(images.map((i) => i.slot)).toEqual(["cover", "before"]);
+    expect(startIndex).toBe(0);
+  });
+
+  test("starts on Before when only before and after resolved", () => {
+    const { images, startIndex } = buildHeaderImages({
+      cover: null,
+      hero: null,
+      before: "B",
+      after: "A",
+    });
+    expect(images[startIndex].label).toBe("Before");
+  });
+
+  test("returns one image and index 0 when only the hero resolved", () => {
+    const { images, startIndex } = buildHeaderImages({
+      cover: null,
+      hero: "H",
+      before: null,
+      after: null,
+    });
+    expect(images).toHaveLength(1);
+    expect(startIndex).toBe(0);
+  });
+
+  test("returns an empty list when nothing resolved", () => {
+    expect(
+      buildHeaderImages({ cover: null, hero: null, before: null, after: null })
+    ).toEqual({ images: [], startIndex: 0 });
   });
 });
