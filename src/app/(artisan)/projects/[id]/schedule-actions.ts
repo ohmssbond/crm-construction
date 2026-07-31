@@ -8,8 +8,12 @@ import { normalizeScheduleFields, type ScheduleFields } from "@/lib/data/schedul
 // Schedule writes. All RLS-scoped (artisan_all → is_org_member), exactly like the
 // live-edit writes in ./actions.ts: updates and deletes by id rely on the policy's
 // USING clause to confine the change to the signed-in org, and inserts supply
-// organization_id from the session. No explicit membership check — matching
-// updateTodo and updateStatusUpdate.
+// organization_id from the session. Update/delete actions below have no explicit
+// membership check — matching updateTodo and updateStatusUpdate. addPhase and
+// addTask are the deliberate exception: RLS never verifies that the caller-supplied
+// project_id/phase_id belongs to the session's org, and schedule rows are fully
+// customer-visible (contact_read has no is_shared gate), so those two insert
+// actions verify the target project/phase first — see the comments inline.
 
 /** Next position for a new row: append to the end of its sibling list. */
 async function nextPosition(
@@ -68,6 +72,18 @@ export async function addPhase(projectId: string, name: string) {
   const ctx = await getOrgContext();
   if (!ctx) return;
   const supabase = await createClient();
+  // Insert policies only check organization_id on the row being written, never that
+  // project_id belongs to that org — so a caller could otherwise graft their org onto
+  // another org's project. Schedule rows are unusually exposed: contact_read has no
+  // is_shared gate, so an injected row would render straight into the victim's portal.
+  // Confirm the project resolves under our own RLS (artisan_all → is_org_member)
+  // before trusting the caller-supplied id.
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", projectId)
+    .maybeSingle();
+  if (!project) return; // not this org's project — silently no-op, like the other guards
   await supabase.from("schedule_phases").insert({
     organization_id: ctx.org.id,
     project_id: projectId,
@@ -106,6 +122,24 @@ export async function addTask(projectId: string, phaseId: string, name: string) 
   const ctx = await getOrgContext();
   if (!ctx) return;
   const supabase = await createClient();
+  // Same rationale as addPhase: insert RLS only checks organization_id, not that
+  // project_id/phase_id belong to that org, and schedule rows have no is_shared gate
+  // on contact_read — a mismatched row would leak straight into a portal. Confirm the
+  // project resolves under our own RLS, then confirm the phase both resolves AND
+  // belongs to that same project, so a phase id borrowed from another project can't
+  // be grafted in either.
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", projectId)
+    .maybeSingle();
+  if (!project) return; // not this org's project — silently no-op, like the other guards
+  const { data: phase } = await supabase
+    .from("schedule_phases")
+    .select("project_id")
+    .eq("id", phaseId)
+    .maybeSingle();
+  if (!phase || phase.project_id !== projectId) return; // phase not in this project — no-op
   await supabase.from("schedule_tasks").insert({
     organization_id: ctx.org.id,
     project_id: projectId,
