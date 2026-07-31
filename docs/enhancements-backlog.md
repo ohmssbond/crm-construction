@@ -38,17 +38,6 @@ exact location and change so it can be picked up cold.
   when handed one.
 - **Scope:** artisan-only UI; no data/DB change (thumbHref already flows through).
 
-### 3. Bound the thumbnail-signing concurrency
-- **Why:** `withAttachmentUrls` (`src/lib/data/attachments.ts`) signs thumbnails
-  with an **unbounded** `Promise.all(files.filter(isImageAttachment).map(…))` — one
-  Storage round-trip per image. Fine for today's modest galleries (a handful to a
-  few dozen), but a 100+-image gallery fires 100+ simultaneous requests on one
-  render (rate-limit / tail-latency risk). A code comment already flags this.
-- **Change:** cap concurrency (chunk into batches of ~10, or a small `p-limit`).
-  **Do this before** galleries grow large or before item 1 copies the technique to
-  worker/T&B.
-- **Scope:** one helper; no behavior change beyond throttling.
-
 ### 4. Customer account ↔ contact record sync (deferred decision)
 - **Context:** self-service account editing (shipped) changes only the user's **login
   identity** — `user_metadata.full_name` and `auth.users.email`. It deliberately does
@@ -122,6 +111,16 @@ exact location and change so it can be picked up cold.
   still says "Add a task".
 
 ## Done
+
+- **Bound the thumbnail-signing concurrency** — `withAttachmentUrls`
+  (`src/lib/data/attachments.ts`) signed thumbnails via an unbounded `Promise.all`,
+  one Storage round-trip per image; it became load-bearing when `listProjects`
+  started resolving a cover thumbnail per project with no `.limit()`. Now chunks
+  the image list into batches of 10 (`THUMB_BATCH_SIZE`) and awaits each batch in
+  turn, so a large gallery or a tenant with many covered projects can't fire
+  hundreds of simultaneous Storage requests. Same thumbnails for the same inputs,
+  just throttled. Applied from a final code review on `project-ui-polish`; no
+  migration.
 
 - **Edit a project update** — inline edit-in-place on the artisan Updates tab (reuses
   the task-edit pattern `TaskRow`+`updateTodo`): `UpdateCard` became a client component

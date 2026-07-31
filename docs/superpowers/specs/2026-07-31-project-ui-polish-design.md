@@ -146,11 +146,15 @@ Array reordering only — no content, prop, or logic change to any panel:
 
 ## Testing
 
-No new unit tests: every change is loader plumbing or presentation, and the one piece of
-pure logic involved (`stageToStatus`) is already covered. `resolveCoverHrefs` does I/O and
-follows the repo's convention that such functions take a client and go untested.
+Most of this change is loader plumbing or presentation, and the one piece of pure logic
+involved (`stageToStatus`) is already covered. `resolveCoverHrefs` does I/O, but I/O
+functions here ARE testable via a stubbed client — `withAttachmentUrls` is the existing
+precedent (`attachments.test.ts`'s `fakeSupabase` stub) — so `resolveCoverHrefs` gets the
+same treatment: tests assert the `sharedOnly` filter gates an unshared cover, that
+`sharedOnly: false` returns it, that an empty id list issues no query, and that the
+returned map is keyed by attachment id.
 
-Gates: `npx tsc --noEmit`, `npm test` (131 passing), `npm run build`.
+Gates: `npx tsc --noEmit`, `npm test`, `npm run build`.
 
 Manual verification, since none of this is reachable by the automated gates:
 

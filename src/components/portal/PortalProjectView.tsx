@@ -12,7 +12,7 @@ import type { PortalProjectDetail } from "@/lib/data/portal";
 
 /**
  * The customer/partner portal view of a project — hero, team roster,
- * before/after, and the Updates / Photos / Files / Schedule / To-Dos tabs. Rendered by both
+ * before/after, and the Updates / To-Dos / Schedule / Files / Photos tabs. Rendered by both
  * the real portal page and the tenant preview so the two look identical. Pure
  * presentation of a shaped `PortalProjectDetail`.
  */

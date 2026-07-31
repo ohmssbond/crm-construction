@@ -1,5 +1,5 @@
-import { describe, expect, test } from "vitest";
-import { groupAttachmentsByType, withAttachmentUrls } from "./attachments";
+import { describe, expect, test, vi } from "vitest";
+import { groupAttachmentsByType, resolveCoverHrefs, withAttachmentUrls } from "./attachments";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type Att = { id: string; category: string; kind: string };
@@ -104,5 +104,92 @@ describe("withAttachmentUrls", () => {
     const lnk = out.find((r) => r.id === "lnk")!;
     expect(lnk.href).toBe("https://x.test/d");
     expect(lnk.thumbHref).toBeNull();
+  });
+});
+
+// Minimal `.from("attachments").select(...).in(...)[.eq(...)]` stub, layered on the
+// storage stub above so resolveCoverHrefs's internal withAttachmentUrls call resolves
+// hrefs/thumbHrefs too. `fromSpy` lets tests assert whether a query was ever issued.
+function fakeSupabaseWithAttachments(
+  attachmentRows: { id: string; kind: string; mime_type: string | null; url: string | null; storage_path: string | null; is_shared: boolean }[],
+  signed: Record<string, string> = {},
+  thumbs: Record<string, string> = {}
+) {
+  const fromSpy = vi.fn((_table: string) => ({
+    select: (_cols: string) => ({
+      in: (_col: string, ids: string[]) => {
+        let filtered = attachmentRows.filter((r) => ids.includes(r.id));
+        const query = {
+          eq: (col: "is_shared", val: boolean) => {
+            filtered = filtered.filter((r) => r[col] === val);
+            return query;
+          },
+          then: (resolve: (v: { data: typeof attachmentRows }) => void) =>
+            resolve({ data: filtered }),
+        };
+        return query;
+      },
+    }),
+  }));
+
+  const storage = fakeSupabase(signed, thumbs).storage;
+  return { from: fromSpy, storage } as unknown as SupabaseClient & { from: typeof fromSpy };
+}
+
+describe("resolveCoverHrefs", () => {
+  const attachmentRows = [
+    {
+      id: "shared-img",
+      kind: "file",
+      mime_type: "image/jpeg",
+      url: null,
+      storage_path: "p/shared.jpg",
+      is_shared: true,
+    },
+    {
+      id: "unshared-img",
+      kind: "file",
+      mime_type: "image/jpeg",
+      url: null,
+      storage_path: "p/unshared.jpg",
+      is_shared: false,
+    },
+  ];
+
+  test("sharedOnly: true applies the is_shared filter, so an unshared cover resolves to nothing", async () => {
+    const supa = fakeSupabaseWithAttachments(
+      attachmentRows,
+      { "p/unshared.jpg": "FULL_UNSHARED" },
+      { "p/unshared.jpg": "THUMB_UNSHARED" }
+    );
+    const result = await resolveCoverHrefs(supa, ["unshared-img"], { sharedOnly: true });
+    expect(result.has("unshared-img")).toBe(false);
+  });
+
+  test("sharedOnly: false returns that same id", async () => {
+    const supa = fakeSupabaseWithAttachments(
+      attachmentRows,
+      { "p/unshared.jpg": "FULL_UNSHARED" },
+      { "p/unshared.jpg": "THUMB_UNSHARED" }
+    );
+    const result = await resolveCoverHrefs(supa, ["unshared-img"], { sharedOnly: false });
+    expect(result.get("unshared-img")).toEqual({ href: "FULL_UNSHARED", thumbHref: "THUMB_UNSHARED" });
+  });
+
+  test("an empty id list issues no query at all", async () => {
+    const supa = fakeSupabaseWithAttachments(attachmentRows);
+    const result = await resolveCoverHrefs(supa, [], { sharedOnly: false });
+    expect(result.size).toBe(0);
+    expect(supa.from).not.toHaveBeenCalled();
+  });
+
+  test("the returned map is keyed by attachment id with { href, thumbHref } values", async () => {
+    const supa = fakeSupabaseWithAttachments(
+      attachmentRows,
+      { "p/shared.jpg": "FULL_SHARED" },
+      { "p/shared.jpg": "THUMB_SHARED" }
+    );
+    const result = await resolveCoverHrefs(supa, ["shared-img"], { sharedOnly: true });
+    expect(result.get("shared-img")).toEqual({ href: "FULL_SHARED", thumbHref: "THUMB_SHARED" });
   });
 });

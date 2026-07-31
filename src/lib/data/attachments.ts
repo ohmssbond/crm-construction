@@ -16,6 +16,9 @@ const SIGNED_URL_TTL = 60 * 60; // 1h
 // 4080x3072 photo becomes 600x3072). CSS object-cover then crops from a correctly
 // proportioned image.
 const THUMB = { width: 600, quality: 60, resize: "contain" as const };
+// Cap on simultaneous per-image thumbnail-signing requests within one call to
+// withAttachmentUrls — see the comment at its call site below.
+const THUMB_BATCH_SIZE = 10;
 
 /** Sign a single transformed (resized) image variant — /render/image/ URL. */
 export async function signImageVariant(
@@ -51,18 +54,23 @@ export async function withAttachmentUrls<T extends AttachmentRef>(
   }
 
   // Thumbnails are signed one-per-image (the batch endpoint ignores transforms),
-  // so this fans out N Storage round-trips per render — fine for today's modest
-  // galleries (a handful to a few dozen), all in parallel (~one RTT wall-clock).
-  // Concurrency is unbounded: if galleries ever grow large (100s), cap it (chunk
-  // or p-limit) before Storage rate limits / tail latency bite.
+  // so this fans out N Storage round-trips per render. Concurrency is bounded to
+  // batches of THUMB_BATCH_SIZE, awaited sequentially, so a large gallery (100s of
+  // images, e.g. a staff project list with many covers) can't fire hundreds of
+  // simultaneous Storage requests — trading some wall-clock time for staying well
+  // under Storage rate limits / tail latency.
+  const images = files.filter(isImageAttachment);
   const thumbs: Record<string, string> = {};
-  await Promise.all(
-    files.filter(isImageAttachment).map(async (r) => {
-      const path = r.storage_path as string;
-      const url = await signImageVariant(supabase, path, THUMB);
-      if (url) thumbs[path] = url;
-    })
-  );
+  for (let i = 0; i < images.length; i += THUMB_BATCH_SIZE) {
+    const batch = images.slice(i, i + THUMB_BATCH_SIZE);
+    await Promise.all(
+      batch.map(async (r) => {
+        const path = r.storage_path as string;
+        const url = await signImageVariant(supabase, path, THUMB);
+        if (url) thumbs[path] = url;
+      })
+    );
+  }
 
   return rows.map((r) => ({
     ...r,
