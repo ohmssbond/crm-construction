@@ -266,11 +266,11 @@ export default async function ProjectDetailPage({
             ),
           },
           {
-            label: "Tasks",
+            label: "To-Dos",
             content: (
               <div className="flex flex-col gap-3">
                 <Banner icon={<Eye size={15} />}>
-                  Tasks are <strong>private</strong> by default. Assign one to a{" "}
+                  To-dos are <strong>private</strong> by default. Assign one to a{" "}
                   {clientNoun.toLowerCase()} or mark it shared to show it in their portal.
                 </Banner>
                 <TodoComposer
@@ -279,7 +279,7 @@ export default async function ProjectDetailPage({
                   artisanLabel={artisanLabel}
                 />
                 {todos.length === 0 ? (
-                  <EmptyState glyph="✅" title="No tasks yet." />
+                  <EmptyState glyph="✅" title="No to-dos yet." />
                 ) : (
                   <Card>
                     {todos.map((t) => (
