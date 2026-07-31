@@ -65,6 +65,62 @@ exact location and change so it can be picked up cold.
   that a customer overwrites the tenant's label. Recorded so the detail isn't lost.
 - **Scope:** portal write action + RLS/function; product decision first.
 
+### 5. `project_in_org` guard is missing on the older insert paths
+- **Why:** the Schedule build (2026-07-31) found that `artisan_all`'s `with check` validates
+  `is_org_member(organization_id)` but **not** that the client-supplied `project_id`
+  belongs to that org — so a row can be written with org A's `organization_id` and org
+  B's `project_id`. Fixed for `schedule_phases`/`schedule_tasks` in
+  `20260731000002_schedule_integrity.sql`, and `project_contacts` was already fixed in
+  `20260717000001`. **The same gap remains on `attachments` and `status_updates`.**
+- **Where:** `recordAttachment`, `postUpdate`, `attachContact`
+  (`src/app/(artisan)/projects/[id]/actions.ts`) all take `project_id` from the caller
+  while setting `organization_id` from the session.
+- **Change:** one migration extending those tables' `artisan_all` `with check` with
+  `public.project_in_org(project_id, organization_id)` — the helper exists
+  (`20260717000001_company_reps.sql:58`) and is already granted to `authenticated`.
+  `alter policy … with check (…)` leaves `using` intact (proven against the live
+  `project_contacts` policy).
+- **Note:** exploitability is low — server-action args are sealed by Next, and these
+  tables gate portal reads on `is_shared`, unlike the schedule. Defense-in-depth.
+- **Scope:** one migration, no app changes.
+
+### 6. No component test for the read-only `ScheduleTable` invariant
+- **Why:** `ScheduleTable` renders read-only **only** when its `actions` prop is omitted,
+  and that single mechanism is what keeps Edit/Delete/move/add controls out of the
+  customer portal. It is currently guarded by human review alone.
+- **Blocker:** the repo has no component-test infrastructure — all 13 suites are pure
+  functions under `src/lib/data/`. This is infra work (jsdom + React Testing Library),
+  not a one-liner.
+- **Change:** render `<ScheduleTable phases={fixture} />` with no `actions` and assert no
+  button matches `/Edit|Delete|Move|\+ Phase|\+ Task/`.
+- **Scope:** test infra + one test; would also unlock component tests generally.
+
+### 7. `getProjectSchedule` swallows query errors
+- **Why:** `src/lib/data/schedule.ts` ignores `phases.error`/`tasks.error` and falls back
+  to `[]`, so a transient failure renders **"No schedule yet."** to a *customer*, who
+  reasonably concludes their contractor has no plan. Plausible-but-wrong is a worse
+  failure mode than obviously-broken.
+- **Context:** this matches the existing convention — no module under `src/lib/data/`
+  checks `.error` — so it is not a regression, and a one-off error path here would be
+  inconsistent. Recorded as the first call site to adopt any future error-surfacing
+  convention.
+- **Scope:** convention decision first.
+
+### 8. Schedule UI polish (all Minor, from the 2026-07-31 review)
+- Move ↑/↓ render active on the first/last row even though `reorder()` no-ops there — no
+  `isFirst`/`isLast` is threaded into `ScheduleRow`. Clicking does nothing, with no feedback.
+- The decorative `✓` on completed rows (`ScheduleRow.tsx`) lacks `aria-hidden="true"`.
+- No schedule control uses the `Button` primitive — each is a hand-styled `<button>`.
+  (Mixed precedent: `ArchiveButton` uses `Button`; `TaskRow`'s inline row controls don't.)
+- `getProjectSchedule` is awaited inside the returned object literal in all three loaders
+  rather than joining the surrounding `Promise.all`, adding one serial round trip per page
+  load. It only needs the project id. (`attachments:` on the adjacent line does the same.)
+- `contact_read` on the schedule tables omits the `archived_at is null` clause that
+  `contact_read on projects` carries — unreachable through the app, and
+  `status_updates`/`attachments` share the gap.
+- No `updated_at` on either schedule table; stale JSDoc on `addTodo` (`actions.ts:412`)
+  still says "Add a task".
+
 ## Done
 
 - **Edit a project update** — inline edit-in-place on the artisan Updates tab (reuses
