@@ -561,6 +561,51 @@ git commit -m "feat(projects): cycle the header image through the portfolio slot
 
 ---
 
+### Task 4: Schedule disclaimer
+
+Unrelated to the header — folded into this branch because both are small project-view UI changes.
+
+**Files:**
+- Modify: `src/components/schedule/ScheduleTable.tsx`
+
+**Interfaces:**
+- Consumes: nothing new. Produces: nothing new. One element, one string.
+
+- [ ] **Step 1: Add the disclaimer**
+
+`ScheduleTable` is already rendered by all three surfaces (artisan tab, customer portal, `/preview/[id]`), so putting the copy here covers them all and it cannot drift between them. Do NOT add it at the call sites.
+
+The component currently returns an `EmptyState` branch when `phases.length === 0`, and otherwise a `<Card>` containing the phase rows. Add the disclaimer to the **non-empty branch only**, above the `Card`, wrapping both in a fragment or a `flex flex-col gap-3` div as the surrounding style requires:
+
+```tsx
+      <p className="text-meta text-muted">
+        Dates are included to support planning and scheduling. Changes will occur due to
+        factors such as: seasonality, weather, scheduling with subcontractors, etc. The
+        project team will work to keep this as accurate as possible.
+      </p>
+```
+
+Copy it **verbatim** — the punctuation was reviewed and approved. In particular: no space before the colon, "subcontractors" as one word, single spaces throughout.
+
+Leave the empty-state branch untouched: a disclaimer about dates on a project with no dates is noise.
+
+This is straight text by request — a plain `<p>`, no `Banner`, no icon. The artisan tab's existing "always visible to the customer" `Banner` stays; the disclaimer renders below it, inside the table component.
+
+- [ ] **Step 2: Verify the gates**
+
+Run: `npx tsc --noEmit && npm test && npm run build`
+
+Expected: all green, 146 tests — this task adds no tests and changes no logic.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/components/schedule/ScheduleTable.tsx
+git commit -m "feat(schedule): disclaimer above the phases and tasks"
+```
+
+---
+
 ## Manual verification (before merge)
 
 The interaction is not reachable by the automated gates — they prove it compiles and that the ordering logic is correct, not that it works in a browser.
@@ -574,3 +619,4 @@ The interaction is not reachable by the automated gates — they prove it compil
 - [ ] Works on the artisan `compact` header and the portal `full` header.
 - [ ] On a phone: the arrow does not collide with the name pill, status badge, or label chip.
 - [ ] The portal's before/after strip below the hero still renders correctly.
+- [ ] The Schedule disclaimer appears above the phases on all three surfaces, and does **not** appear on a project with no schedule.

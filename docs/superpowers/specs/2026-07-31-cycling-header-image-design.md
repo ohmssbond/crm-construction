@@ -181,6 +181,41 @@ Manual verification, since the interaction is not reachable by the automated gat
 - Cycling is instant — no flash of empty space on first click.
 - Works on the artisan `compact` header and the portal `full` header, and on a phone.
 
+---
+
+## Addendum: Schedule disclaimer
+
+Unrelated to the header, folded into the same branch because both are small project-view
+UI changes and it saves a full ship cycle.
+
+A short disclaimer appears above the phases and tasks on the Schedule tab, on **all
+three surfaces** (artisan, portal, preview), telling the reader that schedule dates
+move for reasons outside anyone's control.
+
+**Copy, verbatim:**
+
+> Dates are included to support planning and scheduling. Changes will occur due to
+> factors such as: seasonality, weather, scheduling with subcontractors, etc. The
+> project team will work to keep this as accurate as possible.
+
+Doug supplied this wording; three punctuation fixes were applied and approved — a space
+before a colon removed, "sub contractors" → "subcontractors", and a doubled space
+closed.
+
+**It lives inside `ScheduleTable`** (`src/components/schedule/ScheduleTable.tsx`), not
+at the two call sites. That component is already shared by all three surfaces, so one
+insertion covers them all and the copy cannot drift between them.
+
+- Rendered **above** the `Card` that holds the phase rows.
+- Rendered **only when the schedule has at least one phase** — a disclaimer about dates
+  on a project with no dates is noise. The empty state stays exactly as it is.
+- Straight text: a plain `<p>` in the existing muted-meta type. No `Banner`, no icon —
+  it is a statement of fact, not a warning.
+- On the artisan tab it sits below the existing "always visible to the customer"
+  banner, which says a different thing and stays.
+
+No data, loader, prop, or test changes. The existing suite stays green.
+
 ## Risks
 
 - **`ProjectHero` becomes a Client Component.** It currently renders inside Server
