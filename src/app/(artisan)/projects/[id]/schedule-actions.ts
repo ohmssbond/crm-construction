@@ -76,14 +76,20 @@ export async function addPhase(projectId: string, name: string) {
   // project_id belongs to that org — so a caller could otherwise graft their org onto
   // another org's project. Schedule rows are unusually exposed: contact_read has no
   // is_shared gate, so an injected row would render straight into the victim's portal.
-  // Confirm the project resolves under our own RLS (artisan_all → is_org_member)
-  // before trusting the caller-supplied id.
+  //
+  // A plain existence check ("does this project resolve for me?") is NOT an ownership
+  // check: projects carries two permissive SELECT policies, artisan_all
+  // (is_org_member) and contact_read (contact_can_see_project), and Postgres ORs them.
+  // A caller who is staff of org A but also a portal contact on an org B project
+  // resolves org B's project through contact_read alone — the row is visible without
+  // belonging to A. So we compare organization_id explicitly against the session's
+  // org rather than trusting mere visibility.
   const { data: project } = await supabase
     .from("projects")
-    .select("id")
+    .select("id, organization_id")
     .eq("id", projectId)
     .maybeSingle();
-  if (!project) return; // not this org's project — silently no-op, like the other guards
+  if (!project || project.organization_id !== ctx.org.id) return; // not this org's project — silently no-op, like the other guards
   await supabase.from("schedule_phases").insert({
     organization_id: ctx.org.id,
     project_id: projectId,
@@ -124,16 +130,23 @@ export async function addTask(projectId: string, phaseId: string, name: string) 
   const supabase = await createClient();
   // Same rationale as addPhase: insert RLS only checks organization_id, not that
   // project_id/phase_id belong to that org, and schedule rows have no is_shared gate
-  // on contact_read — a mismatched row would leak straight into a portal. Confirm the
-  // project resolves under our own RLS, then confirm the phase both resolves AND
-  // belongs to that same project, so a phase id borrowed from another project can't
-  // be grafted in either.
+  // on contact_read — a mismatched row would leak straight into a portal.
+  //
+  // Existence alone doesn't prove ownership here either: projects and
+  // schedule_phases each OR together artisan_all (is_org_member) with contact_read
+  // (contact_can_see_project), so a caller who is simultaneously staff of one org and
+  // a portal contact on another org's project can resolve that project (and its
+  // phases) without it belonging to their org. So confirm the project's
+  // organization_id matches the session's org explicitly, BEFORE relying on that
+  // proof to trust the phase's project_id match below — otherwise a phase id
+  // borrowed from another project (or another org entirely) could still be grafted
+  // in.
   const { data: project } = await supabase
     .from("projects")
-    .select("id")
+    .select("id, organization_id")
     .eq("id", projectId)
     .maybeSingle();
-  if (!project) return; // not this org's project — silently no-op, like the other guards
+  if (!project || project.organization_id !== ctx.org.id) return; // not this org's project — silently no-op, like the other guards
   const { data: phase } = await supabase
     .from("schedule_phases")
     .select("project_id")
