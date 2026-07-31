@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { groupAttachmentsByType, resolveCoverHrefs, withAttachmentUrls } from "./attachments";
+import { groupAttachmentsByType, resolveCoverHrefs, resolveHeaderImages, withAttachmentUrls } from "./attachments";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type Att = { id: string; category: string; kind: string };
@@ -191,5 +191,74 @@ describe("resolveCoverHrefs", () => {
     );
     const result = await resolveCoverHrefs(supa, ["shared-img"], { sharedOnly: true });
     expect(result.get("shared-img")).toEqual({ href: "FULL_SHARED", thumbHref: "THUMB_SHARED" });
+  });
+});
+
+describe("resolveHeaderImages", () => {
+  const shared = new Map([
+    ["cover-id", { href: "COVER_FULL", thumbHref: "COVER_THUMB" }],
+    ["hero-id", { href: "HERO_FULL", thumbHref: "HERO_THUMB" }],
+  ]);
+  const rows = [
+    { id: "cover-id", storage_path: "p/cover.jpg" },
+    { id: "hero-id", storage_path: "p/hero.jpg" },
+  ];
+
+  test("signs a header-size variant for each resolved slot", async () => {
+    const supa = fakeSupabase({}, { "p/cover.jpg": "COVER_BIG", "p/hero.jpg": "HERO_BIG" });
+    const out = await resolveHeaderImages(
+      supa,
+      { cover: "cover-id", hero: "hero-id", before: null, after: null },
+      shared,
+      rows
+    );
+    expect(out.images.map((i) => i.href)).toEqual(["COVER_BIG", "HERO_BIG"]);
+    expect(out.startIndex).toBe(1);
+  });
+
+  test("falls back to the slot's own href when the variant sign fails", async () => {
+    const supa = fakeSupabase({}, {});
+    const out = await resolveHeaderImages(
+      supa,
+      { cover: null, hero: "hero-id", before: null, after: null },
+      shared,
+      rows
+    );
+    expect(out.images.map((i) => i.href)).toEqual(["HERO_FULL"]);
+  });
+
+  test("drops a slot whose id is not in the shared map, and never signs its storage_path", async () => {
+    const createSignedUrl = vi.fn(async (path: string) => ({
+      data: { signedUrl: path === "p/hero.jpg" ? "HERO_BIG" : null },
+    }));
+    const supa = {
+      storage: { from: () => ({ createSignedUrl }) },
+    } as unknown as SupabaseClient;
+    const rowsWithSecret = [...rows, { id: "not-shared", storage_path: "p/secret.jpg" }];
+
+    const out = await resolveHeaderImages(
+      supa,
+      { cover: "not-shared", hero: "hero-id", before: null, after: null },
+      shared,
+      rowsWithSecret
+    );
+
+    expect(out.images.map((i) => i.slot)).toEqual(["hero"]);
+    expect(createSignedUrl).not.toHaveBeenCalledWith(
+      "p/secret.jpg",
+      expect.anything(),
+      expect.anything()
+    );
+  });
+
+  test("returns an empty list when no slot is set", async () => {
+    const supa = fakeSupabase({}, {});
+    const out = await resolveHeaderImages(
+      supa,
+      { cover: null, hero: null, before: null, after: null },
+      shared,
+      rows
+    );
+    expect(out).toEqual({ images: [], startIndex: 0 });
   });
 });

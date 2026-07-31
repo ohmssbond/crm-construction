@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { isImageAttachment } from "./portfolio";
+import { buildHeaderImages, isImageAttachment, resolveSlot } from "./portfolio";
+import type { HeaderImage, HeaderSlot } from "./portfolio";
 
 type AttachmentRef = {
   kind: string;
@@ -148,4 +149,44 @@ export async function resolveCoverHrefs(
   const signed = await withAttachmentUrls(supabase, images);
   signed.forEach((a) => byId.set(a.id, { href: a.href, thumbHref: a.thumbHref }));
   return byId;
+}
+
+/** The transform the project header uses — it fills a wide banner. */
+const HEADER = { width: 1400, quality: 65, resize: "contain" as const };
+
+/**
+ * Resolve and sign all four portfolio slots at header size for the cycling header.
+ *
+ * Replaces the hero-only signing block that was duplicated across getPortalProject,
+ * getProjectPreview, and getProjectDetail. `resolveSlot` runs first so the
+ * shared/isolation guard still decides what is visible; only then is a storage_path
+ * looked up. A failed variant sign falls back to the slot's own href rather than
+ * dropping the image. At most four signs, so they all run concurrently — the batching
+ * cap that withAttachmentUrls needs does not apply at this size.
+ */
+export async function resolveHeaderImages(
+  supabase: SupabaseClient,
+  slotIds: Record<HeaderSlot, string | null>,
+  sharedImagesById: Map<string, { href: string | null; thumbHref: string | null }>,
+  signedAttachments: { id: string; storage_path: string | null }[]
+): Promise<{ images: HeaderImage[]; startIndex: number }> {
+  const slots: HeaderSlot[] = ["cover", "hero", "before", "after"];
+
+  const signedHrefs = await Promise.all(
+    slots.map(async (slot): Promise<[HeaderSlot, string | null]> => {
+      const id = slotIds[slot];
+      const resolved = resolveSlot(id, sharedImagesById);
+      if (!resolved) return [slot, null];
+      const row = signedAttachments.find((a) => a.id === id);
+      if (row?.storage_path) {
+        const big = await signImageVariant(supabase, row.storage_path, HEADER);
+        if (big) return [slot, big];
+      }
+      return [slot, resolved.href];
+    })
+  );
+
+  return buildHeaderImages(
+    Object.fromEntries(signedHrefs) as Record<HeaderSlot, string | null>
+  );
 }

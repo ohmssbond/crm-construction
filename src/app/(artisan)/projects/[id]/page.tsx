@@ -80,7 +80,7 @@ export default async function ProjectDetailPage({
   const [detail, ctx] = await Promise.all([getProjectDetail(id), getOrgContext()]);
   if (!detail) notFound();
 
-  const { project, updates, todos, contacts, reps, availableContacts, availableStaff, attachments, hero, schedule, fileCategories } =
+  const { project, updates, todos, contacts, reps, availableContacts, availableStaff, attachments, headerImages, schedule, fileCategories } =
     detail;
   const clientNoun = ctx?.org.client_noun ?? "Customer";
   const taskContacts = [
@@ -109,7 +109,8 @@ export default async function ProjectDetailPage({
       <ProjectHero
         name={project.name}
         status={stageToStatus(project.stage)}
-        hero={hero}
+        images={headerImages.images}
+        startIndex={headerImages.startIndex}
         size="compact"
       />
       <div className="flex flex-wrap items-center gap-3">

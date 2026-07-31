@@ -98,3 +98,33 @@ export function validatePhotoAssignment(
   if (!isImageAttachment(attachment)) return "Only photos can be tagged.";
   return null;
 }
+
+export type HeaderSlot = "cover" | "hero" | "before" | "after";
+export type HeaderImage = { slot: HeaderSlot; label: string; href: string };
+
+/**
+ * The header cycles the four portfolio slots in a fixed order, but OPENS on the hero —
+ * so the sequence starts mid-list and wraps. Slots that didn't resolve are dropped
+ * rather than shown as placeholders, and with no hero the header opens on the first
+ * slot that did resolve (showing a placeholder while a real photo sits one click away
+ * is worse than showing the photo).
+ */
+const HEADER_ORDER: { slot: HeaderSlot; label: string }[] = [
+  { slot: "cover", label: "Cover" },
+  { slot: "hero", label: "Current progress" },
+  { slot: "before", label: "Before" },
+  { slot: "after", label: "After" },
+];
+
+export function buildHeaderImages(signed: Record<HeaderSlot, string | null>): {
+  images: HeaderImage[];
+  startIndex: number;
+} {
+  const images = HEADER_ORDER.filter((o) => signed[o.slot]).map((o) => ({
+    slot: o.slot,
+    label: o.label,
+    href: signed[o.slot] as string,
+  }));
+  const heroIndex = images.findIndex((i) => i.slot === "hero");
+  return { images, startIndex: heroIndex === -1 ? 0 : heroIndex };
+}
