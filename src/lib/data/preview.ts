@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { one } from "./rel";
 import { contactName } from "./format";
-import { withAttachmentUrls, signImageVariant } from "./attachments";
+import { withAttachmentUrls, resolveHeaderImages } from "./attachments";
 import {
   stageToStatus,
   isImageAttachment,
@@ -98,19 +98,20 @@ export async function getProjectPreview(
   );
 
   const cover = resolveSlot(project.cover_attachment_id, sharedImagesById);
-  const heroSlot = resolveSlot(project.hero_attachment_id, sharedImagesById);
   const beforeSlot = resolveSlot(project.before_attachment_id, sharedImagesById);
   const afterSlot = resolveSlot(project.after_attachment_id, sharedImagesById);
 
-  // Hero: a dedicated larger transform (fills the wide banner), same as the portal.
-  let hero = heroSlot;
-  if (heroSlot && project.hero_attachment_id) {
-    const heroImg = images.find((a) => a.id === project.hero_attachment_id);
-    if (heroImg?.storage_path) {
-      const big = await signImageVariant(supabase, heroImg.storage_path, { width: 1400, quality: 65, resize: "contain" });
-      if (big) hero = { href: big, thumbHref: heroSlot.thumbHref };
-    }
-  }
+  const headerImages = await resolveHeaderImages(
+    supabase,
+    {
+      cover: project.cover_attachment_id,
+      hero: project.hero_attachment_id,
+      before: project.before_attachment_id,
+      after: project.after_attachment_id,
+    },
+    sharedImagesById,
+    images
+  );
 
   const before = beforeSlot ? { href: beforeSlot.thumbHref ?? beforeSlot.href, thumbHref: beforeSlot.thumbHref } : null;
   const after = afterSlot ? { href: afterSlot.thumbHref ?? afterSlot.href, thumbHref: afterSlot.thumbHref } : null;
@@ -157,7 +158,7 @@ export async function getProjectPreview(
     project: { ...project, customer: one(project.customer) },
     status: stageToStatus(project.stage),
     cover,
-    hero,
+    headerImages,
     before,
     after,
     beforeAfter: beforeAfterVisible(before, after),

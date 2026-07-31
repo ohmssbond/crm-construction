@@ -2,7 +2,7 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { one } from "./rel";
 import { monogram } from "./format";
-import { withAttachmentUrls, signImageVariant, resolveCoverHrefs } from "./attachments";
+import { withAttachmentUrls, resolveCoverHrefs, resolveHeaderImages } from "./attachments";
 import {
   stageToStatus,
   isImageAttachment,
@@ -155,21 +155,20 @@ export async function getPortalProject(id: string) {
   );
 
   const cover = resolveSlot(project.cover_attachment_id, sharedImagesById);
-  const heroSlot = resolveSlot(project.hero_attachment_id, sharedImagesById);
   const beforeSlot = resolveSlot(project.before_attachment_id, sharedImagesById);
   const afterSlot = resolveSlot(project.after_attachment_id, sharedImagesById);
 
-  // Hero: a dedicated larger transform (it fills a wide banner). Falls back to the
-  // slot's full href if the variant sign fails. resolveSlot already enforced the
-  // shared/isolation guard, so the storage_path lookup is safe.
-  let hero = heroSlot;
-  if (heroSlot && project.hero_attachment_id) {
-    const heroImg = images.find((a) => a.id === project.hero_attachment_id);
-    if (heroImg?.storage_path) {
-      const big = await signImageVariant(supabase, heroImg.storage_path, { width: 1400, quality: 65, resize: "contain" });
-      if (big) hero = { href: big, thumbHref: heroSlot.thumbHref };
-    }
-  }
+  const headerImages = await resolveHeaderImages(
+    supabase,
+    {
+      cover: project.cover_attachment_id,
+      hero: project.hero_attachment_id,
+      before: project.before_attachment_id,
+      after: project.after_attachment_id,
+    },
+    sharedImagesById,
+    images
+  );
 
   // Before/After strip is display-only → hand it the 600px thumb.
   const before = beforeSlot ? { href: beforeSlot.thumbHref ?? beforeSlot.href, thumbHref: beforeSlot.thumbHref } : null;
@@ -205,7 +204,7 @@ export async function getPortalProject(id: string) {
     project: { ...project, customer: one(project.customer) },
     status: stageToStatus(project.stage),
     cover,
-    hero,
+    headerImages,
     before,
     after,
     beforeAfter: beforeAfterVisible(before, after),

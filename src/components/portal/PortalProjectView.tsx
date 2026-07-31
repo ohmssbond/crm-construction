@@ -20,7 +20,7 @@ export function PortalProjectView({ detail }: { detail: PortalProjectDetail }) {
   const {
     project,
     status,
-    hero,
+    headerImages,
     before,
     after,
     beforeAfter,
@@ -37,7 +37,12 @@ export function PortalProjectView({ detail }: { detail: PortalProjectDetail }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <ProjectHero name={project.name} status={status} hero={hero} />
+      <ProjectHero
+        name={project.name}
+        status={status}
+        images={headerImages.images}
+        startIndex={headerImages.startIndex}
+      />
 
       <ProjectTeamCard team={team} orgName={orgName} clientNoun={clientNoun} />
 
