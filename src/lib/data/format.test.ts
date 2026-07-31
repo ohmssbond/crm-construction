@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { fmtDateTime, fmtZonedDate, fmtAddress, fmtJobLocation } from "./format";
+import { fmtDateTime, fmtZonedDate, fmtAddress, fmtJobLocation, fmtScheduleDate, fmtProjected } from "./format";
 
 describe("fmtDateTime", () => {
   test("renders a UTC instant in Eastern daylight time (summer)", () => {
@@ -61,5 +61,41 @@ describe("fmtJobLocation", () => {
   });
   test("empty → empty string", () => {
     expect(fmtJobLocation({})).toBe("");
+  });
+});
+
+describe("fmtScheduleDate", () => {
+  test("renders an ISO date with its year", () => {
+    expect(fmtScheduleDate("2026-11-15")).toBe("Nov 15, 2026");
+  });
+
+  test("does not shift the day across timezones", () => {
+    expect(fmtScheduleDate("2026-01-01")).toBe("Jan 1, 2026");
+  });
+
+  test("returns null for null", () => {
+    expect(fmtScheduleDate(null)).toBeNull();
+  });
+});
+
+describe("fmtProjected", () => {
+  test("joins a date and a note with a separator", () => {
+    expect(fmtProjected("2026-11-15", "pending survey")).toBe("Nov 15, 2026 · pending survey");
+  });
+
+  test("renders the date alone when there is no note", () => {
+    expect(fmtProjected("2026-11-15", null)).toBe("Nov 15, 2026");
+  });
+
+  test("renders the note alone when there is no date", () => {
+    expect(fmtProjected(null, "TBD pending permit")).toBe("TBD pending permit");
+  });
+
+  test("ignores a whitespace-only note", () => {
+    expect(fmtProjected("2026-11-15", "   ")).toBe("Nov 15, 2026");
+  });
+
+  test("returns null when both are empty", () => {
+    expect(fmtProjected(null, null)).toBeNull();
   });
 });
