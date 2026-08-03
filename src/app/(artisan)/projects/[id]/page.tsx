@@ -154,6 +154,8 @@ export default async function ProjectDetailPage({
                     <UpdateCard
                       key={u.id}
                       when={fmtDateTime(u.created_at, timezone)}
+                      date={new Date(u.created_at).toLocaleDateString("en-CA", { timeZone: timezone })}
+                      maxDate={today}
                       title={u.title}
                       body={u.body}
                       photoId={u.photo_attachment_id}

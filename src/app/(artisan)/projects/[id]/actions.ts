@@ -302,10 +302,13 @@ export async function updateStatusUpdate(
   updateId: string,
   title: string,
   body: string,
-  photoAttachmentId: string | null
+  photoAttachmentId: string | null,
+  date: string | null
 ) {
   const text = body.trim();
   if (!text) return; // body required; an empty save is a no-op
+  const ctx = await getOrgContext();
+  if (!ctx) return;
 
   const supabase = await createClient();
 
@@ -326,9 +329,17 @@ export async function updateStatusUpdate(
     }
   }
 
+  // Null date = the picker was untouched, so created_at stays out of the patch and the
+  // update keeps its original time — rewording a body must never silently move a
+  // 4:10pm update to noon. A picked date lands at noon in the ORG's zone; a future
+  // date is refused.
+  const tz = ctx.org.timezone || DEFAULT_TIMEZONE;
+  if (date && date > todayInZone(tz)) return;
+  const postedAt = date ? { created_at: noonInZone(date, tz) } : {};
+
   await supabase
     .from("status_updates")
-    .update({ title: title.trim() || null, body: text, photo_attachment_id: photoId })
+    .update({ title: title.trim() || null, body: text, photo_attachment_id: photoId, ...postedAt })
     .eq("id", updateId);
   revalidatePath(`/projects/${projectId}`);
 }

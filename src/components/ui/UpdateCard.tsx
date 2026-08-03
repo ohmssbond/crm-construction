@@ -14,6 +14,8 @@ export function UpdateCard({
   shared = false,
   portal = false,
   photos,
+  date,
+  maxDate,
   shareAction,
   editAction,
 }: {
@@ -24,25 +26,34 @@ export function UpdateCard({
   shared?: boolean;
   portal?: boolean;
   photos?: UpdatePhoto[];
+  date: string;
+  maxDate: string;
   shareAction?: (shared: boolean) => void | Promise<void>;
-  editAction?: (title: string, body: string, photoAttachmentId: string | null) => void | Promise<void>;
+  editAction?: (
+    title: string,
+    body: string,
+    photoAttachmentId: string | null,
+    date: string | null
+  ) => void | Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
   const [titleV, setTitleV] = useState(title ?? "");
   const [bodyV, setBodyV] = useState(body);
   const [photoV, setPhotoV] = useState<string | null>(photoIdDefault ?? null);
+  const [dateV, setDateV] = useState(date);
   const [pending, start] = useTransition();
 
   const startEdit = () => {
     setTitleV(title ?? "");
     setBodyV(body);
     setPhotoV(photoIdDefault ?? null);
+    setDateV(date);
     setEditing(true);
   };
   const save = () => {
     if (!bodyV.trim() || !editAction) return;
     start(async () => {
-      await editAction(titleV, bodyV, photoV);
+      await editAction(titleV, bodyV, photoV, dateV === date ? null : dateV);
       setEditing(false);
     });
   };
@@ -67,6 +78,15 @@ export function UpdateCard({
           className={`${fieldInput} text-[13px] resize-y`}
         />
         <div className="flex flex-wrap items-center gap-[10px] pt-[6px]">
+          <input
+            type="date"
+            value={dateV}
+            max={maxDate}
+            onChange={(e) => setDateV(e.target.value)}
+            disabled={pending}
+            aria-label="Update date"
+            className={`${fieldInput} w-auto text-meta py-[5px]`}
+          />
           {photos && photos.length > 0 && (
             <select
               value={photoV ?? ""}
