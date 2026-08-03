@@ -156,6 +156,18 @@ export async function postUpdate(
   if (!ctx) return;
   const supabase = await createClient();
 
+  // `date` is null when the composer's picker was left on today — then we omit
+  // created_at entirely and let Postgres' now() default apply, so a same-day post is
+  // stamped to the minute exactly as it always was. A picked date lands at noon in the
+  // ORG's zone (never the server's), and a future date is refused outright.
+  //
+  // This guard MUST run before the photo-validation block below: that block writes
+  // is_shared:true on the referenced photo as a side effect, and a rejected (future-
+  // dated) post must never leave that write behind — do not reorder it after.
+  const tz = ctx.org.timezone || DEFAULT_TIMEZONE;
+  if (date && date > todayInZone(tz)) return;
+  const postedAt = date ? { created_at: noonInZone(date, tz) } : {};
+
   // A photo on an update auto-shares it (mirrors slot/phase tagging). If the
   // referenced photo is invalid/stale, drop ONLY the photo ref and still post
   // the update (never discard the contractor's title/body).
@@ -172,14 +184,6 @@ export async function postUpdate(
       await supabase.from("attachments").update({ is_shared: true }).eq("id", photoId);
     }
   }
-
-  // `date` is null when the composer's picker was left on today — then we omit
-  // created_at entirely and let Postgres' now() default apply, so a same-day post is
-  // stamped to the minute exactly as it always was. A picked date lands at noon in the
-  // ORG's zone (never the server's), and a future date is refused outright.
-  const tz = ctx.org.timezone || DEFAULT_TIMEZONE;
-  if (date && date > todayInZone(tz)) return;
-  const postedAt = date ? { created_at: noonInZone(date, tz) } : {};
 
   await supabase.from("status_updates").insert({
     organization_id: ctx.org.id,
@@ -312,6 +316,18 @@ export async function updateStatusUpdate(
 
   const supabase = await createClient();
 
+  // Null date = the picker was untouched, so created_at stays out of the patch and the
+  // update keeps its original time — rewording a body must never silently move a
+  // 4:10pm update to noon. A picked date lands at noon in the ORG's zone; a future
+  // date is refused.
+  //
+  // This guard MUST run before the photo-validation block below: that block writes
+  // is_shared:true on the referenced photo as a side effect, and a rejected (future-
+  // dated) edit must never leave that write behind — do not reorder it after.
+  const tz = ctx.org.timezone || DEFAULT_TIMEZONE;
+  if (date && date > todayInZone(tz)) return;
+  const postedAt = date ? { created_at: noonInZone(date, tz) } : {};
+
   // A photo on an update auto-shares it (mirrors postUpdate). If the referenced
   // photo is invalid/stale, drop ONLY the photo ref — never fail the save over it.
   // validatePhotoAssignment returns an error string when invalid, null when valid.
@@ -328,14 +344,6 @@ export async function updateStatusUpdate(
       await supabase.from("attachments").update({ is_shared: true }).eq("id", photoId);
     }
   }
-
-  // Null date = the picker was untouched, so created_at stays out of the patch and the
-  // update keeps its original time — rewording a body must never silently move a
-  // 4:10pm update to noon. A picked date lands at noon in the ORG's zone; a future
-  // date is refused.
-  const tz = ctx.org.timezone || DEFAULT_TIMEZONE;
-  if (date && date > todayInZone(tz)) return;
-  const postedAt = date ? { created_at: noonInZone(date, tz) } : {};
 
   await supabase
     .from("status_updates")
