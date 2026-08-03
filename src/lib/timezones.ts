@@ -16,3 +16,91 @@ export const DEFAULT_TIMEZONE = "America/New_York";
 export function isValidTimezone(value: string): boolean {
   return TIMEZONES.some((t) => t.value === value);
 }
+
+/**
+ * "2026-08-01" + an IANA zone → the UTC ISO instant of NOON that day in that zone.
+ * Returns `null` if `date` isn't a well-formed `YYYY-MM-DD` string or doesn't name a
+ * real calendar date (e.g. a rolled-over "2026-02-30") — Server Action arguments are
+ * client-controlled, so this validates rather than trusting the shape.
+ *
+ * Noon is deliberate. It sits far from both midnight and any DST transition, so the
+ * single offset correction below is always right and the rendered date can never slip
+ * a day for a viewer in a neighbouring zone. Anchoring at midnight would be fragile on
+ * both counts.
+ */
+export function noonInZone(date: string, timeZone: string): string | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!match) return null;
+  const y = Number(match[1]);
+  const m = Number(match[2]);
+  const d = Number(match[3]);
+
+  // Built via setUTCFullYear rather than `Date.UTC(y, ...)` / `new Date(y, ...)`
+  // deliberately: those two treat a 0-99 year as 1900+year (so "0000-01-01" would
+  // silently become 1900), while setUTCFullYear sets the year exactly as given.
+  const guess = new Date(0);
+  guess.setUTCFullYear(y, m - 1, d);
+  guess.setUTCHours(12, 0, 0, 0);
+  // A rolled-over date (e.g. Feb 30 -> Mar 2) won't read back as the date it was
+  // set to — reject it instead of silently writing the rolled-over instant.
+  if (
+    guess.getUTCFullYear() !== y ||
+    guess.getUTCMonth() !== m - 1 ||
+    guess.getUTCDate() !== d
+  ) {
+    return null;
+  }
+
+  // How far the target zone runs from UTC at that instant. Deliberately NOT the
+  // `new Date(x.toLocaleString("en-US", { timeZone }))` round-trip idiom: that
+  // parses a locale string back into a Date using the HOST runtime's OWN default
+  // timezone, relying on that offset cancelling out between two such parses. It
+  // silently breaks when the host's default zone (not the target zone) has a
+  // spring-forward transition on the same calendar date and the intermediate
+  // wall-clock string falls in the skipped hour — Node then parses it under
+  // whichever offset it falls back to, which is wrong. Reading the target zone's
+  // wall-clock directly via Intl.DateTimeFormat + formatToParts and computing the
+  // offset arithmetically sidesteps the host zone entirely.
+  const offsetMs = zoneOffsetMs(guess, timeZone);
+  return new Date(guess.getTime() - offsetMs).toISOString();
+}
+
+/**
+ * The target zone's UTC offset (in ms, positive when the zone is ahead of UTC)
+ * at the given instant, computed by reading how the zone renders that instant's
+ * wall-clock and comparing it to the instant itself — no host-timezone round-trip.
+ */
+function zoneOffsetMs(instant: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(instant);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "0";
+  // hour12:false can render midnight as "24" instead of "00" — normalize.
+  const hour = Number(get("hour")) % 24;
+  const asUtc = Date.UTC(
+    Number(get("year")),
+    Number(get("month")) - 1,
+    Number(get("day")),
+    hour,
+    Number(get("minute")),
+    Number(get("second"))
+  );
+  return asUtc - instant.getTime();
+}
+
+/** An instant's calendar date in that zone, as "YYYY-MM-DD" (en-CA renders ISO order). */
+export function dateInZone(instant: Date, timeZone: string): string {
+  return instant.toLocaleDateString("en-CA", { timeZone });
+}
+
+/** Today's calendar date in that zone, as "YYYY-MM-DD". */
+export function todayInZone(timeZone: string): string {
+  return dateInZone(new Date(), timeZone);
+}

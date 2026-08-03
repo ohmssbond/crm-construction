@@ -17,7 +17,7 @@ import { isImageAttachment, stageToStatus } from "@/lib/data/portfolio";
 import { ProjectHero } from "@/components/portal/ProjectHero";
 import { getOrgContext } from "@/lib/data/org";
 import { fmtDate, fmtDateTime, fmtZonedDate, contactName } from "@/lib/data/format";
-import { DEFAULT_TIMEZONE } from "@/lib/timezones";
+import { DEFAULT_TIMEZONE, todayInZone, dateInZone } from "@/lib/timezones";
 import { UploadForm } from "./UploadForm";
 import { LinkForm } from "./LinkForm";
 import { StageControl } from "./StageControl";
@@ -89,6 +89,7 @@ export default async function ProjectDetailPage({
   ];
   const artisanLabel = `${ctx?.user.name ?? "Artisan"} (you)`;
   const timezone = ctx?.org.timezone ?? DEFAULT_TIMEZONE;
+  const today = todayInZone(timezone);
   const imageAttachments = attachments.filter(isImageAttachment);
   const fileAttachments = attachments.filter((a) => !isImageAttachment(a));
   const imagePhotos = imageAttachments.map((a) => ({
@@ -144,6 +145,7 @@ export default async function ProjectDetailPage({
                 <Composer
                   action={postUpdate.bind(null, project.id)}
                   photos={imagePhotos.map((p) => ({ id: p.id, filename: p.filename }))}
+                  defaultDate={today}
                 />
                 {updates.length === 0 ? (
                   <EmptyState glyph="📣" title="No updates yet." />
@@ -152,6 +154,8 @@ export default async function ProjectDetailPage({
                     <UpdateCard
                       key={u.id}
                       when={fmtDateTime(u.created_at, timezone)}
+                      date={dateInZone(new Date(u.created_at), timezone)}
+                      maxDate={today}
                       title={u.title}
                       body={u.body}
                       photoId={u.photo_attachment_id}
