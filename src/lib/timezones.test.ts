@@ -1,5 +1,12 @@
 import { describe, expect, test } from "vitest";
-import { isValidTimezone, DEFAULT_TIMEZONE, TIMEZONES, noonInZone, todayInZone } from "./timezones";
+import {
+  isValidTimezone,
+  DEFAULT_TIMEZONE,
+  TIMEZONES,
+  noonInZone,
+  todayInZone,
+  dateInZone,
+} from "./timezones";
 
 describe("timezones", () => {
   test("isValidTimezone accepts a curated zone", () => {
@@ -18,8 +25,9 @@ describe("timezones", () => {
 
 describe("noonInZone", () => {
   /** What wall-clock date+hour does this instant render as in that zone? */
-  const shownIn = (iso: string, timeZone: string) =>
-    new Date(iso).toLocaleString("en-US", {
+  const shownIn = (iso: string | null, timeZone: string) => {
+    expect(iso).not.toBeNull();
+    return new Date(iso as string).toLocaleString("en-US", {
       timeZone,
       year: "numeric",
       month: "2-digit",
@@ -27,6 +35,7 @@ describe("noonInZone", () => {
       hour: "2-digit",
       hour12: false,
     });
+  };
 
   test("lands on noon of the requested date in that zone", () => {
     expect(shownIn(noonInZone("2026-08-01", "America/New_York"), "America/New_York")).toBe(
@@ -37,7 +46,11 @@ describe("noonInZone", () => {
   test("same date in different zones is a different instant", () => {
     const east = noonInZone("2026-08-01", "America/New_York");
     const west = noonInZone("2026-08-01", "America/Los_Angeles");
-    expect(new Date(west).getTime() - new Date(east).getTime()).toBe(3 * 60 * 60 * 1000);
+    expect(east).not.toBeNull();
+    expect(west).not.toBeNull();
+    expect(new Date(west as string).getTime() - new Date(east as string).getTime()).toBe(
+      3 * 60 * 60 * 1000
+    );
   });
 
   test("is correct on both sides of a DST transition", () => {
@@ -63,9 +76,9 @@ describe("noonInZone", () => {
   });
 
   test("returns a parseable ISO instant", () => {
-    expect(Number.isNaN(new Date(noonInZone("2026-08-01", "America/Denver")).getTime())).toBe(
-      false
-    );
+    const instant = noonInZone("2026-08-01", "America/Denver");
+    expect(instant).not.toBeNull();
+    expect(Number.isNaN(new Date(instant as string).getTime())).toBe(false);
   });
 
   // Regression: the previous implementation derived the target zone's offset via
@@ -106,6 +119,46 @@ describe("noonInZone", () => {
       "03/08/2026, 12"
     );
   });
+
+  // Server Action arguments are client-controlled, so noonInZone must be total: it
+  // validates rather than trusting the shape, and returns null instead of throwing or
+  // silently writing a corrupted instant.
+  test("returns null for a malformed date string", () => {
+    expect(noonInZone("2026-01-99999999999", "America/New_York")).toBeNull();
+    expect(noonInZone("1999-999999999-01", "America/New_York")).toBeNull();
+    expect(noonInZone("not-a-date", "America/New_York")).toBeNull();
+  });
+
+  test("returns null for a rolled-over calendar date", () => {
+    expect(noonInZone("2026-02-30", "America/New_York")).toBeNull();
+    expect(noonInZone("2026-13-01", "America/New_York")).toBeNull();
+    expect(noonInZone("2026-04-31", "America/New_York")).toBeNull();
+  });
+
+  test("returns null for a non-4-digit year", () => {
+    expect(noonInZone("26-08-01", "America/New_York")).toBeNull();
+    expect(noonInZone("999-08-01", "America/New_York")).toBeNull();
+    expect(noonInZone("99999-08-01", "America/New_York")).toBeNull();
+  });
+
+  test("valid dates are unaffected", () => {
+    expect(shownIn(noonInZone("2026-08-01", "America/New_York"), "America/New_York")).toBe(
+      "08/01/2026, 12"
+    );
+    expect(shownIn(noonInZone("2024-02-29", "America/New_York"), "America/New_York")).toBe(
+      "02/29/2024, 12"
+    );
+  });
+});
+
+describe("dateInZone", () => {
+  test("renders a fixed instant as different calendar dates in two zones", () => {
+    // 2026-08-01T02:00:00Z is still July 31 evening on the US west coast but already
+    // August 1 morning in a zone far ahead of UTC.
+    const instant = new Date("2026-08-01T02:00:00.000Z");
+    expect(dateInZone(instant, "America/Los_Angeles")).toBe("2026-07-31");
+    expect(dateInZone(instant, "Pacific/Kiritimati")).toBe("2026-08-01");
+  });
 });
 
 describe("todayInZone", () => {
@@ -133,7 +186,9 @@ describe("todayInZone", () => {
   test("round-trips through noonInZone to the same date", () => {
     const zone = "America/Chicago";
     const today = todayInZone(zone);
-    const shown = new Date(noonInZone(today, zone)).toLocaleDateString("en-CA", {
+    const noon = noonInZone(today, zone);
+    expect(noon).not.toBeNull();
+    const shown = new Date(noon as string).toLocaleDateString("en-CA", {
       timeZone: zone,
     });
     expect(shown).toBe(today);

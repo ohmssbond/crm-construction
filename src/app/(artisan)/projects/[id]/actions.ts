@@ -159,14 +159,21 @@ export async function postUpdate(
   // `date` is null when the composer's picker was left on today — then we omit
   // created_at entirely and let Postgres' now() default apply, so a same-day post is
   // stamped to the minute exactly as it always was. A picked date lands at noon in the
-  // ORG's zone (never the server's), and a future date is refused outright.
+  // ORG's zone (never the server's), and a future or malformed date is refused outright
+  // (noonInZone returns null for anything that isn't a real calendar date).
   //
   // This guard MUST run before the photo-validation block below: that block writes
   // is_shared:true on the referenced photo as a side effect, and a rejected (future-
-  // dated) post must never leave that write behind — do not reorder it after.
+  // dated or malformed) post must never leave that write behind — do not reorder it
+  // after.
   const tz = ctx.org.timezone || DEFAULT_TIMEZONE;
-  if (date && date > todayInZone(tz)) return;
-  const postedAt = date ? { created_at: noonInZone(date, tz) } : {};
+  let postedAt: { created_at: string } | Record<string, never> = {};
+  if (date) {
+    if (date > todayInZone(tz)) return;
+    const createdAt = noonInZone(date, tz);
+    if (!createdAt) return;
+    postedAt = { created_at: createdAt };
+  }
 
   // A photo on an update auto-shares it (mirrors slot/phase tagging). If the
   // referenced photo is invalid/stale, drop ONLY the photo ref and still post
@@ -318,15 +325,22 @@ export async function updateStatusUpdate(
 
   // Null date = the picker was untouched, so created_at stays out of the patch and the
   // update keeps its original time — rewording a body must never silently move a
-  // 4:10pm update to noon. A picked date lands at noon in the ORG's zone; a future
-  // date is refused.
+  // 4:10pm update to noon. A picked date lands at noon in the ORG's zone; a future or
+  // malformed date is refused (noonInZone returns null for anything that isn't a real
+  // calendar date).
   //
   // This guard MUST run before the photo-validation block below: that block writes
   // is_shared:true on the referenced photo as a side effect, and a rejected (future-
-  // dated) edit must never leave that write behind — do not reorder it after.
+  // dated or malformed) edit must never leave that write behind — do not reorder it
+  // after.
   const tz = ctx.org.timezone || DEFAULT_TIMEZONE;
-  if (date && date > todayInZone(tz)) return;
-  const postedAt = date ? { created_at: noonInZone(date, tz) } : {};
+  let postedAt: { created_at: string } | Record<string, never> = {};
+  if (date) {
+    if (date > todayInZone(tz)) return;
+    const createdAt = noonInZone(date, tz);
+    if (!createdAt) return;
+    postedAt = { created_at: createdAt };
+  }
 
   // A photo on an update auto-shares it (mirrors postUpdate). If the referenced
   // photo is invalid/stale, drop ONLY the photo ref — never fail the save over it.

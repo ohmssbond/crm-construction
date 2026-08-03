@@ -28,19 +28,27 @@ export function Composer({
   const [body, setBody] = useState("");
   const [shared, setShared] = useState(false);
   const [photoId, setPhotoId] = useState<string | null>(null);
-  const [date, setDate] = useState(defaultDate);
+  // null = the picker hasn't been touched. Structural rather than comparing against
+  // `defaultDate`: that prop is recomputed on every revalidate (e.g. from an unrelated
+  // Server Action elsewhere on the page) and useState does NOT re-initialize from a
+  // changed prop on an already-mounted component, so an equality check can go stale
+  // across a midnight rollover and silently backdate the next post.
+  const [date, setDate] = useState<string | null>(null);
   const [pending, start] = useTransition();
+
+  const effectiveDate = date ?? defaultDate;
+  const dateInFuture = effectiveDate > defaultDate;
 
   const submit = () => {
     const text = body.trim();
-    if (!text || !action || pending) return;
+    if (!text || !action || pending || dateInFuture) return;
     start(async () => {
-      await action(title, text, shared, photoId, date === defaultDate ? null : date);
+      await action(title, text, shared, photoId, date);
       setTitle("");
       setBody("");
       setShared(false);
       setPhotoId(null);
-      setDate(defaultDate);
+      setDate(null);
     });
   };
 
@@ -68,7 +76,7 @@ export function Composer({
         <ShareToggle shared={shared} action={setShared} />
         <input
           type="date"
-          value={date}
+          value={effectiveDate}
           max={defaultDate}
           onChange={(e) => setDate(e.target.value)}
           disabled={pending}
@@ -92,7 +100,7 @@ export function Composer({
         <Button
           size="sm"
           onClick={submit}
-          disabled={pending || !body.trim()}
+          disabled={pending || !body.trim() || dateInFuture}
           className="ml-auto disabled:opacity-60 disabled:cursor-default"
         >
           {pending ? "Posting…" : "Post"}

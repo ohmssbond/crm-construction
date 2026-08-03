@@ -17,7 +17,7 @@ import { isImageAttachment, stageToStatus } from "@/lib/data/portfolio";
 import { ProjectHero } from "@/components/portal/ProjectHero";
 import { getOrgContext } from "@/lib/data/org";
 import { fmtDate, fmtDateTime, fmtZonedDate, contactName } from "@/lib/data/format";
-import { DEFAULT_TIMEZONE, todayInZone } from "@/lib/timezones";
+import { DEFAULT_TIMEZONE, todayInZone, dateInZone } from "@/lib/timezones";
 import { UploadForm } from "./UploadForm";
 import { LinkForm } from "./LinkForm";
 import { StageControl } from "./StageControl";
@@ -154,7 +154,7 @@ export default async function ProjectDetailPage({
                     <UpdateCard
                       key={u.id}
                       when={fmtDateTime(u.created_at, timezone)}
-                      date={new Date(u.created_at).toLocaleDateString("en-CA", { timeZone: timezone })}
+                      date={dateInZone(new Date(u.created_at), timezone)}
                       maxDate={today}
                       title={u.title}
                       body={u.body}

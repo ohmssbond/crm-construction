@@ -19,15 +19,38 @@ export function isValidTimezone(value: string): boolean {
 
 /**
  * "2026-08-01" + an IANA zone → the UTC ISO instant of NOON that day in that zone.
+ * Returns `null` if `date` isn't a well-formed `YYYY-MM-DD` string or doesn't name a
+ * real calendar date (e.g. a rolled-over "2026-02-30") — Server Action arguments are
+ * client-controlled, so this validates rather than trusting the shape.
  *
  * Noon is deliberate. It sits far from both midnight and any DST transition, so the
  * single offset correction below is always right and the rendered date can never slip
  * a day for a viewer in a neighbouring zone. Anchoring at midnight would be fragile on
  * both counts.
  */
-export function noonInZone(date: string, timeZone: string): string {
-  const [y, m, d] = date.split("-").map(Number);
-  const guess = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+export function noonInZone(date: string, timeZone: string): string | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!match) return null;
+  const y = Number(match[1]);
+  const m = Number(match[2]);
+  const d = Number(match[3]);
+
+  // Built via setUTCFullYear rather than `Date.UTC(y, ...)` / `new Date(y, ...)`
+  // deliberately: those two treat a 0-99 year as 1900+year (so "0000-01-01" would
+  // silently become 1900), while setUTCFullYear sets the year exactly as given.
+  const guess = new Date(0);
+  guess.setUTCFullYear(y, m - 1, d);
+  guess.setUTCHours(12, 0, 0, 0);
+  // A rolled-over date (e.g. Feb 30 -> Mar 2) won't read back as the date it was
+  // set to — reject it instead of silently writing the rolled-over instant.
+  if (
+    guess.getUTCFullYear() !== y ||
+    guess.getUTCMonth() !== m - 1 ||
+    guess.getUTCDate() !== d
+  ) {
+    return null;
+  }
+
   // How far the target zone runs from UTC at that instant. Deliberately NOT the
   // `new Date(x.toLocaleString("en-US", { timeZone }))` round-trip idiom: that
   // parses a locale string back into a Date using the HOST runtime's OWN default
@@ -72,7 +95,12 @@ function zoneOffsetMs(instant: Date, timeZone: string): number {
   return asUtc - instant.getTime();
 }
 
-/** Today's calendar date in that zone, as "YYYY-MM-DD" (en-CA renders ISO order). */
+/** An instant's calendar date in that zone, as "YYYY-MM-DD" (en-CA renders ISO order). */
+export function dateInZone(instant: Date, timeZone: string): string {
+  return instant.toLocaleDateString("en-CA", { timeZone });
+}
+
+/** Today's calendar date in that zone, as "YYYY-MM-DD". */
 export function todayInZone(timeZone: string): string {
-  return new Date().toLocaleDateString("en-CA", { timeZone });
+  return dateInZone(new Date(), timeZone);
 }

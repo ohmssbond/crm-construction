@@ -40,20 +40,26 @@ export function UpdateCard({
   const [titleV, setTitleV] = useState(title ?? "");
   const [bodyV, setBodyV] = useState(body);
   const [photoV, setPhotoV] = useState<string | null>(photoIdDefault ?? null);
-  const [dateV, setDateV] = useState(date);
+  // null = the picker hasn't been touched. Structural rather than comparing against
+  // `date`: that prop can be pushed to a new value by an unrelated revalidate while
+  // the edit form is open, and useState does NOT re-initialize from a changed prop on
+  // an already-mounted component, so an equality check can go stale.
+  const [dateV, setDateV] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
   const startEdit = () => {
     setTitleV(title ?? "");
     setBodyV(body);
     setPhotoV(photoIdDefault ?? null);
-    setDateV(date);
+    setDateV(null);
     setEditing(true);
   };
+  const effectiveDate = dateV ?? date;
+  const dateInFuture = effectiveDate > maxDate;
   const save = () => {
-    if (!bodyV.trim() || !editAction) return;
+    if (!bodyV.trim() || !editAction || dateInFuture) return;
     start(async () => {
-      await editAction(titleV, bodyV, photoV, dateV === date ? null : dateV);
+      await editAction(titleV, bodyV, photoV, dateV);
       setEditing(false);
     });
   };
@@ -80,7 +86,7 @@ export function UpdateCard({
         <div className="flex flex-wrap items-center gap-[10px] pt-[6px]">
           <input
             type="date"
-            value={dateV}
+            value={effectiveDate}
             max={maxDate}
             onChange={(e) => setDateV(e.target.value)}
             disabled={pending}
@@ -106,7 +112,7 @@ export function UpdateCard({
           <button
             type="button"
             onClick={save}
-            disabled={pending || !bodyV.trim()}
+            disabled={pending || !bodyV.trim() || dateInFuture}
             className="ml-auto text-meta font-semibold text-accent disabled:opacity-50"
           >
             Save
