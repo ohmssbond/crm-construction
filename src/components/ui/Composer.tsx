@@ -3,38 +3,44 @@
 import { useState, useTransition } from "react";
 import { ShareToggle } from "./ShareToggle";
 import { Button } from "./Button";
+import { fieldInput } from "./Field";
 
 export type ComposerPhoto = { id: string; filename: string | null };
 
 export function Composer({
   placeholder = "Post an update…",
   photos,
+  defaultDate,
   action,
 }: {
   placeholder?: string;
   photos?: ComposerPhoto[];
+  defaultDate: string;
   action?: (
     title: string,
     body: string,
     shared: boolean,
-    photoAttachmentId: string | null
+    photoAttachmentId: string | null,
+    date: string | null
   ) => void | Promise<void>;
 }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [shared, setShared] = useState(false);
   const [photoId, setPhotoId] = useState<string | null>(null);
+  const [date, setDate] = useState(defaultDate);
   const [pending, start] = useTransition();
 
   const submit = () => {
     const text = body.trim();
     if (!text || !action || pending) return;
     start(async () => {
-      await action(title, text, shared, photoId);
+      await action(title, text, shared, photoId, date === defaultDate ? null : date);
       setTitle("");
       setBody("");
       setShared(false);
       setPhotoId(null);
+      setDate(defaultDate);
     });
   };
 
@@ -60,6 +66,15 @@ export function Composer({
       />
       <div className="flex flex-wrap items-center gap-[10px] mt-[10px] border-t border-line-2 pt-[11px]">
         <ShareToggle shared={shared} action={setShared} />
+        <input
+          type="date"
+          value={date}
+          max={defaultDate}
+          onChange={(e) => setDate(e.target.value)}
+          disabled={pending}
+          aria-label="Update date"
+          className={`${fieldInput} w-auto text-meta py-[5px]`}
+        />
         {photos && photos.length > 0 && (
           <select
             value={photoId ?? ""}

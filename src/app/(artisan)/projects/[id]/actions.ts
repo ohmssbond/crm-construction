@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/data/org";
 import { validatePhotoAssignment } from "@/lib/data/portfolio";
 import { sendEmail, appUrl, projectUpdateEmailHtml } from "@/lib/email";
+import { noonInZone, todayInZone, DEFAULT_TIMEZONE } from "@/lib/timezones";
 
 export type RecordResult = { error: string | null };
 
@@ -146,7 +147,8 @@ export async function postUpdate(
   title: string,
   body: string,
   isShared: boolean,
-  photoAttachmentId: string | null
+  photoAttachmentId: string | null,
+  date: string | null
 ) {
   const text = body.trim();
   if (!text) return;
@@ -171,6 +173,14 @@ export async function postUpdate(
     }
   }
 
+  // `date` is null when the composer's picker was left on today — then we omit
+  // created_at entirely and let Postgres' now() default apply, so a same-day post is
+  // stamped to the minute exactly as it always was. A picked date lands at noon in the
+  // ORG's zone (never the server's), and a future date is refused outright.
+  const tz = ctx.org.timezone || DEFAULT_TIMEZONE;
+  if (date && date > todayInZone(tz)) return;
+  const postedAt = date ? { created_at: noonInZone(date, tz) } : {};
+
   await supabase.from("status_updates").insert({
     organization_id: ctx.org.id,
     project_id: projectId,
@@ -178,6 +188,7 @@ export async function postUpdate(
     body: text,
     is_shared: isShared,
     photo_attachment_id: photoId,
+    ...postedAt,
   });
   revalidatePath(`/projects/${projectId}`);
 
