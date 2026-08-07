@@ -39,6 +39,15 @@ house — is permanent. This adds both.
   (`attachments_category_fk → file_categories(organization_id, key)`), not a table-wide
   CHECK — so the valid set differs per tenant, and an unknown key raises a foreign-key
   violation rather than failing gracefully. The action validates before writing.
+  Cycle B (migration `20260722000003`) archived three keys — `photo` for every org and
+  `before_photo`/`after_photo` for construction orgs — that existing rows still
+  legitimately carry (the Photos uploader still pins `category="photo"`, and a photo
+  can land on the Files tab if its mime is non-image, e.g. HEIC as
+  `application/octet-stream`). The dropdown options come from the non-archived set, so a
+  controlled `<select>` on one of those rows has no matching option and would render
+  blank. `AttachmentControls` guards this by prepending a disabled option carrying the
+  raw key when it isn't among `categories`, so the control shows the true value instead
+  of silently going empty.
 
 ## Non-goals
 

@@ -14,6 +14,10 @@ import { fieldInput } from "./Field";
  * confirm(), which blocks automation and keyboard users). `uses` names where the file is
  * currently used so the consequence is visible BEFORE the click, not after — deleting a
  * used file empties that slot via `on delete set null`.
+ *
+ * `name` (the same string the caller already passes to FileTile) feeds the accessible
+ * names below — without it every tile's Delete/category control announces identically to
+ * a screen reader.
  */
 export function AttachmentControls({
   categories,
@@ -21,12 +25,14 @@ export function AttachmentControls({
   categoryAction,
   deleteAction,
   uses,
+  name,
 }: {
   categories?: { key: string; label: string }[];
   category?: string;
   categoryAction?: (category: string) => Promise<void>;
   deleteAction: () => Promise<void>;
   uses: string[];
+  name: string;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [pending, start] = useTransition();
@@ -39,9 +45,20 @@ export function AttachmentControls({
             value={category}
             onChange={(e) => start(() => categoryAction(e.target.value))}
             disabled={pending}
-            aria-label="File category"
+            aria-label={`Category for ${name}`}
             className={`${fieldInput} flex-1 min-w-0 text-chip py-[3px]`}
           >
+            {/* Cycle B archived photo/before_photo/after_photo, but existing rows still
+                legitimately carry those keys. A controlled <select> whose options don't
+                include the current value renders BLANK (selectedIndex -1), silently
+                claiming the file has no category. Prepend a disabled option carrying the
+                raw key so the control shows the truth instead — do not delete this as
+                dead code. */}
+            {category && !categories.some((c) => c.key === category) && (
+              <option value={category} disabled>
+                {category}
+              </option>
+            )}
             {categories.map((c) => (
               <option key={c.key} value={c.key}>
                 {c.label}
@@ -54,7 +71,7 @@ export function AttachmentControls({
             type="button"
             onClick={() => setConfirming(true)}
             disabled={pending}
-            aria-label="Delete file"
+            aria-label={`Delete ${name}`}
             className="text-chip text-faint hover:text-[#b42318] disabled:opacity-60 shrink-0"
           >
             Delete

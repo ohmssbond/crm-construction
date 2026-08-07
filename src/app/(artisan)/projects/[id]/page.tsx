@@ -283,6 +283,7 @@ export default async function ProjectDetailPage({
                                   categoryAction={setAttachmentCategory.bind(null, project.id, a.id)}
                                   deleteAction={deleteAttachment.bind(null, project.id, a.id)}
                                   uses={attachmentUses(a.id, slotValues, updatePhotoIds)}
+                                  name={a.filename ?? a.url ?? "Link"}
                                 />
                               </div>
                             );
@@ -332,6 +333,7 @@ export default async function ProjectDetailPage({
                         <AttachmentControls
                           deleteAction={deleteAttachment.bind(null, project.id, a.id)}
                           uses={attachmentUses(a.id, slotValues, updatePhotoIds)}
+                          name={a.filename ?? a.url ?? "Photo"}
                         />
                       </div>
                     ))}

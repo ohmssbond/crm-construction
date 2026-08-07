@@ -508,11 +508,16 @@ export async function setAttachmentCategory(
     .maybeSingle();
   if (!known) return; // not one of this org's categories
 
+  // Scope the update by organization_id too, not just (id, project_id): getOrgContext
+  // picks one of the caller's orgs arbitrarily when they belong to several, so without
+  // this a key validated against org A could be written onto a row that actually
+  // belongs to org B, tripping the per-org FK as an unhandled 500.
   await supabase
     .from("attachments")
     .update({ category })
     .eq("id", attachmentId)
-    .eq("project_id", projectId);
+    .eq("project_id", projectId)
+    .eq("organization_id", ctx.org.id);
   revalidatePath(`/projects/${projectId}`);
 }
 
@@ -528,6 +533,8 @@ export async function setAttachmentCategory(
  * attachment empties its slot rather than dangling. The UI warns before this point.
  */
 export async function deleteAttachment(projectId: string, attachmentId: string) {
+  const ctx = await getOrgContext();
+  if (!ctx) return;
   const supabase = await createClient();
   const { data: row } = await supabase
     .from("attachments")
@@ -537,14 +544,25 @@ export async function deleteAttachment(projectId: string, attachmentId: string) 
     .maybeSingle();
   if (!row) return;
 
-  await supabase
+  // The storage remove below must not run unless the row actually went away —
+  // otherwise a failed/zero-row delete plus an unconditional storage remove would
+  // destroy the object while the row (and its portal link) survives, which is exactly
+  // the broken-link outcome the row-first ordering exists to prevent.
+  const { error: delErr, count } = await supabase
     .from("attachments")
-    .delete()
+    .delete({ count: "exact" })
     .eq("id", attachmentId)
     .eq("project_id", projectId);
+  if (delErr || !count) return;
 
   if (row.kind === "file" && row.storage_path) {
-    await supabase.storage.from("project-files").remove([row.storage_path as string]);
+    const { error: rmErr } = await supabase.storage
+      .from("project-files")
+      .remove([row.storage_path as string]);
+    // The row is already gone at this point, so a failed remove leaves an orphaned
+    // object with no trace anywhere unless we log it — surface the path so it can be
+    // found and cleaned up manually.
+    if (rmErr) console.error("orphaned storage object", row.storage_path, rmErr.message);
   }
   revalidatePath(`/projects/${projectId}`);
 }
