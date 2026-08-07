@@ -7,6 +7,7 @@ import {
   groupPhotosByPhase,
   validatePhotoAssignment,
   buildHeaderImages,
+  attachmentUses,
 } from "./portfolio";
 
 describe("stageToStatus", () => {
@@ -152,5 +153,49 @@ describe("buildHeaderImages", () => {
     expect(
       buildHeaderImages({ cover: null, hero: null, before: null, after: null })
     ).toEqual({ images: [], startIndex: 0 });
+  });
+});
+
+describe("attachmentUses", () => {
+  const none = { cover: null, hero: null, before: null, after: null };
+
+  test("returns an empty list for an unused attachment", () => {
+    expect(attachmentUses("x", none, [])).toEqual([]);
+  });
+
+  test("names each slot it fills", () => {
+    expect(attachmentUses("a", { ...none, cover: "a" }, [])).toEqual(["Cover photo"]);
+    expect(attachmentUses("a", { ...none, hero: "a" }, [])).toEqual(["Current progress photo"]);
+    expect(attachmentUses("a", { ...none, before: "a" }, [])).toEqual(["Before photo"]);
+    expect(attachmentUses("a", { ...none, after: "a" }, [])).toEqual(["After photo"]);
+  });
+
+  test("lists every slot when one file fills several, in fixed order", () => {
+    expect(attachmentUses("a", { cover: "a", hero: null, before: "a", after: "a" }, [])).toEqual([
+      "Cover photo",
+      "Before photo",
+      "After photo",
+    ]);
+  });
+
+  test("names an update photo", () => {
+    expect(attachmentUses("a", none, ["a"])).toEqual(["a project update"]);
+  });
+
+  test("combines slot and update uses, slots first", () => {
+    expect(attachmentUses("a", { ...none, hero: "a" }, ["b", "a"])).toEqual([
+      "Current progress photo",
+      "a project update",
+    ]);
+  });
+
+  test("ignores slots and updates belonging to other attachments", () => {
+    expect(attachmentUses("a", { cover: "b", hero: "c", before: "d", after: "e" }, ["f"])).toEqual(
+      []
+    );
+  });
+
+  test("mentions an update only once however many updates use it", () => {
+    expect(attachmentUses("a", none, ["a", "a", "a"])).toEqual(["a project update"]);
   });
 });

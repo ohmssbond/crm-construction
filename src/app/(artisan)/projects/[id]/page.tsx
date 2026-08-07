@@ -13,7 +13,8 @@ import { Banner } from "@/components/ui/Banner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getProjectDetail } from "@/lib/data/projects";
 import { groupAttachmentsByType } from "@/lib/data/attachments";
-import { isImageAttachment, stageToStatus } from "@/lib/data/portfolio";
+import { isImageAttachment, stageToStatus, attachmentUses } from "@/lib/data/portfolio";
+import { AttachmentControls } from "@/components/ui/AttachmentControls";
 import { ProjectHero } from "@/components/portal/ProjectHero";
 import { getOrgContext } from "@/lib/data/org";
 import { fmtDate, fmtDateTime, fmtZonedDate, contactName } from "@/lib/data/format";
@@ -55,6 +56,8 @@ import {
   assignRep,
   setPhotoPhase,
   setProjectPhotoSlot,
+  setAttachmentCategory,
+  deleteAttachment,
 } from "./actions";
 
 // Glyph + tile color per file category, with a sensible fallback.
@@ -103,6 +106,9 @@ export default async function ProjectDetailPage({
     before: project.before_attachment_id ?? null,
     after: project.after_attachment_id ?? null,
   };
+  const updatePhotoIds = updates
+    .map((u) => u.photo_attachment_id)
+    .filter((id): id is string => id != null);
 
   return (
     <div className="flex flex-col gap-5">
@@ -262,15 +268,24 @@ export default async function ProjectDetailPage({
                                 ? { glyph: "🔗", bg: "#6a7c8a" }
                                 : FILE_STYLE[a.category] ?? FILE_FALLBACK;
                             return (
-                              <FileTile
-                                key={a.id}
-                                name={a.filename ?? a.url ?? "Link"}
-                                glyph={style.glyph}
-                                bg={style.bg}
-                                shared={a.is_shared}
-                                href={a.href}
-                                shareAction={setAttachmentShared.bind(null, project.id, a.id)}
-                              />
+                              <div key={a.id} className="flex flex-col gap-1">
+                                <FileTile
+                                  name={a.filename ?? a.url ?? "Link"}
+                                  glyph={style.glyph}
+                                  bg={style.bg}
+                                  shared={a.is_shared}
+                                  href={a.href}
+                                  shareAction={setAttachmentShared.bind(null, project.id, a.id)}
+                                />
+                                <AttachmentControls
+                                  categories={fileCategories}
+                                  category={a.category}
+                                  categoryAction={setAttachmentCategory.bind(null, project.id, a.id)}
+                                  deleteAction={deleteAttachment.bind(null, project.id, a.id)}
+                                  uses={attachmentUses(a.id, slotValues, updatePhotoIds)}
+                                  name={a.filename ?? a.url ?? "Link"}
+                                />
+                              </div>
                             );
                           })}
                         </div>
@@ -314,6 +329,11 @@ export default async function ProjectDetailPage({
                         <PhaseControl
                           current={(a.phase as "before" | "during" | "after" | null) ?? null}
                           action={setPhotoPhase.bind(null, project.id, a.id)}
+                        />
+                        <AttachmentControls
+                          deleteAction={deleteAttachment.bind(null, project.id, a.id)}
+                          uses={attachmentUses(a.id, slotValues, updatePhotoIds)}
+                          name={a.filename ?? a.url ?? "Photo"}
                         />
                       </div>
                     ))}

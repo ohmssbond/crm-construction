@@ -477,6 +477,96 @@ export async function addTodo(
   revalidatePath(`/projects/${projectId}`);
 }
 
+/**
+ * Re-file an attachment under a different category.
+ *
+ * `attachments.category` is validated by a PER-ORG foreign key
+ * (attachments_category_fk → file_categories(organization_id, key)), NOT a table-wide
+ * CHECK — the valid set differs per tenant, so an unknown key would surface as a
+ * foreign-key violation. Validate first and return quietly instead, matching this
+ * file's convention for invalid input.
+ */
+export async function setAttachmentCategory(
+  projectId: string,
+  attachmentId: string,
+  category: string
+) {
+  const ctx = await getOrgContext();
+  if (!ctx) return;
+  const supabase = await createClient();
+
+  // Scope the lookup by organization_id explicitly, not by RLS visibility alone: RLS
+  // admits every org the caller belongs to, so a user in two orgs could match two rows
+  // and blow up maybeSingle(). The FK is (organization_id, key), so the session's org is
+  // exactly the right scope.
+  const { data: known } = await supabase
+    .from("file_categories")
+    .select("key")
+    .eq("organization_id", ctx.org.id)
+    .eq("key", category)
+    .is("archived_at", null)
+    .maybeSingle();
+  if (!known) return; // not one of this org's categories
+
+  // Scope the update by organization_id too, not just (id, project_id): getOrgContext
+  // picks one of the caller's orgs arbitrarily when they belong to several, so without
+  // this a key validated against org A could be written onto a row that actually
+  // belongs to org B, tripping the per-org FK as an unhandled 500.
+  await supabase
+    .from("attachments")
+    .update({ category })
+    .eq("id", attachmentId)
+    .eq("project_id", projectId)
+    .eq("organization_id", ctx.org.id);
+  revalidatePath(`/projects/${projectId}`);
+}
+
+/**
+ * Delete an attachment: the row AND its object in the project-files bucket.
+ *
+ * Row first, then storage. A failed storage remove leaves an invisible orphan;
+ * storage-first would leave a row pointing at a file that no longer exists, which shows
+ * up as a broken link in the customer's portal. Links (kind='link') have no object.
+ *
+ * The five references to attachments (the four project photo slots and
+ * status_updates.photo_attachment_id) are all `on delete set null`, so a used
+ * attachment empties its slot rather than dangling. The UI warns before this point.
+ */
+export async function deleteAttachment(projectId: string, attachmentId: string) {
+  const ctx = await getOrgContext();
+  if (!ctx) return;
+  const supabase = await createClient();
+  const { data: row } = await supabase
+    .from("attachments")
+    .select("storage_path, kind")
+    .eq("id", attachmentId)
+    .eq("project_id", projectId)
+    .maybeSingle();
+  if (!row) return;
+
+  // The storage remove below must not run unless the row actually went away —
+  // otherwise a failed/zero-row delete plus an unconditional storage remove would
+  // destroy the object while the row (and its portal link) survives, which is exactly
+  // the broken-link outcome the row-first ordering exists to prevent.
+  const { error: delErr, count } = await supabase
+    .from("attachments")
+    .delete({ count: "exact" })
+    .eq("id", attachmentId)
+    .eq("project_id", projectId);
+  if (delErr || !count) return;
+
+  if (row.kind === "file" && row.storage_path) {
+    const { error: rmErr } = await supabase.storage
+      .from("project-files")
+      .remove([row.storage_path as string]);
+    // The row is already gone at this point, so a failed remove leaves an orphaned
+    // object with no trace anywhere unless we log it — surface the path so it can be
+    // found and cleaned up manually.
+    if (rmErr) console.error("orphaned storage object", row.storage_path, rmErr.message);
+  }
+  revalidatePath(`/projects/${projectId}`);
+}
+
 /** Attach an external document link (Google Doc/Drive, etc.) — no upload. */
 export async function addLink(
   projectId: string,
