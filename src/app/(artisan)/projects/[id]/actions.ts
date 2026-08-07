@@ -477,6 +477,78 @@ export async function addTodo(
   revalidatePath(`/projects/${projectId}`);
 }
 
+/**
+ * Re-file an attachment under a different category.
+ *
+ * `attachments.category` is validated by a PER-ORG foreign key
+ * (attachments_category_fk → file_categories(organization_id, key)), NOT a table-wide
+ * CHECK — the valid set differs per tenant, so an unknown key would surface as a
+ * foreign-key violation. Validate first and return quietly instead, matching this
+ * file's convention for invalid input.
+ */
+export async function setAttachmentCategory(
+  projectId: string,
+  attachmentId: string,
+  category: string
+) {
+  const ctx = await getOrgContext();
+  if (!ctx) return;
+  const supabase = await createClient();
+
+  // Scope the lookup by organization_id explicitly, not by RLS visibility alone: RLS
+  // admits every org the caller belongs to, so a user in two orgs could match two rows
+  // and blow up maybeSingle(). The FK is (organization_id, key), so the session's org is
+  // exactly the right scope.
+  const { data: known } = await supabase
+    .from("file_categories")
+    .select("key")
+    .eq("organization_id", ctx.org.id)
+    .eq("key", category)
+    .is("archived_at", null)
+    .maybeSingle();
+  if (!known) return; // not one of this org's categories
+
+  await supabase
+    .from("attachments")
+    .update({ category })
+    .eq("id", attachmentId)
+    .eq("project_id", projectId);
+  revalidatePath(`/projects/${projectId}`);
+}
+
+/**
+ * Delete an attachment: the row AND its object in the project-files bucket.
+ *
+ * Row first, then storage. A failed storage remove leaves an invisible orphan;
+ * storage-first would leave a row pointing at a file that no longer exists, which shows
+ * up as a broken link in the customer's portal. Links (kind='link') have no object.
+ *
+ * The five references to attachments (the four project photo slots and
+ * status_updates.photo_attachment_id) are all `on delete set null`, so a used
+ * attachment empties its slot rather than dangling. The UI warns before this point.
+ */
+export async function deleteAttachment(projectId: string, attachmentId: string) {
+  const supabase = await createClient();
+  const { data: row } = await supabase
+    .from("attachments")
+    .select("storage_path, kind")
+    .eq("id", attachmentId)
+    .eq("project_id", projectId)
+    .maybeSingle();
+  if (!row) return;
+
+  await supabase
+    .from("attachments")
+    .delete()
+    .eq("id", attachmentId)
+    .eq("project_id", projectId);
+
+  if (row.kind === "file" && row.storage_path) {
+    await supabase.storage.from("project-files").remove([row.storage_path as string]);
+  }
+  revalidatePath(`/projects/${projectId}`);
+}
+
 /** Attach an external document link (Google Doc/Drive, etc.) — no upload. */
 export async function addLink(
   projectId: string,
