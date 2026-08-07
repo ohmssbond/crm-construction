@@ -128,3 +128,26 @@ export function buildHeaderImages(signed: Record<HeaderSlot, string | null>): {
   const heroIndex = images.findIndex((i) => i.slot === "hero");
   return { images, startIndex: heroIndex === -1 ? 0 : heroIndex };
 }
+
+/**
+ * Where an attachment is currently used, as labels for the delete confirm. Empty when
+ * unused. The labels match what staff already see: the project header calls the hero
+ * slot "Current progress", so this does too.
+ *
+ * All five references are `on delete set null`, so deleting a used attachment empties
+ * the slot rather than dangling — this exists to make that consequence visible before
+ * the fact, not to prevent it.
+ */
+export function attachmentUses(
+  attachmentId: string,
+  slots: { cover: string | null; hero: string | null; before: string | null; after: string | null },
+  updatePhotoIds: string[]
+): string[] {
+  const uses: string[] = [];
+  if (slots.cover === attachmentId) uses.push("Cover photo");
+  if (slots.hero === attachmentId) uses.push("Current progress photo");
+  if (slots.before === attachmentId) uses.push("Before photo");
+  if (slots.after === attachmentId) uses.push("After photo");
+  if (updatePhotoIds.includes(attachmentId)) uses.push("a project update");
+  return uses;
+}
