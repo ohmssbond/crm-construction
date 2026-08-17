@@ -110,6 +110,31 @@ exact location and change so it can be picked up cold.
 - No `updated_at` on either schedule table; stale JSDoc on `addTodo` (`actions.ts:412`)
   still says "Add a task".
 
+### 9. Portal invites don't check contact type
+- **Why:** `inviteContact` (`src/app/(artisan)/actions.ts`) gates only on "has an email" and
+  "doesn't already have a login" — it never looks at `contacts.type`. Portal *access* is
+  likewise type-blind: `contact_can_see_project()`
+  (`supabase/migrations/20260602000002_rls.sql`) is purely `project_contacts` membership.
+  So a staff member can invite a **Government**, **Other**, or **Prospect** contact and
+  hand them a working portal login with read access to every shared update, attachment,
+  and schedule on the projects they're attached to.
+- **Not a regression.** `prospect` has had this since the portal shipped; the 2026-08-17
+  contact-types work neither created nor worsened it. It surfaced because that branch
+  described the new types as "internal only," and a final review pointed out the claim was
+  broader than anything enforced. The docs were narrowed to "portal team roster and
+  notification emails" rather than the code being changed.
+- **What IS enforced today** — three filters, all keyed off the same three-type list, all
+  deliberate and none to be widened:
+  - `portal_project_team` RPC — the roster widget
+  - `groupProjectTeam` (`src/lib/data/projectTeam.ts`) — three buckets, ignores the rest
+  - `project_notification_recipients`
+    (`supabase/migrations/20260723000003_notification_preferences.sql`) — update emails
+- **If revisited:** gate `inviteContact` (and the `InvitePanel` UI) to `partner` and
+  `customer` only. Cheap to do — but it **changes existing Prospect behavior**, and a
+  tenant may already be inviting prospects deliberately. That's the product decision to
+  make first.
+- **Scope:** one action + one UI gate; decide the Prospect question before building.
+
 ## Done
 
 - **Bound the thumbnail-signing concurrency** — `withAttachmentUrls`

@@ -12,6 +12,7 @@ import { TypeChip, LoginChip, type ContactType } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { contactName, contactInitials } from "@/lib/data/format";
 import { ArchivedSection } from "../ArchivedSection";
+import { CONTACT_TYPES } from "@/lib/data/contactTypes";
 
 type Contact = {
   id: string;
@@ -25,9 +26,7 @@ type ArchivedContact = { id: string; first_name: string | null; last_name: strin
 
 const TYPE_FILTERS: Record<string, string | null> = {
   All: null,
-  Partner: "partner",
-  Prospect: "prospect",
-  Customer: "customer",
+  ...Object.fromEntries(CONTACT_TYPES.map((t) => [t.label, t.value])),
 };
 
 export function ContactList({
