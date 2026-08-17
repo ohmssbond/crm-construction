@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/data/org";
 import { sendEmail, appUrl, inviteEmailHtml } from "@/lib/email";
 import { DEFAULT_TIMEZONE, isValidTimezone } from "@/lib/timezones";
+import { isSelectableContactType, typeHasCompany } from "@/lib/data/contactTypes";
 
 export type FormState = { error: string | null };
 export type InviteResult = { error: string | null; emailed: boolean };
@@ -87,7 +88,7 @@ export async function updateContact(
   const last = str(fd, "last_name");
   const type = str(fd, "type");
   if (!first && !last) return { error: "Enter a first or last name." };
-  if (!["partner", "prospect", "customer"].includes(type)) {
+  if (!isSelectableContactType(type)) {
     return { error: "Pick a contact type." };
   }
 
@@ -99,7 +100,7 @@ export async function updateContact(
       last_name: orNull(last),
       email: orNull(str(fd, "email")),
       phone: orNull(str(fd, "phone")),
-      company: type === "partner" ? orNull(str(fd, "company")) : null,
+      company: typeHasCompany(type) ? orNull(str(fd, "company")) : null,
       type,
       customer_id: orNull(str(fd, "customer_id")),
     })
@@ -117,7 +118,7 @@ export async function createContact(
   const last = str(fd, "last_name");
   const type = str(fd, "type");
   if (!first && !last) return { error: "Enter a first or last name." };
-  if (!["partner", "prospect", "customer"].includes(type)) {
+  if (!isSelectableContactType(type)) {
     return { error: "Pick a contact type." };
   }
 
@@ -132,7 +133,7 @@ export async function createContact(
       last_name: orNull(last),
       email: orNull(str(fd, "email")),
       phone: orNull(str(fd, "phone")),
-      company: type === "partner" ? orNull(str(fd, "company")) : null,
+      company: typeHasCompany(type) ? orNull(str(fd, "company")) : null,
       type,
       customer_id: orNull(str(fd, "customer_id")),
     })

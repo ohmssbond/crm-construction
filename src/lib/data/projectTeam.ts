@@ -26,7 +26,10 @@ const person = (r: TeamRow): TeamPerson => ({ name: r.name, email: r.email });
  *   - partners (type='partner'), grouped by company then sorted by name;
  *     companies sorted case-insensitively with the no-company group last
  *   - customer (type='customer'), sorted by name
- * Rows of any other type (e.g. 'prospect') are ignored.
+ * Rows of any other type are ignored — 'prospect', and deliberately 'government' and
+ * 'other', which are internal-only records (inspectors, permit offices, utilities) that
+ * must never be published to a customer. portal_project_team's type filter excludes them
+ * too; both are intentional, not an oversight.
  */
 export function groupProjectTeam(rows: TeamRow[]): ProjectTeam {
   const tenant = rows.filter((r) => r.type === "rep").map(person).sort(byName);

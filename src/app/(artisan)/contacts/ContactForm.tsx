@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Field, fieldInput, FormError } from "@/components/ui/Field";
 import type { FormState } from "../actions";
+import { CONTACT_TYPES, typeHasCompany } from "@/lib/data/contactTypes";
 
 const initial: FormState = { error: null };
 
@@ -50,7 +51,7 @@ export function ContactForm({
         <Field label="Phone">
           <input name="phone" defaultValue={defaults?.phone ?? ""} className={fieldInput} />
         </Field>
-        {type === "partner" && (
+        {typeHasCompany(type) && (
           <Field label="Company">
             <input name="company" value={company} onChange={(e) => setCompany(e.target.value)} className={fieldInput} />
           </Field>
@@ -62,9 +63,11 @@ export function ContactForm({
             onChange={(e) => setType(e.target.value)}
             className={fieldInput}
           >
-            <option value="customer">Customer</option>
-            <option value="partner">Partner</option>
-            <option value="prospect">Prospect</option>
+            {CONTACT_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
           </select>
         </Field>
         <Field label={clientNoun}>

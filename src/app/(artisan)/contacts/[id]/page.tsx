@@ -13,6 +13,7 @@ import { Note } from "@/components/ui/Note";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getContactDetail, contactName, contactInitials } from "@/lib/data/contacts";
 import { getOrgContext } from "@/lib/data/org";
+import { typeHasCompany } from "@/lib/data/contactTypes";
 import { getPendingInvitation } from "@/lib/data/invitations";
 import { inviteContact, revokeInvitation, archiveContact } from "../../actions";
 import { InvitePanel } from "./InvitePanel";
@@ -57,7 +58,7 @@ export default async function ContactDetailPage({
       <Card className="px-4 py-1">
         <KeyValue label="Email" value={contact.email ?? "—"} />
         <KeyValue label="Phone" value={contact.phone ?? "—"} />
-        {contact.type === "partner" && (
+        {typeHasCompany(contact.type) && (
           <KeyValue label="Company" value={contact.company ?? "—"} />
         )}
         <KeyValue label={clientNoun} value={contact.customer?.name ?? "—"} />

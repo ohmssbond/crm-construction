@@ -1,3 +1,5 @@
+import type { SelectableContactType } from "@/lib/data/contactTypes";
+
 const chipBase =
   "inline-flex items-center gap-1 rounded-full text-chip font-semibold px-[9px] py-[3px] whitespace-nowrap";
 
@@ -15,12 +17,15 @@ export function StageChip({ stage }: { stage: Stage }) {
   return <span className={`${chipBase} ${cls}`}>{label}</span>;
 }
 
-export type ContactType = "partner" | "prospect" | "customer" | "rep";
+/** Every type a chip may render — the selectable ones plus `rep`, which is display-only. */
+export type ContactType = SelectableContactType | "rep";
 
 const TYPE_STYLE: Record<ContactType, string> = {
   partner: "bg-proposal-soft text-proposal",
   prospect: "bg-proposal-soft text-proposal",
   customer: "bg-proposal-soft text-proposal",
+  government: "bg-proposal-soft text-proposal",
+  other: "bg-proposal-soft text-proposal",
   rep: "bg-signed-soft text-signed",
 };
 
