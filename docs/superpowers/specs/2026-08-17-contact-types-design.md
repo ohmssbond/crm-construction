@@ -11,24 +11,45 @@ record that fits nothing else. This adds **Government** and **Other**.
 - Both new types are selectable when creating or editing a contact.
 - Both can carry a Company, so an agency name has somewhere to live.
 - Both filter in the contacts list like the existing types.
-- Neither appears in the customer's portal.
+- Neither appears in the portal team roster or receives project-update notification
+  emails.
 
 ## Decisions (settled)
 
-- **Internal only — they never reach the portal.** These are staff-side records:
-  inspectors, permit offices, utilities. Attaching one to a project must not publish a
-  building inspector's contact details to a homeowner. This requires **no work**: the
-  `portal_project_team` RPC already filters `c.type in ('rep', 'partner', 'customer')`
-  and `groupProjectTeam` has exactly three buckets, ignoring everything else. What
-  changes is that the exclusion becomes **intentional** rather than incidental, so
-  `groupProjectTeam`'s docstring must name the new types as deliberately excluded — it
+- **Internal only — excluded from the portal roster and from notification emails.**
+  These are staff-side records: inspectors, permit offices, utilities. Attaching one to
+  a project must not publish a building inspector's contact details in the portal's
+  "Your Project Team," and must not send them project-update emails. This requires **no
+  work**: three existing filters already key off the same three-type list and so already
+  exclude 'government' and 'other':
+  - the `portal_project_team` RPC (`c.type in ('rep', 'partner', 'customer')`)
+  - `groupProjectTeam`, which has exactly three buckets, ignoring everything else
+  - `project_notification_recipients` (`supabase/migrations/20260723000003_notification_preferences.sql`),
+    which filters `c.type in ('rep', 'partner', 'customer')` for the notifiable
+    recipients of a project's update emails — previously undocumented and unverified as
+    part of this exclusion, confirmed correct while writing this fix
+
+  What changes is that the exclusion becomes **intentional** rather than incidental, so
+  each site's comment/docstring should name the new types as deliberately excluded — it
   currently says "Rows of any other type (e.g. 'prospect') are ignored," which a future
-  reader could easily mistake for an oversight once two more types exist.
+  reader could easily mistake for an oversight once two more types exist. None of these
+  three filters should be widened to include 'government' or 'other'.
+
+  **This is not a portal access control.** Whether a contact's linked user can sign in
+  and reach the portal for a project at all is governed separately by `project_contacts`
+  membership (`contact_can_see_project()` in
+  `supabase/migrations/20260602000002_rls.sql`), which does not check contact type — and
+  `inviteContact` does not check type either. A Government or Other contact with a portal
+  login (however that login came to exist) can still see everything the RLS `contact_read`
+  policies expose; they are simply absent from the roster widget and the notification
+  list. That exposure is pre-existing and identical for `prospect`; this change neither
+  creates nor worsens it.
 - **Company applies to Partner, Government, and Other.** A government contact without
   somewhere to put "City of Portland, Building Dept" forces the agency into the name
   field. Customer, Prospect, and Rep keep no Company — a customer is a person and a rep
-  is the tenant's own staff. Because the new types never reach the portal, `company` is
-  a purely internal label for them, with none of the partner-grouping consequences.
+  is the tenant's own staff. Because the new types never appear in the portal roster,
+  `company` is a purely internal label for them, with none of the partner-grouping
+  consequences.
 - **One source of truth for the type list.** This is the substance of the change. The
   types are currently spelled out in five places and the company rule in three; adding
   two types by hand means editing eight sites and hoping none is missed. A missed

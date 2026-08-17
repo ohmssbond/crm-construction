@@ -27,9 +27,12 @@ const person = (r: TeamRow): TeamPerson => ({ name: r.name, email: r.email });
  *     companies sorted case-insensitively with the no-company group last
  *   - customer (type='customer'), sorted by name
  * Rows of any other type are ignored — 'prospect', and deliberately 'government' and
- * 'other', which are internal-only records (inspectors, permit offices, utilities) that
- * must never be published to a customer. portal_project_team's type filter excludes them
- * too; both are intentional, not an oversight.
+ * 'other'. Those two are excluded from this roster on purpose (inspectors, permit
+ * offices, utilities aren't part of "Your Project Team"); portal_project_team's type
+ * filter excludes them too, for the same reason. This is a roster-level exclusion only,
+ * NOT a portal access control — whether a contact's linked user can reach the portal at
+ * all is governed separately by project_contacts membership, and the invite path does
+ * not check contact type.
  */
 export function groupProjectTeam(rows: TeamRow[]): ProjectTeam {
   const tenant = rows.filter((r) => r.type === "rep").map(person).sort(byName);
