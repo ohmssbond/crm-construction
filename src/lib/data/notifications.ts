@@ -25,6 +25,10 @@ export async function getProjectUpdateNotifications(): Promise<boolean> {
 // who un-shares to revise and re-shares must not send a second "New update" email for
 // the same post.
 
+// Pure function, no I/O — but its test file transitively imports @/lib/supabase/server
+// (via this module's getProjectUpdateNotifications above) → next/headers. That resolves
+// fine under Vitest today, so this file must NOT gain `import "server-only"`, or the
+// test file breaks.
 export function shouldNotifyOnShare(
   wasShared: boolean,
   nextShared: boolean,

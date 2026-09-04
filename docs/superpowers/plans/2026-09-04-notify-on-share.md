@@ -340,7 +340,7 @@ git commit -m "feat(updates): email the team when an update is shared later"
 
 ## Manual verification (after `supabase db push`, before merge)
 
-**The migration must be applied first.** Until it is, both actions reference a column that does not exist and every post and toggle fails.
+**The migration must be applied first.** Until it is, `notified_at` doesn't exist: `postUpdate` still inserts and still emails (the stamp write 404s and is swallowed), so posting looks fine. But `setUpdateShared`'s read of `notified_at` errors, `data` comes back null, and `if (!row) return;` makes the Shared toggle a **silent no-op** for every update — the optimistic UI shows the flip working until the next refresh, nothing throws or logs. If the deploy happens in the other order (migration applied, old code still live), an update posted shared in that window emails but is never stamped, so its first off/on flip after the new code ships sends a second email.
 
 Nothing below is reachable by the automated gates — they prove the predicate is right and that it compiles, not that any email was sent.
 

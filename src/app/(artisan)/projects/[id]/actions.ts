@@ -176,6 +176,20 @@ async function notifyProjectUpdate(
   const list = (recipients ?? []) as { email: string; type: string }[];
   if (list.length === 0) return; // nobody to tell — leave notified_at null so a later share can
 
+  // Claim BEFORE sending: a compare-and-set on notified_at. If the claim fails or
+  // matches zero rows, someone else already announced this update (or the write
+  // failed) — either way, do not send. Stamping after the sends would be fail-OPEN:
+  // a failed stamp would leave notified_at null and the next toggle would send a
+  // second email, silently, which is the exact thing this column exists to prevent.
+  const { data: claimed } = await supabase
+    .from("status_updates")
+    .update({ notified_at: new Date().toISOString() })
+    .eq("id", updateId)
+    .eq("project_id", projectId)
+    .is("notified_at", null)
+    .select("id");
+  if (!claimed?.length) return;
+
   const base = appUrl();
   await Promise.allSettled(
     list.map((r) =>
@@ -194,12 +208,6 @@ async function notifyProjectUpdate(
       })
     )
   );
-
-  await supabase
-    .from("status_updates")
-    .update({ notified_at: new Date().toISOString() })
-    .eq("id", updateId)
-    .eq("project_id", projectId);
 }
 
 /** Post a status update (optional title + lead photo; optionally shared). */
@@ -270,7 +278,19 @@ export async function postUpdate(
 
   // Best-effort, after the insert so a send failure never loses the post. A private
   // update announces nothing now; flipping its Shared toggle later will.
-  if (!isShared || !inserted?.id) return;
+  if (!isShared || !inserted?.id) {
+    if (isShared) {
+      // The insert above didn't error (or we'd see it elsewhere), yet came back with
+      // no id — a shared update was just posted with no way to notify anyone. Safe
+      // under today's artisan_all RLS policy (it always returns the row), but log so a
+      // future policy narrowing that silently kills notifications shows up in Vercel
+      // runtime logs instead of vanishing.
+      console.error("postUpdate: shared insert returned no id; notification skipped", {
+        projectId,
+      });
+    }
+    return;
+  }
   await notifyProjectUpdate(supabase, projectId, inserted.id, title.trim() || null, text);
 }
 
@@ -289,11 +309,12 @@ export async function setUpdateShared(projectId: string, updateId: string, share
     .maybeSingle();
   if (!row) return;
 
-  await supabase
+  const { error } = await supabase
     .from("status_updates")
     .update({ is_shared: shared })
     .eq("id", updateId)
     .eq("project_id", projectId);
+  if (error) return; // write failed — don't notify about a change that didn't happen
   revalidatePath(`/projects/${projectId}`);
 
   if (shouldNotifyOnShare(row.is_shared, shared, row.notified_at)) {
