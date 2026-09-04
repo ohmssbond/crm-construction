@@ -6,6 +6,7 @@ import { getOrgContext } from "@/lib/data/org";
 import { validatePhotoAssignment } from "@/lib/data/portfolio";
 import { sendEmail, appUrl, projectUpdateEmailHtml } from "@/lib/email";
 import { noonInZone, todayInZone, DEFAULT_TIMEZONE } from "@/lib/timezones";
+import { shouldNotifyOnShare } from "@/lib/data/notifications";
 
 export type RecordResult = { error: string | null };
 
@@ -141,6 +142,74 @@ export async function setProjectPhotoSlot(
   return { error: null };
 }
 
+/**
+ * Best-effort: email the project team (minus the acting user and anyone opted out) a
+ * link to an update that has just become visible to the customer, then record that it
+ * announced itself.
+ *
+ * Shared by BOTH paths — posting as shared, and flipping the Shared toggle later — so
+ * the two cannot drift apart. `notified_at` is what makes an update announce exactly
+ * once across repeated toggling.
+ *
+ * The stamp is skipped when there were no recipients, so sharing an update before the
+ * customer is attached does not burn the single notification on an empty send.
+ * Sends are best-effort: a failure is swallowed and never retried, matching the
+ * behavior this replaces.
+ */
+async function notifyProjectUpdate(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projectId: string,
+  updateId: string,
+  title: string | null,
+  body: string
+): Promise<void> {
+  const [{ data: authData }, { data: proj }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from("projects").select("name").eq("id", projectId).maybeSingle(),
+  ]);
+  const projectName = proj?.name ?? "your project";
+  const { data: recipients } = await supabase.rpc("project_notification_recipients", {
+    p_project: projectId,
+    p_exclude_user: authData?.user?.id ?? null,
+  });
+
+  const list = (recipients ?? []) as { email: string; type: string }[];
+  if (list.length === 0) return; // nobody to tell — leave notified_at null so a later share can
+
+  // Claim BEFORE sending: a compare-and-set on notified_at. If the claim fails or
+  // matches zero rows, someone else already announced this update (or the write
+  // failed) — either way, do not send. Stamping after the sends would be fail-OPEN:
+  // a failed stamp would leave notified_at null and the next toggle would send a
+  // second email, silently, which is the exact thing this column exists to prevent.
+  const { data: claimed } = await supabase
+    .from("status_updates")
+    .update({ notified_at: new Date().toISOString() })
+    .eq("id", updateId)
+    .eq("project_id", projectId)
+    .is("notified_at", null)
+    .select("id");
+  if (!claimed?.length) return;
+
+  const base = appUrl();
+  await Promise.allSettled(
+    list.map((r) =>
+      sendEmail({
+        to: r.email,
+        subject: `New update on ${projectName}`,
+        html: projectUpdateEmailHtml({
+          projectName,
+          title,
+          body,
+          link:
+            r.type === "rep"
+              ? `${base}/projects/${projectId}`
+              : `${base}/my-projects/${projectId}`,
+        }),
+      })
+    )
+  );
+}
+
 /** Post a status update (optional title + lead photo; optionally shared). */
 export async function postUpdate(
   projectId: string,
@@ -192,55 +261,65 @@ export async function postUpdate(
     }
   }
 
-  await supabase.from("status_updates").insert({
-    organization_id: ctx.org.id,
-    project_id: projectId,
-    title: title.trim() || null,
-    body: text,
-    is_shared: isShared,
-    photo_attachment_id: photoId,
-    ...postedAt,
-  });
+  const { data: inserted } = await supabase
+    .from("status_updates")
+    .insert({
+      organization_id: ctx.org.id,
+      project_id: projectId,
+      title: title.trim() || null,
+      body: text,
+      is_shared: isShared,
+      photo_attachment_id: photoId,
+      ...postedAt,
+    })
+    .select("id")
+    .single();
   revalidatePath(`/projects/${projectId}`);
 
-  // Best-effort: email the project team (minus author + opted-out) a link to a
-  // SHARED update. Runs after the insert so a send failure never loses the post;
-  // no-op without RESEND_API_KEY.
-  if (!isShared) return;
-  const [{ data: authData }, { data: proj }] = await Promise.all([
-    supabase.auth.getUser(),
-    supabase.from("projects").select("name").eq("id", projectId).maybeSingle(),
-  ]);
-  const projectName = proj?.name ?? "your project";
-  const { data: recipients } = await supabase.rpc("project_notification_recipients", {
-    p_project: projectId,
-    p_exclude_user: authData?.user?.id ?? null,
-  });
-  const base = appUrl();
-  await Promise.allSettled(
-    ((recipients ?? []) as { email: string; type: string }[]).map((r) =>
-      sendEmail({
-        to: r.email,
-        subject: `New update on ${projectName}`,
-        html: projectUpdateEmailHtml({
-          projectName,
-          title: title.trim() || null,
-          body: text,
-          link:
-            r.type === "rep"
-              ? `${base}/projects/${projectId}`
-              : `${base}/my-projects/${projectId}`,
-        }),
-      })
-    )
-  );
+  // Best-effort, after the insert so a send failure never loses the post. A private
+  // update announces nothing now; flipping its Shared toggle later will.
+  if (!isShared || !inserted?.id) {
+    if (isShared) {
+      // The insert above didn't error (or we'd see it elsewhere), yet came back with
+      // no id — a shared update was just posted with no way to notify anyone. Safe
+      // under today's artisan_all RLS policy (it always returns the row), but log so a
+      // future policy narrowing that silently kills notifications shows up in Vercel
+      // runtime logs instead of vanishing.
+      console.error("postUpdate: shared insert returned no id; notification skipped", {
+        projectId,
+      });
+    }
+    return;
+  }
+  await notifyProjectUpdate(supabase, projectId, inserted.id, title.trim() || null, text);
 }
 
-/** Toggle a status update's portal visibility. */
+/**
+ * Toggle a status update's portal visibility, and — the first time it becomes visible —
+ * email the project team, exactly as posting it shared would have.
+ */
 export async function setUpdateShared(projectId: string, updateId: string, shared: boolean) {
   const supabase = await createClient();
-  await supabase.from("status_updates").update({ is_shared: shared }).eq("id", updateId);
+
+  const { data: row } = await supabase
+    .from("status_updates")
+    .select("is_shared, notified_at, title, body")
+    .eq("id", updateId)
+    .eq("project_id", projectId)
+    .maybeSingle();
+  if (!row) return;
+
+  const { error } = await supabase
+    .from("status_updates")
+    .update({ is_shared: shared })
+    .eq("id", updateId)
+    .eq("project_id", projectId);
+  if (error) return; // write failed — don't notify about a change that didn't happen
   revalidatePath(`/projects/${projectId}`);
+
+  if (shouldNotifyOnShare(row.is_shared, shared, row.notified_at)) {
+    await notifyProjectUpdate(supabase, projectId, updateId, row.title, row.body);
+  }
 }
 
 /** Move the project to a new stage. */
